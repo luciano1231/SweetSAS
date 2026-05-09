@@ -23,7 +23,7 @@ const PERSONAL_COLS = [
 
 let dashboardData = [], filteredData = [], charts = {}, currentView = 'overview';
 let activeFilters = { ingresos: {}, gastos: {}, personales: {} };
-const DEFAULT_SHEET_URL = '/data';
+const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbx0XjF9A61J8G6f3DW9G5ral8AceS7UdhRQiMi9_k2QB-J0JnpHEdBC0y0no2KVRqJh/exec';
 let sheetUrl = localStorage.getItem('sweetSAS_sheetUrl') || DEFAULT_SHEET_URL;
 
 function fmt(n) { if (n == null || isNaN(n)) return '$0'; if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M'; if (Math.abs(n) >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K'; return '$' + n.toLocaleString('es-AR'); }
@@ -71,7 +71,18 @@ function parseJSONSheet(rows) {
 
 async function fetchData() {
   if (!sheetUrl) return null;
-  try { const r = await fetch(sheetUrl); if (!r.ok) throw 0; return parseJSONSheet(await r.json()); } catch (e) { console.warn('Fetch error', e); return null; }
+  return new Promise((resolve) => {
+    const cbName = 'sweetSAS_cb_' + Date.now();
+    window[cbName] = function (data) {
+      delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      resolve(parseJSONSheet(data));
+    };
+    const script = document.createElement('script');
+    script.src = sheetUrl + (sheetUrl.includes('?') ? '&' : '?') + 'callback=' + cbName;
+    script.onerror = () => { delete window[cbName]; resolve(null); };
+    document.head.appendChild(script);
+  });
 }
 
 async function loadData() {
