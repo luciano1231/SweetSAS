@@ -23,7 +23,7 @@ const PERSONAL_COLS = [
 
 let dashboardData = [], filteredData = [], charts = {}, currentView = 'overview';
 let activeFilters = { ingresos: {}, gastos: {}, personales: {} };
-const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbx0XjF9A61J8G6f3DW9G5ral8AceS7UdhRQiMi9_k2QB-J0JnpHEdBC0y0no2KVRqJh/exec';
+const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbziobe992H3vPeL63szDyVmgmlmqq0rQaCNvfx3y10vlr3N0LgD1bSjvIbLwAUIDN0o/exec';
 let sheetUrl = localStorage.getItem('sweetSAS_sheetUrl') || DEFAULT_SHEET_URL;
 
 function fmt(n) { if (n == null || isNaN(n)) return '$0'; if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M'; if (Math.abs(n) >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K'; return '$' + n.toLocaleString('es-AR'); }
