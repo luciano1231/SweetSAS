@@ -26,8 +26,8 @@ let activeFilters = { ingresos: {}, gastos: {}, personales: {} };
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbziobe992H3vPeL63szDyVmgmlmqq0rQaCNvfx3y10vlr3N0LgD1bSjvIbLwAUIDN0o/exec';
 let sheetUrl = localStorage.getItem('sweetSAS_sheetUrl') || DEFAULT_SHEET_URL;
 
-function fmt(n) { if (n == null || isNaN(n)) return '$0'; if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M'; if (Math.abs(n) >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K'; return '$' + n.toLocaleString('es-AR'); }
-function fmtFull(n) { if (n == null || isNaN(n)) return '$0'; return '$' + n.toLocaleString('es-AR'); }
+function fmt(n) { if (n == null || isNaN(n)) return '$0'; n = Math.round(n); if (Math.abs(n) >= 1e6) return '$' + Math.round(n / 1e6) + 'M'; if (Math.abs(n) >= 1e3) return '$' + Math.round(n / 1e3) + 'K'; return '$' + n.toLocaleString('es-AR', { maximumFractionDigits: 0 }); }
+function fmtFull(n) { if (n == null || isNaN(n)) return '$0'; return '$' + Math.round(n).toLocaleString('es-AR', { maximumFractionDigits: 0 }); }
 function parseNum(s) { if (!s) return 0; s = String(s).trim().replace(/["'$\s]/g, ''); if (s === '' || s === '-') return 0; if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); else if (s.includes(',') && /,\d{3}/.test(s) && !/,\d{1,2}$/.test(s)) s = s.replace(/,/g, ''); else if (s.includes(',')) s = s.replace(',', '.'); else if (s.includes('.') && /\.\d{3}/.test(s) && (s.match(/\./g) || []).length > 1) s = s.replace(/\./g, ''); return parseFloat(s) || 0; }
 function sumF(d, k) { return d.reduce((a, r) => a + (r[k] || 0), 0); }
 function formatDateLabel(f) {
@@ -160,7 +160,7 @@ function renderKPIs() {
   document.getElementById('kpiGastos').textContent = fmt(te);
   document.getElementById('kpiGastosCount').textContent = filteredData.length + ' meses';
   document.getElementById('kpiBalance').textContent = fmt(bal);
-  document.getElementById('kpiBalancePct').textContent = 'Margen: ' + (ti > 0 ? ((bal / ti) * 100).toFixed(1) : 0) + '%';
+  document.getElementById('kpiBalancePct').textContent = 'Margen: ' + (ti > 0 ? Math.round((bal / ti) * 100) : 0) + '%';
   document.getElementById('kpiPersonales').textContent = fmt(tp);
   document.getElementById('kpiPersonalesCount').textContent = filteredData.length + ' meses';
 }
@@ -265,7 +265,7 @@ function renderComparativoView() {
   document.getElementById('compGastos').textContent = fmtFull(te);
   document.getElementById('compBalance').textContent = fmtFull(bal);
   document.getElementById('compBalance').style.color = bal >= 0 ? '#10b981' : '#ef4444';
-  document.getElementById('compMargin').textContent = (ti > 0 ? ((bal / ti) * 100).toFixed(1) : 0) + '%';
+  document.getElementById('compMargin').textContent = (ti > 0 ? Math.round((bal / ti) * 100) : 0) + '%';
   document.getElementById('compBarIng').style.width = (ti / mx * 100) + '%';
   document.getElementById('compBarGas').style.width = (te / mx * 100) + '%';
 }
