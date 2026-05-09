@@ -1,464 +1,304 @@
-/* ============================================
-   Sweet SAS — Dashboard JS
-   ============================================ */
-
-// ---- Sample Data (based on the Google Sheet screenshot) ----
-const SAMPLE_DATA = [
-    { fecha: '1/5/2026', panaderia: 5494290, sweetHiper: 7336165, chango: 2748900, mayoristas: 346829, cajaChicaPan: 0, cajaChicaSH: 66500, cajaChicaCh: 0, cajaSemanal: 4615300, obligaciones: 0, remitos: 0, gastosPerOblig: 0, invOblig: 0, gastosPerCaja: 0, invCaja: 0 },
-    { fecha: '1/4/2026', panaderia: 6309488, sweetHiper: 14735670, chango: 7623600, mayoristas: 3938140, cajaChicaPan: 0, cajaChicaSH: 510600, cajaChicaCh: 5864790, cajaSemanal: 12753310, obligaciones: 15210950, remitos: 2628, gastosPerOblig: 2226590, invOblig: 0, gastosPerCaja: 0, invCaja: 0 },
-    { fecha: '1/3/2024', panaderia: 7802960, sweetHiper: 17339070, chango: 7972244, mayoristas: 6753732, cajaChicaPan: 0, cajaChicaSH: 12113450, cajaChicaCh: 4992750, cajaSemanal: 14455390, obligaciones: 15367620, remitos: 3390, gastosPerOblig: 246590, invOblig: 0, gastosPerCaja: 0, invCaja: 0 },
-    { fecha: '1/2/2024', panaderia: 8004649, sweetHiper: 21703278, chango: 10113555, mayoristas: 6235448, cajaChicaPan: 0, cajaChicaSH: 19991600, cajaChicaCh: 6314410, cajaSemanal: 23049950, obligaciones: 16681739, remitos: 2628, gastosPerOblig: 338377, invOblig: 0, gastosPerCaja: 0, invCaja: 0 },
-    { fecha: '1/1/2024', panaderia: 10128768, sweetHiper: 25914804, chango: 11867469, mayoristas: 8585484, cajaChicaPan: 0, cajaChicaSH: 16435830, cajaChicaCh: 6786100, cajaSemanal: 27415312, obligaciones: 23242472, remitos: 43581, gastosPerOblig: 832430, invOblig: 0, gastosPerCaja: 82000, invCaja: 0 },
-    { fecha: '1/8/2024', panaderia: 11509969, sweetHiper: 25603200, chango: 11879495, mayoristas: 8867181, cajaChicaPan: 0, cajaChicaSH: 13190450, cajaChicaCh: 5677650, cajaSemanal: 21989101, obligaciones: 37600396, remitos: 7008, gastosPerOblig: 159699, invOblig: 2385008, gastosPerCaja: 0, invCaja: 0 },
-    { fecha: '1/9/2024', panaderia: 10925571, sweetHiper: 22424850, chango: 11641610, mayoristas: 8458070, cajaChicaPan: 0, cajaChicaSH: 12032600, cajaChicaCh: 4517980, cajaSemanal: 16031297, obligaciones: 56879824, remitos: 135551, gastosPerOblig: 4004560, invOblig: 336934, gastosPerCaja: 0, invCaja: 0 },
-    { fecha: '1/10/2024', panaderia: 12121800, sweetHiper: 24572620, chango: 11869480, mayoristas: 9928608, cajaChicaPan: 0, cajaChicaSH: 13766390, cajaChicaCh: 8978880, cajaSemanal: 14424730, obligaciones: 54793368, remitos: 248790, gastosPerOblig: 1033312, invOblig: 239038, gastosPerCaja: 50000, invCaja: 0 },
-    { fecha: '1/11/2024', panaderia: 11496918, sweetHiper: 26261225, chango: 14063945, mayoristas: 45894394, cajaChicaPan: 0, cajaChicaSH: 14071136, cajaChicaCh: 5035843, cajaSemanal: 16468468, obligaciones: 51821115, remitos: 4243791, gastosPerOblig: 288199, invOblig: 208670, gastosPerCaja: 0, invCaja: 0 },
-    { fecha: '1/12/2024', panaderia: 11326195, sweetHiper: 33343265, chango: 17383975, mayoristas: 19459852, cajaChicaPan: 0, cajaChicaSH: 8783094, cajaChicaCh: 2663321, cajaSemanal: 21128670, obligaciones: 37978456, remitos: 42076, gastosPerOblig: 111029, invOblig: 0, gastosPerCaja: 0, invCaja: 0 },
+/* Sweet SAS Dashboard JS — Rebuilt */
+const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const INCOME_COLS = [
+  {key:'panaderia',label:'Ingreso Panadería',color:'#3b82f6',icon:'🍞'},
+  {key:'sweetHiper',label:'Ingreso Sweet Hiper',color:'#8b5cf6',icon:'🛒'},
+  {key:'chango',label:'Ingreso Chango',color:'#10b981',icon:'🏪'},
+  {key:'mayoristasExt',label:'Ingreso Mayoristas Ext.',color:'#f59e0b',icon:'📦'},
+  {key:'mayoristasInt',label:'Ingreso Mayoristas Int.',color:'#06b6d4',icon:'📋'}
+];
+const EXPENSE_COLS = [
+  {key:'cajaChicaPan',label:'Caja Chica Panadería',color:'#ef4444'},
+  {key:'cajaChicaSH',label:'Caja Chica Sweet Hiper',color:'#f97316'},
+  {key:'cajaChicaCh',label:'Caja Chica Chango',color:'#ec4899'},
+  {key:'cajaSemanal',label:'Caja Semanal',color:'#8b5cf6'},
+  {key:'obligaciones',label:'Obligaciones',color:'#6366f1'}
+];
+const PERSONAL_COLS = [
+  {key:'gastosPerOblig',label:'Gastos Pers. (Obligaciones)',color:'#eab308'},
+  {key:'invOblig',label:'Inversiones Obligaciones',color:'#a3e635'},
+  {key:'gastosPerCaja',label:'Gastos Pers. (Caja Chica)',color:'#facc15'},
+  {key:'invCaja',label:'Inversiones (Caja Chica)',color:'#fde047'}
 ];
 
-// ---- State ----
-let dashboardData = [];
-let charts = {};
-let currentView = 'overview';
-// Direct connection to Google Sheet "Nuevo Balance" tab
-const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1Z07Z72qZIcMFg2hlZ71S7F7FQqxNbjBfZ3ltQ9vl81U/pub?gid=2069063828&single=true&output=csv';
-let sheetUrl = localStorage.getItem('sweetSAS_sheetUrl') || DEFAULT_SHEET_URL;
-let autoRefreshInterval = null;
-const AUTO_REFRESH_MS = 5 * 60 * 1000; // 5 minutes
+let dashboardData=[], filteredData=[], charts={}, currentView='overview';
+let activeFilters={ingresos:{},gastos:{},personales:{}};
+const DEFAULT_SHEET_URL='https://docs.google.com/spreadsheets/d/1Z07Z72qZIcMFg2hlZ71S7F7FQqxNbjBfZ3ltQ9vl81U/pub?gid=2069063828&single=true&output=csv';
+let sheetUrl=localStorage.getItem('sweetSAS_sheetUrl')||DEFAULT_SHEET_URL;
 
-// ---- Helpers ----
-function formatMoney(n) {
-    if (n == null || isNaN(n)) return '$0';
-    if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
-    if (Math.abs(n) >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
-    return '$' + n.toLocaleString('es-AR');
+function fmt(n){if(n==null||isNaN(n))return'$0';if(Math.abs(n)>=1e6)return'$'+(n/1e6).toFixed(1)+'M';if(Math.abs(n)>=1e3)return'$'+(n/1e3).toFixed(0)+'K';return'$'+n.toLocaleString('es-AR');}
+function fmtFull(n){if(n==null||isNaN(n))return'$0';return'$'+n.toLocaleString('es-AR');}
+function parseNum(s){if(!s)return 0;s=String(s).trim().replace(/["'$\s]/g,'');if(s===''||s==='-')return 0;if(s.includes('.')&&s.includes(','))s=s.replace(/\./g,'').replace(',','.');else if(s.includes(',')&&/,\d{3}/.test(s)&&!/,\d{1,2}$/.test(s))s=s.replace(/,/g,'');else if(s.includes(','))s=s.replace(',','.');else if(s.includes('.')&&/\.\d{3}/.test(s)&&(s.match(/\./g)||[]).length>1)s=s.replace(/\./g,'');return parseFloat(s)||0;}
+function sumF(d,k){return d.reduce((a,r)=>a+(r[k]||0),0);}
+function formatDateLabel(f){
+  if(!f)return'';
+  let parts=f.replace(/\//g,'-').split('-');
+  let d;
+  if(parts.length>=2){
+    if(parts[0].length===4)d=new Date(+parts[0],+parts[1]-1,1);
+    else if(parts.length===3)d=new Date(+parts[2],+parts[1]-1,1);
+    else d=new Date(+parts[1],+parts[0]-1,1);
+  }else return f;
+  if(isNaN(d))return f;
+  return MONTHS_ES[d.getMonth()]+' '+d.getFullYear();
 }
 
-function formatMoneyFull(n) {
-    if (n == null || isNaN(n)) return '$0';
-    return '$' + n.toLocaleString('es-AR');
+function splitCSV(line){const r=[];let c='',q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(q&&i+1<line.length&&line[i+1]==='"'){c+='"';i++;}else q=!q;}else if(ch===','&&!q){r.push(c.trim());c='';}else c+=ch;}r.push(c.trim());return r;}
+
+function parseCSV(csv){
+  const lines=csv.trim().split('\n');if(lines.length<2)return[];
+  let hi=0;for(let i=0;i<lines.length;i++){if(lines[i].toLowerCase().match(/fecha|mes|ingres/)){hi=i;break;}}
+  const rows=[];
+  for(let i=hi+1;i<lines.length;i++){
+    const c=splitCSV(lines[i]);if(c.length<5||!c[0]||!c[0].trim())continue;
+    rows.push({fecha:c[0].replace(/"/g,'').trim(),panaderia:parseNum(c[1]),sweetHiper:parseNum(c[2]),chango:parseNum(c[3]),mayoristasExt:parseNum(c[4]),cajaChicaPan:parseNum(c[5]),cajaChicaSH:parseNum(c[6]),cajaChicaCh:parseNum(c[7]),cajaSemanal:parseNum(c[8]),obligaciones:parseNum(c[9]),mayoristasInt:parseNum(c[10]),gastosPerOblig:parseNum(c[11]),invOblig:parseNum(c[12]),gastosPerCaja:parseNum(c[13]),invCaja:parseNum(c[14])});
+  }
+  return rows;
 }
 
-function parseNum(str) {
-    if (!str) return 0;
-    let s = String(str).trim();
-    // Remove currency symbols, spaces, quotes
-    s = s.replace(/["'$\s]/g, '');
-    if (s === '' || s === '-') return 0;
-    // Google Sheets CSV: numbers may use dots as thousands sep and comma as decimal
-    // Or they may be plain numbers. Detect format:
-    // If has both dots and commas, dots are thousands, comma is decimal
-    if (s.includes('.') && s.includes(',')) {
-        s = s.replace(/\./g, '').replace(',', '.');
-    }
-    // If only commas and looks like thousands separator (groups of 3)
-    else if (s.includes(',') && /,\d{3}/.test(s) && !/,\d{1,2}$/.test(s)) {
-        s = s.replace(/,/g, '');
-    }
-    // If only comma and looks like decimal
-    else if (s.includes(',')) {
-        s = s.replace(',', '.');
-    }
-    // If only dots and looks like thousands separator
-    else if (s.includes('.') && /\.\d{3}/.test(s) && (s.match(/\./g) || []).length > 1) {
-        s = s.replace(/\./g, '');
-    }
-    return parseFloat(s) || 0;
+async function fetchData(){
+  if(!sheetUrl)return null;
+  try{const r=await fetch(sheetUrl);if(!r.ok)throw 0;return parseCSV(await r.text());}catch(e){console.warn('Fetch error',e);return null;}
 }
 
-function sumField(data, field) {
-    return data.reduce((s, r) => s + (r[field] || 0), 0);
+async function loadData(){
+  const d=await fetchData();
+  if(d&&d.length>0){dashboardData=d;setConn(true);}
+  else{dashboardData=[];setConn(false);}
+  populateDateFilters();applyDateFilter();
 }
 
-// ---- CSV Parser (handles Google Sheets quoted fields) ----
-function splitCSVLine(line) {
-    const result = [];
-    let current = '';
-    let inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (ch === '"') {
-            if (inQuotes && i + 1 < line.length && line[i + 1] === '"') {
-                current += '"'; i++;
-            } else {
-                inQuotes = !inQuotes;
-            }
-        } else if (ch === ',' && !inQuotes) {
-            result.push(current.trim());
-            current = '';
-        } else {
-            current += ch;
-        }
-    }
-    result.push(current.trim());
-    return result;
+function setConn(on){
+  const dot=document.querySelector('.status-dot'),txt=document.querySelector('.status-text');
+  if(on){dot.className='status-dot online';txt.textContent='Google Sheets conectado';}
+  else{dot.className='status-dot offline';txt.textContent='Sin conexión';}
 }
 
-function parseCSV(csv) {
-    const lines = csv.trim().split('\n');
-    if (lines.length < 2) return [];
-    
-    // Find header row (skip empty rows)
-    let headerIdx = 0;
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].toLowerCase();
-        if (line.includes('fecha') || line.includes('ingres')) {
-            headerIdx = i;
-            break;
-        }
-    }
-    
-    const rows = [];
-    for (let i = headerIdx + 1; i < lines.length; i++) {
-        const cols = splitCSVLine(lines[i]);
-        if (cols.length < 5) continue;
-        // Skip empty rows
-        if (!cols[0] || cols[0].trim() === '') continue;
-        
-        rows.push({
-            fecha: cols[0]?.replace(/"/g, '').trim() || '',
-            panaderia: parseNum(cols[1]),
-            sweetHiper: parseNum(cols[2]),
-            chango: parseNum(cols[3]),
-            mayoristas: parseNum(cols[4]),
-            cajaChicaPan: parseNum(cols[5]),
-            cajaChicaSH: parseNum(cols[6]),
-            cajaChicaCh: parseNum(cols[7]),
-            cajaSemanal: parseNum(cols[8]),
-            obligaciones: parseNum(cols[9]),
-            remitos: parseNum(cols[10]),
-            gastosPerOblig: parseNum(cols[11]),
-            invOblig: parseNum(cols[12]),
-            gastosPerCaja: parseNum(cols[13]),
-            invCaja: parseNum(cols[14]),
-        });
-    }
-    return rows;
+function populateDateFilters(){
+  const from=document.getElementById('filterFrom'),to=document.getElementById('filterTo');
+  from.innerHTML='<option value="">Inicio</option>';to.innerHTML='<option value="">Fin</option>';
+  dashboardData.forEach((r,i)=>{
+    const lbl=formatDateLabel(r.fecha);
+    from.innerHTML+=`<option value="${i}">${lbl}</option>`;
+    to.innerHTML+=`<option value="${i}">${lbl}</option>`;
+  });
 }
 
-// ---- Data Fetching ----
-async function fetchSheetData() {
-    if (!sheetUrl) return null;
-    try {
-        const res = await fetch(sheetUrl);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const csv = await res.text();
-        return parseCSV(csv);
-    } catch (e) {
-        console.warn('Error fetching sheet:', e);
-        return null;
-    }
+function applyDateFilter(){
+  const fi=document.getElementById('filterFrom').value,ti=document.getElementById('filterTo').value;
+  let start=fi===''?0:+fi, end=ti===''?dashboardData.length-1:+ti;
+  if(start>end)[start,end]=[end,start];
+  filteredData=dashboardData.slice(start,end+1);
+  renderAll();
 }
 
-async function loadData() {
-    const liveData = await fetchSheetData();
-    if (liveData && liveData.length > 0) {
-        dashboardData = liveData;
-        setConnectionStatus(true);
-    } else {
-        dashboardData = SAMPLE_DATA;
-        setConnectionStatus(false);
-    }
-    renderAll();
+// Init column filters
+function initFilters(type,cols,containerId){
+  const c=document.getElementById(containerId);if(!c)return;c.innerHTML='';
+  activeFilters[type]={};
+  cols.forEach(col=>{
+    activeFilters[type][col.key]=true;
+    const chip=document.createElement('button');
+    chip.className='filter-chip active';chip.dataset.key=col.key;chip.dataset.type=type;
+    chip.style.setProperty('--chip-color',col.color);
+    chip.textContent=col.label;
+    chip.onclick=()=>{
+      activeFilters[type][col.key]=!activeFilters[type][col.key];
+      chip.classList.toggle('active');
+      renderViewCharts(type);
+    };
+    c.appendChild(chip);
+  });
 }
 
-function setConnectionStatus(online) {
-    const dot = document.querySelector('.status-dot');
-    const text = document.querySelector('.status-text');
-    if (online) {
-        dot.className = 'status-dot online';
-        text.textContent = 'Google Sheets conectado';
-    } else {
-        dot.className = 'status-dot offline';
-        text.textContent = 'Datos de ejemplo';
-    }
+Chart.defaults.color='#8b95a8';Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.plugins.legend.labels.usePointStyle=true;
+Chart.defaults.plugins.tooltip.backgroundColor='#1a2035';Chart.defaults.plugins.tooltip.borderColor='rgba(255,255,255,0.1)';
+Chart.defaults.plugins.tooltip.borderWidth=1;Chart.defaults.plugins.tooltip.padding=12;Chart.defaults.plugins.tooltip.cornerRadius=8;
+
+function destroyChart(k){if(charts[k]){charts[k].destroy();delete charts[k];}}
+function destroyAll(){Object.keys(charts).forEach(k=>destroyChart(k));}
+
+function getLabels(){return filteredData.map(r=>formatDateLabel(r.fecha));}
+function getActiveCols(type,allCols){return allCols.filter(c=>activeFilters[type]?.[c.key]!==false);}
+function sumCols(row,cols){return cols.reduce((s,c)=>s+(row[c.key]||0),0);}
+function totalIncome(r){return INCOME_COLS.reduce((s,c)=>s+(r[c.key]||0),0);}
+function totalExpense(r){return EXPENSE_COLS.reduce((s,c)=>s+(r[c.key]||0),0);}
+function totalPersonal(r){return PERSONAL_COLS.reduce((s,c)=>s+(r[c.key]||0),0);}
+
+function renderKPIs(){
+  const ti=filteredData.reduce((s,r)=>s+totalIncome(r),0);
+  const te=filteredData.reduce((s,r)=>s+totalExpense(r),0);
+  const tp=filteredData.reduce((s,r)=>s+totalPersonal(r),0);
+  const bal=ti-te;
+  document.getElementById('kpiIngresos').textContent=fmt(ti);
+  document.getElementById('kpiIngresosCount').textContent=filteredData.length+' meses';
+  document.getElementById('kpiGastos').textContent=fmt(te);
+  document.getElementById('kpiGastosCount').textContent=filteredData.length+' meses';
+  document.getElementById('kpiBalance').textContent=fmt(bal);
+  document.getElementById('kpiBalancePct').textContent='Margen: '+(ti>0?((bal/ti)*100).toFixed(1):0)+'%';
+  document.getElementById('kpiPersonales').textContent=fmt(tp);
+  document.getElementById('kpiPersonalesCount').textContent=filteredData.length+' meses';
 }
 
-// ---- Chart Theme ----
-const chartColors = {
-    blue: '#3b82f6', purple: '#8b5cf6', green: '#10b981',
-    amber: '#f59e0b', red: '#ef4444', cyan: '#06b6d4', pink: '#ec4899',
-};
+function renderOverviewCharts(){
+  const labels=getLabels();
+  destroyChart('overviewBalance');destroyChart('overviewDonut');
+  const ingArr=filteredData.map(r=>totalIncome(r)),gasArr=filteredData.map(r=>totalExpense(r));
+  charts.overviewBalance=new Chart(document.getElementById('chartOverviewBalance'),{type:'bar',data:{labels,datasets:[
+    {label:'Ingresos',data:ingArr,backgroundColor:'#10b981cc',borderRadius:6,barPercentage:.6},
+    {label:'Gastos Empresa',data:gasArr,backgroundColor:'#ef4444cc',borderRadius:6,barPercentage:.6}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index'},scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'}},x:{grid:{display:false}}}}});
 
-Chart.defaults.color = '#8b95a8';
-Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
-Chart.defaults.font.family = "'Inter', sans-serif";
-Chart.defaults.plugins.legend.labels.usePointStyle = true;
-Chart.defaults.plugins.legend.labels.pointStyleWidth = 10;
-Chart.defaults.plugins.tooltip.backgroundColor = '#1a2035';
-Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,0.1)';
-Chart.defaults.plugins.tooltip.borderWidth = 1;
-Chart.defaults.plugins.tooltip.padding = 12;
-Chart.defaults.plugins.tooltip.cornerRadius = 8;
-
-// ---- Render KPIs ----
-function renderKPIs() {
-    const totalIngresos = sumField(dashboardData, 'panaderia') + sumField(dashboardData, 'sweetHiper') +
-        sumField(dashboardData, 'chango') + sumField(dashboardData, 'mayoristas');
-    const totalGastos = sumField(dashboardData, 'cajaChicaPan') + sumField(dashboardData, 'cajaChicaSH') +
-        sumField(dashboardData, 'cajaChicaCh') + sumField(dashboardData, 'obligaciones') +
-        sumField(dashboardData, 'remitos') + sumField(dashboardData, 'gastosPerOblig') +
-        sumField(dashboardData, 'invOblig') + sumField(dashboardData, 'gastosPerCaja') + sumField(dashboardData, 'invCaja');
-    const balance = totalIngresos - totalGastos;
-    const totalCaja = sumField(dashboardData, 'cajaSemanal');
-    const promCaja = dashboardData.length ? totalCaja / dashboardData.length : 0;
-
-    document.getElementById('kpiIngresos').textContent = formatMoney(totalIngresos);
-    document.getElementById('kpiIngresosCount').textContent = dashboardData.length + ' registros';
-    document.getElementById('kpiGastos').textContent = formatMoney(totalGastos);
-    document.getElementById('kpiGastosCount').textContent = dashboardData.length + ' registros';
-    document.getElementById('kpiBalance').textContent = formatMoney(balance);
-    const pct = totalIngresos > 0 ? ((balance / totalIngresos) * 100).toFixed(1) : 0;
-    document.getElementById('kpiBalancePct').textContent = 'Margen: ' + pct + '%';
-    document.getElementById('kpiCaja').textContent = formatMoney(totalCaja);
-    document.getElementById('kpiCajaProm').textContent = 'Promedio: ' + formatMoney(promCaja);
+  const incTotals=INCOME_COLS.map(c=>sumF(filteredData,c.key));
+  charts.overviewDonut=new Chart(document.getElementById('chartOverviewDonut'),{type:'doughnut',data:{labels:INCOME_COLS.map(c=>c.label),datasets:[{data:incTotals,backgroundColor:INCOME_COLS.map(c=>c.color),borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmtFull(ctx.raw)}}}}});
 }
 
-// ---- Render Charts ----
-function destroyCharts() {
-    Object.values(charts).forEach(c => c.destroy());
-    charts = {};
+function renderIngresosView(){
+  const labels=getLabels();const cols=getActiveCols('ingresos',INCOME_COLS);
+  destroyChart('ingresosDetalle');
+  const type=document.querySelector('.chart-type-btn.active[data-chart="ingresosDetalle"]')?.dataset.type||'bar';
+  charts.ingresosDetalle=new Chart(document.getElementById('chartIngresosDetalle'),{type,data:{labels,datasets:cols.map(c=>({
+    label:c.label,data:filteredData.map(r=>r[c.key]),
+    backgroundColor:c.color+'cc',borderColor:c.color,borderRadius:type==='bar'?4:0,
+    tension:.4,fill:type==='line',pointRadius:type==='line'?3:0,pointHoverRadius:6
+  }))},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{y:{stacked:type==='bar',ticks:{callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'}},x:{stacked:type==='bar',grid:{display:false}}}}});
+
+  const grid=document.getElementById('ingresosCards');grid.innerHTML='';
+  const totals=INCOME_COLS.map(c=>({...c,total:sumF(filteredData,c.key)}));
+  const mx=Math.max(...totals.map(t=>t.total))||1;
+  totals.forEach(t=>{grid.innerHTML+=`<div class="local-card" style="--card-color:${t.color}"><h4>${t.icon} ${t.label}</h4><div class="local-total" style="color:${t.color}">${fmtFull(t.total)}</div><div class="local-bar"><div class="local-bar-fill" style="width:${(t.total/mx*100)}%;background:linear-gradient(90deg,${t.color},${t.color}88)"></div></div></div>`;});
 }
 
-function renderCharts() {
-    destroyCharts();
-    const labels = dashboardData.map(r => r.fecha);
+function renderGastosView(){
+  const labels=getLabels();const cols=getActiveCols('gastos',EXPENSE_COLS);
+  destroyChart('gastosDetalle');destroyChart('gastosDonut');
+  const type=document.querySelector('.chart-type-btn.active[data-chart="gastosDetalle"]')?.dataset.type||'bar';
+  charts.gastosDetalle=new Chart(document.getElementById('chartGastosDetalle'),{type,data:{labels,datasets:cols.map(c=>({
+    label:c.label,data:filteredData.map(r=>r[c.key]),
+    backgroundColor:c.color+'cc',borderColor:c.color,borderRadius:type==='bar'?4:0,
+    tension:.4,fill:type==='line',pointRadius:type==='line'?3:0,pointHoverRadius:6
+  }))},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{y:{stacked:type==='bar',ticks:{callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'}},x:{stacked:type==='bar',grid:{display:false}}}}});
 
-    // Line chart — Ingresos por local
-    charts.ingresos = new Chart(document.getElementById('chartIngresos'), {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [
-                { label: 'Panadería', data: dashboardData.map(r => r.panaderia), borderColor: chartColors.blue, backgroundColor: chartColors.blue + '20', tension: 0.4, fill: true, pointRadius: 3, pointHoverRadius: 6 },
-                { label: 'Sweet Hiper', data: dashboardData.map(r => r.sweetHiper), borderColor: chartColors.purple, backgroundColor: chartColors.purple + '20', tension: 0.4, fill: true, pointRadius: 3, pointHoverRadius: 6 },
-                { label: 'Chango', data: dashboardData.map(r => r.chango), borderColor: chartColors.green, backgroundColor: chartColors.green + '20', tension: 0.4, fill: true, pointRadius: 3, pointHoverRadius: 6 },
-                { label: 'Mayoristas', data: dashboardData.map(r => r.mayoristas), borderColor: chartColors.amber, backgroundColor: chartColors.amber + '20', tension: 0.4, fill: true, pointRadius: 3, pointHoverRadius: 6 },
-            ]
-        },
-        options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-            scales: { y: { ticks: { callback: v => formatMoney(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { display: false } } } }
-    });
+  const totals=EXPENSE_COLS.map(c=>sumF(filteredData,c.key));
+  charts.gastosDonut=new Chart(document.getElementById('chartGastosDonut'),{type:'doughnut',data:{labels:EXPENSE_COLS.map(c=>c.label),datasets:[{data:totals,backgroundColor:EXPENSE_COLS.map(c=>c.color),borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmtFull(ctx.raw)}}}}});
 
-    // Donut — Distribution
-    const totalPan = sumField(dashboardData, 'panaderia');
-    const totalSH = sumField(dashboardData, 'sweetHiper');
-    const totalCh = sumField(dashboardData, 'chango');
-    const totalMay = sumField(dashboardData, 'mayoristas');
-
-    charts.distribucion = new Chart(document.getElementById('chartDistribucion'), {
-        type: 'doughnut',
-        data: {
-            labels: ['Panadería', 'Sweet Hiper', 'Chango', 'Mayoristas'],
-            datasets: [{ data: [totalPan, totalSH, totalCh, totalMay], backgroundColor: [chartColors.blue, chartColors.purple, chartColors.green, chartColors.amber], borderWidth: 0, hoverOffset: 8 }]
-        },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '68%',
-            plugins: { tooltip: { callbacks: { label: ctx => ctx.label + ': ' + formatMoneyFull(ctx.raw) } } } }
-    });
-
-    // Donut — Gastos
-    const gLabels = ['Caja Panadería', 'Caja Sweet Hiper', 'Caja Chango', 'Obligaciones', 'Remitos', 'Gastos Pers.', 'Inversiones'];
-    const gData = [sumField(dashboardData, 'cajaChicaPan'), sumField(dashboardData, 'cajaChicaSH'), sumField(dashboardData, 'cajaChicaCh'),
-        sumField(dashboardData, 'obligaciones'), sumField(dashboardData, 'remitos'),
-        sumField(dashboardData, 'gastosPerOblig') + sumField(dashboardData, 'gastosPerCaja'),
-        sumField(dashboardData, 'invOblig') + sumField(dashboardData, 'invCaja')];
-
-    charts.gastos = new Chart(document.getElementById('chartGastos'), {
-        type: 'doughnut',
-        data: { labels: gLabels, datasets: [{ data: gData, backgroundColor: [chartColors.blue, chartColors.purple, chartColors.green, chartColors.red, chartColors.cyan, chartColors.pink, chartColors.amber], borderWidth: 0, hoverOffset: 8 }] },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '68%',
-            plugins: { tooltip: { callbacks: { label: ctx => ctx.label + ': ' + formatMoneyFull(ctx.raw) } } } }
-    });
-
-    // Bar — Balance
-    const ingresosArr = dashboardData.map(r => r.panaderia + r.sweetHiper + r.chango + r.mayoristas);
-    const gastosArr = dashboardData.map(r => r.cajaChicaPan + r.cajaChicaSH + r.cajaChicaCh + r.obligaciones + r.remitos + r.gastosPerOblig + r.invOblig + r.gastosPerCaja + r.invCaja);
-
-    charts.balance = new Chart(document.getElementById('chartBalance'), {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [
-                { label: 'Ingresos', data: ingresosArr, backgroundColor: chartColors.green + 'cc', borderRadius: 6, barPercentage: 0.6 },
-                { label: 'Gastos', data: gastosArr, backgroundColor: chartColors.red + 'cc', borderRadius: 6, barPercentage: 0.6 },
-            ]
-        },
-        options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index' },
-            scales: { y: { ticks: { callback: v => formatMoney(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { display: false } } } }
-    });
-
-    // Detail charts
-    charts.ingresosDetalle = new Chart(document.getElementById('chartIngresosDetalle'), {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [
-                { label: 'Panadería', data: dashboardData.map(r => r.panaderia), backgroundColor: chartColors.blue + 'cc', borderRadius: 4 },
-                { label: 'Sweet Hiper', data: dashboardData.map(r => r.sweetHiper), backgroundColor: chartColors.purple + 'cc', borderRadius: 4 },
-                { label: 'Chango', data: dashboardData.map(r => r.chango), backgroundColor: chartColors.green + 'cc', borderRadius: 4 },
-                { label: 'Mayoristas', data: dashboardData.map(r => r.mayoristas), backgroundColor: chartColors.amber + 'cc', borderRadius: 4 },
-            ]
-        },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { stacked: true, ticks: { callback: v => formatMoney(v) } }, x: { stacked: true, grid: { display: false } } } }
-    });
-
-    charts.gastosDetalle = new Chart(document.getElementById('chartGastosDetalle'), {
-        type: 'bar',
-        data: {
-            labels,
-            datasets: [
-                { label: 'Caja Chica SH', data: dashboardData.map(r => r.cajaChicaSH), backgroundColor: chartColors.purple + 'cc', borderRadius: 4 },
-                { label: 'Caja Chica Chango', data: dashboardData.map(r => r.cajaChicaCh), backgroundColor: chartColors.green + 'cc', borderRadius: 4 },
-                { label: 'Obligaciones', data: dashboardData.map(r => r.obligaciones), backgroundColor: chartColors.red + 'cc', borderRadius: 4 },
-            ]
-        },
-        options: { responsive: true, maintainAspectRatio: false, scales: { y: { stacked: true, ticks: { callback: v => formatMoney(v) } }, x: { stacked: true, grid: { display: false } } } }
-    });
+  const grid=document.getElementById('gastosSummary');grid.innerHTML='';
+  EXPENSE_COLS.forEach(c=>{grid.innerHTML+=`<div class="gasto-item"><span class="gasto-label"><span class="gasto-dot" style="background:${c.color}"></span>${c.label}</span><span class="gasto-value">${fmtFull(sumF(filteredData,c.key))}</span></div>`;});
 }
 
-// ---- Render Performers ----
-function renderPerformers() {
-    let bestIdx = 0, bestVal = 0;
-    dashboardData.forEach((r, i) => {
-        const total = r.panaderia + r.sweetHiper + r.chango + r.mayoristas;
-        if (total > bestVal) { bestVal = total; bestIdx = i; }
-    });
-    document.getElementById('bestWeek').textContent = formatMoney(bestVal);
-    document.getElementById('bestWeekDetail').textContent = dashboardData[bestIdx]?.fecha || '—';
+function renderPersonalesView(){
+  const labels=getLabels();const cols=getActiveCols('personales',PERSONAL_COLS);
+  destroyChart('personalesDetalle');destroyChart('personalesDonut');
+  const type=document.querySelector('.chart-type-btn.active[data-chart="personalesDetalle"]')?.dataset.type||'bar';
+  charts.personalesDetalle=new Chart(document.getElementById('chartPersonalesDetalle'),{type,data:{labels,datasets:cols.map(c=>({
+    label:c.label,data:filteredData.map(r=>r[c.key]),
+    backgroundColor:c.color+'cc',borderColor:c.color,borderRadius:type==='bar'?4:0,
+    tension:.4,fill:type==='line',pointRadius:type==='line'?3:0,pointHoverRadius:6
+  }))},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},scales:{y:{stacked:type==='bar',ticks:{callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'}},x:{stacked:type==='bar',grid:{display:false}}}}});
 
-    const totals = { 'Panadería': sumField(dashboardData, 'panaderia'), 'Sweet Hiper': sumField(dashboardData, 'sweetHiper'), 'Chango': sumField(dashboardData, 'chango'), 'Mayoristas': sumField(dashboardData, 'mayoristas') };
-    const best = Object.entries(totals).sort((a, b) => b[1] - a[1])[0];
-    document.getElementById('bestLocal').textContent = best[0];
-    document.getElementById('bestLocalDetail').textContent = formatMoneyFull(best[1]);
+  const totals=PERSONAL_COLS.map(c=>sumF(filteredData,c.key));
+  charts.personalesDonut=new Chart(document.getElementById('chartPersonalesDonut'),{type:'doughnut',data:{labels:PERSONAL_COLS.map(c=>c.label),datasets:[{data:totals,backgroundColor:PERSONAL_COLS.map(c=>c.color),borderWidth:0,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmtFull(ctx.raw)}}}}});
 
-    const last = dashboardData[dashboardData.length - 1];
-    document.getElementById('lastRecord').textContent = last?.fecha || '—';
-    const lastTotal = last ? last.panaderia + last.sweetHiper + last.chango + last.mayoristas : 0;
-    document.getElementById('lastRecordDetail').textContent = 'Total: ' + formatMoney(lastTotal);
+  const grid=document.getElementById('personalesSummary');grid.innerHTML='';
+  PERSONAL_COLS.forEach(c=>{grid.innerHTML+=`<div class="gasto-item gasto-personal"><span class="gasto-label"><span class="gasto-dot" style="background:${c.color}"></span>${c.label}</span><span class="gasto-value gasto-value-yellow">${fmtFull(sumF(filteredData,c.key))}</span></div>`;});
 }
 
-// ---- Render Locals Detail ----
-function renderLocals() {
-    const pan = sumField(dashboardData, 'panaderia');
-    const sh = sumField(dashboardData, 'sweetHiper');
-    const ch = sumField(dashboardData, 'chango');
-    const may = sumField(dashboardData, 'mayoristas');
-    const max = Math.max(pan, sh, ch, may) || 1;
+function renderComparativoView(){
+  const labels=getLabels();
+  destroyChart('comparativo');destroyChart('balanceNeto');
+  const ingArr=filteredData.map(r=>totalIncome(r)),gasArr=filteredData.map(r=>totalExpense(r)),balArr=filteredData.map(r=>totalIncome(r)-totalExpense(r));
 
-    document.getElementById('totalPanaderia').textContent = formatMoneyFull(pan);
-    document.getElementById('totalSweetHiper').textContent = formatMoneyFull(sh);
-    document.getElementById('totalChango').textContent = formatMoneyFull(ch);
-    document.getElementById('totalMayoristas').textContent = formatMoneyFull(may);
+  charts.comparativo=new Chart(document.getElementById('chartComparativo'),{type:'bar',data:{labels,datasets:[
+    {label:'Ingresos',data:ingArr,backgroundColor:'#10b981cc',borderRadius:6,barPercentage:.35,categoryPercentage:.8},
+    {label:'Gastos Empresa',data:gasArr,backgroundColor:'#ef4444cc',borderRadius:6,barPercentage:.35,categoryPercentage:.8}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index'},plugins:{tooltip:{callbacks:{afterBody:items=>{const i=items[0].dataIndex;return'Balance: '+fmtFull(balArr[i]);}}}},scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'}},x:{grid:{display:false}}}}});
 
-    setTimeout(() => {
-        document.getElementById('barPanaderia').style.width = (pan / max * 100) + '%';
-        document.getElementById('barSweetHiper').style.width = (sh / max * 100) + '%';
-        document.getElementById('barChango').style.width = (ch / max * 100) + '%';
-        document.getElementById('barMayoristas').style.width = (may / max * 100) + '%';
-    }, 300);
+  charts.balanceNeto=new Chart(document.getElementById('chartBalanceNeto'),{type:'bar',data:{labels,datasets:[{label:'Balance Neto',data:balArr,backgroundColor:balArr.map(v=>v>=0?'#10b981cc':'#ef4444cc'),borderRadius:6,barPercentage:.6}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{ticks:{callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.04)'}},x:{grid:{display:false}}}}});
+
+  const ti=ingArr.reduce((a,v)=>a+v,0),te=gasArr.reduce((a,v)=>a+v,0),bal=ti-te,mx=Math.max(ti,te)||1;
+  document.getElementById('compIngresos').textContent=fmtFull(ti);
+  document.getElementById('compGastos').textContent=fmtFull(te);
+  document.getElementById('compBalance').textContent=fmtFull(bal);
+  document.getElementById('compBalance').style.color=bal>=0?'#10b981':'#ef4444';
+  document.getElementById('compMargin').textContent=(ti>0?((bal/ti)*100).toFixed(1):0)+'%';
+  document.getElementById('compBarIng').style.width=(ti/mx*100)+'%';
+  document.getElementById('compBarGas').style.width=(te/mx*100)+'%';
 }
 
-// ---- Render Gastos Detail ----
-function renderGastosDetail() {
-    document.getElementById('gastoCajaPanaderia').textContent = formatMoneyFull(sumField(dashboardData, 'cajaChicaPan'));
-    document.getElementById('gastoCajaSweetHiper').textContent = formatMoneyFull(sumField(dashboardData, 'cajaChicaSH'));
-    document.getElementById('gastoCajaChango').textContent = formatMoneyFull(sumField(dashboardData, 'cajaChicaCh'));
-    document.getElementById('gastoObligaciones').textContent = formatMoneyFull(sumField(dashboardData, 'obligaciones'));
-    document.getElementById('gastoRemitos').textContent = formatMoneyFull(sumField(dashboardData, 'remitos'));
-    document.getElementById('gastoPersonalesOblig').textContent = formatMoneyFull(sumField(dashboardData, 'gastosPerOblig'));
-    document.getElementById('gastoInvOblig').textContent = formatMoneyFull(sumField(dashboardData, 'invOblig'));
-    document.getElementById('gastoPersonalesCaja').textContent = formatMoneyFull(sumField(dashboardData, 'gastosPerCaja'));
-    document.getElementById('gastoInvCaja').textContent = formatMoneyFull(sumField(dashboardData, 'invCaja'));
+function renderPerformers(){
+  let bi=0,bv=0;filteredData.forEach((r,i)=>{const t=totalIncome(r);if(t>bv){bv=t;bi=i;}});
+  document.getElementById('bestMonth').textContent=fmt(bv);
+  document.getElementById('bestMonthDetail').textContent=formatDateLabel(filteredData[bi]?.fecha)||'—';
+  const tots=INCOME_COLS.map(c=>({label:c.label,total:sumF(filteredData,c.key)})).sort((a,b)=>b.total-a.total);
+  document.getElementById('bestSource').textContent=tots[0]?.label||'—';
+  document.getElementById('bestSourceDetail').textContent=fmtFull(tots[0]?.total||0);
+  const last=filteredData[filteredData.length-1];
+  document.getElementById('lastRecord').textContent=formatDateLabel(last?.fecha)||'—';
+  document.getElementById('lastRecordDetail').textContent='Total: '+fmt(last?totalIncome(last):0);
 }
 
-// ---- Render Table ----
-function renderTable(filter = '') {
-    const tbody = document.getElementById('tableBody');
-    const filtered = filter ? dashboardData.filter(r => r.fecha.toLowerCase().includes(filter.toLowerCase())) : dashboardData;
-    tbody.innerHTML = filtered.map(r => `<tr>
-        <td>${r.fecha}</td><td>${formatMoneyFull(r.panaderia)}</td><td>${formatMoneyFull(r.sweetHiper)}</td>
-        <td>${formatMoneyFull(r.chango)}</td><td>${formatMoneyFull(r.mayoristas)}</td>
-        <td>${formatMoneyFull(r.cajaSemanal)}</td><td>${formatMoneyFull(r.obligaciones)}</td>
-    </tr>`).join('');
+function renderTable(filter=''){
+  const allCols=[{key:'fecha',label:'Mes y Año'},...INCOME_COLS,...EXPENSE_COLS,...PERSONAL_COLS];
+  document.getElementById('tableHead').innerHTML=allCols.map(c=>`<th>${c.label}</th>`).join('');
+  const data=filter?filteredData.filter(r=>formatDateLabel(r.fecha).toLowerCase().includes(filter.toLowerCase())):filteredData;
+  document.getElementById('tableBody').innerHTML=data.map(r=>'<tr>'+allCols.map(c=>c.key==='fecha'?`<td>${formatDateLabel(r.fecha)}</td>`:`<td>${fmtFull(r[c.key])}</td>`).join('')+'</tr>').join('');
 }
 
-// ---- Render All ----
-function renderAll() {
-    renderKPIs();
-    renderCharts();
-    renderPerformers();
-    renderLocals();
-    renderGastosDetail();
-    renderTable();
+function renderViewCharts(type){
+  if(type==='ingresos')renderIngresosView();
+  else if(type==='gastos')renderGastosView();
+  else if(type==='personales')renderPersonalesView();
 }
 
-// ---- Navigation ----
-function switchView(view) {
-    currentView = view;
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-
-    const viewMap = { overview: 'viewOverview', ingresos: 'viewIngresos', gastos: 'viewGastos', tabla: 'viewTabla' };
-    const titleMap = { overview: 'Resumen General', ingresos: 'Ingresos por Local', gastos: 'Gastos & Obligaciones', tabla: 'Tabla Detallada' };
-
-    document.getElementById(viewMap[view]).classList.add('active');
-    document.querySelector(`[data-view="${view}"]`).classList.add('active');
-    document.getElementById('viewTitle').textContent = titleMap[view];
-
-    // Close sidebar on mobile
-    document.getElementById('sidebar').classList.remove('open');
+function renderAll(){
+  destroyAll();renderKPIs();renderOverviewCharts();renderPerformers();
+  renderIngresosView();renderGastosView();renderPersonalesView();renderComparativoView();renderTable();
 }
 
-// ---- Init ----
-document.addEventListener('DOMContentLoaded', () => {
-    // Date display
-    const now = new Date();
-    document.getElementById('currentDate').textContent = now.toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+function switchView(v){
+  currentView=v;
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const map={overview:'viewOverview',ingresos:'viewIngresos',gastos:'viewGastos',personales:'viewPersonales',comparativo:'viewComparativo',tabla:'viewTabla'};
+  const titles={overview:'Resumen General',ingresos:'Ingresos',gastos:'Gastos Empresa',personales:'Gastos Personales',comparativo:'Comparativo',tabla:'Tabla Detallada'};
+  document.getElementById(map[v]).classList.add('active');
+  document.querySelector(`[data-view="${v}"]`).classList.add('active');
+  document.getElementById('viewTitle').textContent=titles[v];
+  document.getElementById('sidebar').classList.remove('open');
+}
 
-    // Navigation
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', e => { e.preventDefault(); switchView(item.dataset.view); });
-    });
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('currentDate').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.querySelectorAll('.nav-item').forEach(i=>i.addEventListener('click',e=>{e.preventDefault();switchView(i.dataset.view);}));
+  document.getElementById('menuToggle').addEventListener('click',()=>document.getElementById('sidebar').classList.toggle('open'));
+  document.getElementById('sidebarClose').addEventListener('click',()=>document.getElementById('sidebar').classList.remove('open'));
+  document.getElementById('tableSearch').addEventListener('input',e=>renderTable(e.target.value));
+  document.getElementById('filterFrom').addEventListener('change',applyDateFilter);
+  document.getElementById('filterTo').addEventListener('change',applyDateFilter);
+  document.getElementById('btnResetDates').addEventListener('click',()=>{document.getElementById('filterFrom').value='';document.getElementById('filterTo').value='';applyDateFilter();});
+  document.getElementById('btnRefresh').addEventListener('click',()=>{document.getElementById('btnRefresh').classList.add('spinning');loadData().then(()=>setTimeout(()=>document.getElementById('btnRefresh').classList.remove('spinning'),500));});
 
-    // Mobile sidebar
-    document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
-    document.getElementById('sidebarClose').addEventListener('click', () => document.getElementById('sidebar').classList.remove('open'));
+  // Chart type toggles
+  document.querySelectorAll('.chart-type-btn').forEach(btn=>{btn.addEventListener('click',()=>{
+    const chart=btn.dataset.chart;
+    document.querySelectorAll(`.chart-type-btn[data-chart="${chart}"]`).forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    if(chart==='ingresosDetalle')renderIngresosView();
+    else if(chart==='gastosDetalle')renderGastosView();
+    else if(chart==='personalesDetalle')renderPersonalesView();
+  });});
 
-    // Table search
-    document.getElementById('tableSearch').addEventListener('input', e => renderTable(e.target.value));
+  // Init column filter chips
+  initFilters('ingresos',INCOME_COLS,'ingresosChips');
+  initFilters('gastos',EXPENSE_COLS,'gastosChips');
+  initFilters('personales',PERSONAL_COLS,'personalesChips');
 
-    // Refresh button
-    document.getElementById('btnRefresh').addEventListener('click', () => {
-        document.getElementById('btnRefresh').classList.add('spinning');
-        loadData().then(() => {
-            setTimeout(() => document.getElementById('btnRefresh').classList.remove('spinning'), 500);
-        });
-    });
+  // Config modal
+  document.getElementById('connectionStatus').addEventListener('click',()=>{document.getElementById('sheetUrl').value=sheetUrl;document.getElementById('configModal').classList.add('active');});
+  document.getElementById('btnCloseModal').addEventListener('click',()=>document.getElementById('configModal').classList.remove('active'));
+  document.getElementById('btnConnect').addEventListener('click',()=>{sheetUrl=document.getElementById('sheetUrl').value.trim();if(sheetUrl)localStorage.setItem('sweetSAS_sheetUrl',sheetUrl);document.getElementById('configModal').classList.remove('active');loadData();});
 
-    // Config modal
-    document.getElementById('connectionStatus').addEventListener('click', () => {
-        document.getElementById('sheetUrl').value = sheetUrl;
-        document.getElementById('configModal').classList.add('active');
-    });
-    document.getElementById('btnCloseModal').addEventListener('click', () => document.getElementById('configModal').classList.remove('active'));
-    document.getElementById('btnConnect').addEventListener('click', () => {
-        sheetUrl = document.getElementById('sheetUrl').value.trim();
-        if (sheetUrl) {
-            localStorage.setItem('sweetSAS_sheetUrl', sheetUrl);
-        }
-        document.getElementById('configModal').classList.remove('active');
-        loadData();
-    });
-
-    // Load data & start auto-refresh
-    loadData().then(() => {
-        setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 600);
-    });
-
-    // Auto-refresh every 5 minutes
-    autoRefreshInterval = setInterval(() => {
-        console.log('[Dashboard] Auto-refreshing data...');
-        loadData();
-    }, AUTO_REFRESH_MS);
+  loadData().then(()=>setTimeout(()=>document.getElementById('loadingOverlay').classList.add('hidden'),600));
+  setInterval(()=>loadData(),300000);
 });
-

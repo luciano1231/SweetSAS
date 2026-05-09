@@ -43,7 +43,15 @@
             </a>
             <a href="#" class="nav-item" data-view="gastos">
                 <span class="nav-icon">📉</span>
-                <span class="nav-label">Gastos & Obligaciones</span>
+                <span class="nav-label">Gastos Empresa</span>
+            </a>
+            <a href="#" class="nav-item" data-view="personales">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Gastos Personales</span>
+            </a>
+            <a href="#" class="nav-item" data-view="comparativo">
+                <span class="nav-icon">⚖️</span>
+                <span class="nav-label">Comparativo</span>
             </a>
             <a href="#" class="nav-item" data-view="tabla">
                 <span class="nav-icon">📋</span>
@@ -70,12 +78,13 @@
                 <span class="topbar-date" id="currentDate"></span>
             </div>
             <div class="topbar-actions">
-                <div class="period-selector">
-                    <select id="periodFilter">
-                        <option value="all">Todo el período</option>
-                        <option value="month">Este mes</option>
-                        <option value="week">Esta semana</option>
-                    </select>
+                <!-- Date Range Filter -->
+                <div class="date-range-filter">
+                    <label class="filter-label">Desde</label>
+                    <select id="filterFrom" class="filter-select"></select>
+                    <label class="filter-label">Hasta</label>
+                    <select id="filterTo" class="filter-select"></select>
+                    <button class="btn-filter-reset" id="btnResetDates" title="Resetear rango">✕</button>
                 </div>
                 <button class="btn-refresh" id="btnRefresh" title="Actualizar datos">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -86,7 +95,7 @@
             </div>
         </header>
 
-        <!-- Overview View -->
+        <!-- ===================== OVERVIEW VIEW ===================== -->
         <section class="view active" id="viewOverview">
             <!-- KPI Cards -->
             <div class="kpi-grid">
@@ -95,16 +104,16 @@
                     <div class="kpi-content">
                         <span class="kpi-label">Ingresos Totales</span>
                         <span class="kpi-value" id="kpiIngresos">$0</span>
-                        <span class="kpi-sub" id="kpiIngresosCount">0 registros</span>
+                        <span class="kpi-sub" id="kpiIngresosCount">0 meses</span>
                     </div>
                     <div class="kpi-glow"></div>
                 </div>
                 <div class="kpi-card kpi-gastos">
                     <div class="kpi-icon">📉</div>
                     <div class="kpi-content">
-                        <span class="kpi-label">Gastos Totales</span>
+                        <span class="kpi-label">Gastos Empresa</span>
                         <span class="kpi-value" id="kpiGastos">$0</span>
-                        <span class="kpi-sub" id="kpiGastosCount">0 registros</span>
+                        <span class="kpi-sub" id="kpiGastosCount">0 meses</span>
                     </div>
                     <div class="kpi-glow"></div>
                 </div>
@@ -117,54 +126,33 @@
                     </div>
                     <div class="kpi-glow"></div>
                 </div>
-                <div class="kpi-card kpi-caja">
-                    <div class="kpi-icon">🏦</div>
+                <div class="kpi-card kpi-personales">
+                    <div class="kpi-icon">👤</div>
                     <div class="kpi-content">
-                        <span class="kpi-label">Caja Semanal Total</span>
-                        <span class="kpi-value" id="kpiCaja">$0</span>
-                        <span class="kpi-sub" id="kpiCajaProm">Promedio: $0</span>
+                        <span class="kpi-label">Gastos Personales</span>
+                        <span class="kpi-value" id="kpiPersonales">$0</span>
+                        <span class="kpi-sub" id="kpiPersonalesCount">0 meses</span>
                     </div>
                     <div class="kpi-glow"></div>
                 </div>
             </div>
 
-            <!-- Charts Row 1 -->
+            <!-- Mini charts overview -->
             <div class="charts-grid">
                 <div class="chart-card chart-large">
                     <div class="chart-header">
-                        <h3>Evolución de Ingresos por Local</h3>
-                        <div class="chart-legend" id="legendIngresos"></div>
+                        <h3>Evolución Mensual — Ingresos vs Gastos</h3>
                     </div>
                     <div class="chart-body">
-                        <canvas id="chartIngresos"></canvas>
+                        <canvas id="chartOverviewBalance"></canvas>
                     </div>
                 </div>
                 <div class="chart-card chart-small">
                     <div class="chart-header">
-                        <h3>Distribución por Local</h3>
+                        <h3>Distribución de Ingresos</h3>
                     </div>
                     <div class="chart-body chart-body-donut">
-                        <canvas id="chartDistribucion"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts Row 2 -->
-            <div class="charts-grid">
-                <div class="chart-card chart-small">
-                    <div class="chart-header">
-                        <h3>Gastos & Obligaciones</h3>
-                    </div>
-                    <div class="chart-body chart-body-donut">
-                        <canvas id="chartGastos"></canvas>
-                    </div>
-                </div>
-                <div class="chart-card chart-large">
-                    <div class="chart-header">
-                        <h3>Balance Semanal (Ingresos vs Gastos)</h3>
-                    </div>
-                    <div class="chart-body">
-                        <canvas id="chartBalance"></canvas>
+                        <canvas id="chartOverviewDonut"></canvas>
                     </div>
                 </div>
             </div>
@@ -172,14 +160,14 @@
             <!-- Top Performers -->
             <div class="performers-grid">
                 <div class="performer-card">
-                    <h3>🏆 Mejor Semana en Ingresos</h3>
-                    <div class="performer-value" id="bestWeek">—</div>
-                    <div class="performer-detail" id="bestWeekDetail">—</div>
+                    <h3>🏆 Mejor Mes en Ingresos</h3>
+                    <div class="performer-value" id="bestMonth">—</div>
+                    <div class="performer-detail" id="bestMonthDetail">—</div>
                 </div>
                 <div class="performer-card">
-                    <h3>📍 Local con Mayor Ingreso</h3>
-                    <div class="performer-value" id="bestLocal">—</div>
-                    <div class="performer-detail" id="bestLocalDetail">—</div>
+                    <h3>📍 Fuente con Mayor Ingreso</h3>
+                    <div class="performer-value" id="bestSource">—</div>
+                    <div class="performer-detail" id="bestSourceDetail">—</div>
                 </div>
                 <div class="performer-card">
                     <h3>📆 Último Registro</h3>
@@ -189,95 +177,160 @@
             </div>
         </section>
 
-        <!-- Ingresos View -->
+        <!-- ===================== INGRESOS VIEW ===================== -->
         <section class="view" id="viewIngresos">
+            <!-- Column Filters -->
+            <div class="column-filters" id="ingresosFilters">
+                <span class="filter-title">Filtrar columnas:</span>
+                <div class="filter-chips" id="ingresosChips"></div>
+            </div>
             <div class="charts-grid single">
                 <div class="chart-card chart-full">
                     <div class="chart-header">
-                        <h3>Ingresos por Local — Detalle Semanal</h3>
+                        <h3>Ingresos por Fuente — Evolución Mensual</h3>
+                        <div class="chart-type-toggle">
+                            <button class="chart-type-btn active" data-chart="ingresosDetalle" data-type="bar" title="Barras">📊</button>
+                            <button class="chart-type-btn" data-chart="ingresosDetalle" data-type="line" title="Líneas">📈</button>
+                        </div>
                     </div>
                     <div class="chart-body chart-body-tall">
                         <canvas id="chartIngresosDetalle"></canvas>
                     </div>
                 </div>
             </div>
-            <div class="local-cards-grid">
-                <div class="local-card local-panaderia">
-                    <h4>🍞 Panadería</h4>
-                    <div class="local-total" id="totalPanaderia">$0</div>
-                    <div class="local-bar"><div class="local-bar-fill" id="barPanaderia"></div></div>
-                </div>
-                <div class="local-card local-sweethiper">
-                    <h4>🛒 Sweet Hiper</h4>
-                    <div class="local-total" id="totalSweetHiper">$0</div>
-                    <div class="local-bar"><div class="local-bar-fill" id="barSweetHiper"></div></div>
-                </div>
-                <div class="local-card local-chango">
-                    <h4>🏪 Chango</h4>
-                    <div class="local-total" id="totalChango">$0</div>
-                    <div class="local-bar"><div class="local-bar-fill" id="barChango"></div></div>
-                </div>
-                <div class="local-card local-mayoristas">
-                    <h4>📦 Mayoristas</h4>
-                    <div class="local-total" id="totalMayoristas">$0</div>
-                    <div class="local-bar"><div class="local-bar-fill" id="barMayoristas"></div></div>
-                </div>
-            </div>
+            <!-- Income source cards -->
+            <div class="local-cards-grid" id="ingresosCards"></div>
         </section>
 
-        <!-- Gastos View -->
+        <!-- ===================== GASTOS EMPRESA VIEW ===================== -->
         <section class="view" id="viewGastos">
+            <!-- Column Filters -->
+            <div class="column-filters" id="gastosFilters">
+                <span class="filter-title">Filtrar columnas:</span>
+                <div class="filter-chips" id="gastosChips"></div>
+            </div>
             <div class="charts-grid single">
                 <div class="chart-card chart-full">
                     <div class="chart-header">
-                        <h3>Desglose de Gastos y Obligaciones</h3>
+                        <h3>Gastos de la Empresa — Evolución Mensual</h3>
+                        <div class="chart-type-toggle">
+                            <button class="chart-type-btn active" data-chart="gastosDetalle" data-type="bar" title="Barras">📊</button>
+                            <button class="chart-type-btn" data-chart="gastosDetalle" data-type="line" title="Líneas">📈</button>
+                        </div>
                     </div>
                     <div class="chart-body chart-body-tall">
                         <canvas id="chartGastosDetalle"></canvas>
                     </div>
                 </div>
             </div>
-            <div class="gastos-summary-grid">
-                <div class="gasto-item">
-                    <span class="gasto-label">Caja Chica (Panadería)</span>
-                    <span class="gasto-value" id="gastoCajaPanaderia">$0</span>
+            <div class="charts-grid">
+                <div class="chart-card chart-small">
+                    <div class="chart-header">
+                        <h3>Proporción por Categoría</h3>
+                    </div>
+                    <div class="chart-body chart-body-donut">
+                        <canvas id="chartGastosDonut"></canvas>
+                    </div>
                 </div>
-                <div class="gasto-item">
-                    <span class="gasto-label">Caja Chica (Sweet Hiper)</span>
-                    <span class="gasto-value" id="gastoCajaSweetHiper">$0</span>
-                </div>
-                <div class="gasto-item">
-                    <span class="gasto-label">Caja Chica (Chango)</span>
-                    <span class="gasto-value" id="gastoCajaChango">$0</span>
-                </div>
-                <div class="gasto-item">
-                    <span class="gasto-label">Obligaciones</span>
-                    <span class="gasto-value" id="gastoObligaciones">$0</span>
-                </div>
-                <div class="gasto-item">
-                    <span class="gasto-label">Remitos Internos</span>
-                    <span class="gasto-value" id="gastoRemitos">$0</span>
-                </div>
-                <div class="gasto-item">
-                    <span class="gasto-label">Gastos Personales (Obligaciones)</span>
-                    <span class="gasto-value" id="gastoPersonalesOblig">$0</span>
-                </div>
-                <div class="gasto-item">
-                    <span class="gasto-label">Inversiones Obligaciones</span>
-                    <span class="gasto-value" id="gastoInvOblig">$0</span>
-                </div>
-                <div class="gasto-item">
-                    <span class="gasto-label">Gastos Personales (Caja Chica)</span>
-                    <span class="gasto-value" id="gastoPersonalesCaja">$0</span>
-                </div>
-                <div class="gasto-item">
-                    <span class="gasto-label">Inversiones Caja Chica</span>
-                    <span class="gasto-value" id="gastoInvCaja">$0</span>
+                <div class="chart-card chart-large">
+                    <div class="chart-header">
+                        <h3>Detalle Acumulado</h3>
+                    </div>
+                    <div class="gastos-summary-grid" id="gastosSummary"></div>
                 </div>
             </div>
         </section>
 
-        <!-- Tabla View -->
+        <!-- ===================== GASTOS PERSONALES VIEW ===================== -->
+        <section class="view" id="viewPersonales">
+            <!-- Column Filters -->
+            <div class="column-filters" id="personalesFilters">
+                <span class="filter-title">Filtrar columnas:</span>
+                <div class="filter-chips" id="personalesChips"></div>
+            </div>
+            <div class="charts-grid single">
+                <div class="chart-card chart-full">
+                    <div class="chart-header">
+                        <h3>Gastos Personales — Evolución Mensual</h3>
+                        <div class="chart-type-toggle">
+                            <button class="chart-type-btn active" data-chart="personalesDetalle" data-type="bar" title="Barras">📊</button>
+                            <button class="chart-type-btn" data-chart="personalesDetalle" data-type="line" title="Líneas">📈</button>
+                        </div>
+                    </div>
+                    <div class="chart-body chart-body-tall">
+                        <canvas id="chartPersonalesDetalle"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card chart-small">
+                    <div class="chart-header">
+                        <h3>Proporción Gastos Personales</h3>
+                    </div>
+                    <div class="chart-body chart-body-donut">
+                        <canvas id="chartPersonalesDonut"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card chart-large">
+                    <div class="chart-header">
+                        <h3>Detalle Acumulado</h3>
+                    </div>
+                    <div class="gastos-summary-grid" id="personalesSummary"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== COMPARATIVO VIEW ===================== -->
+        <section class="view" id="viewComparativo">
+            <div class="charts-grid single">
+                <div class="chart-card chart-full">
+                    <div class="chart-header">
+                        <h3>Ingresos vs Gastos Empresa — Comparativo Mensual</h3>
+                    </div>
+                    <div class="chart-body chart-body-tall">
+                        <canvas id="chartComparativo"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-card chart-large">
+                    <div class="chart-header">
+                        <h3>Balance Neto Mensual</h3>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="chartBalanceNeto"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card chart-small">
+                    <div class="chart-header">
+                        <h3>Resumen Comparativo</h3>
+                    </div>
+                    <div class="comparativo-summary" id="comparativoSummary">
+                        <div class="comp-item comp-ingresos">
+                            <div class="comp-label">Total Ingresos</div>
+                            <div class="comp-value" id="compIngresos">$0</div>
+                            <div class="comp-bar"><div class="comp-bar-fill comp-bar-green" id="compBarIng"></div></div>
+                        </div>
+                        <div class="comp-item comp-gastos">
+                            <div class="comp-label">Total Gastos Empresa</div>
+                            <div class="comp-value" id="compGastos">$0</div>
+                            <div class="comp-bar"><div class="comp-bar-fill comp-bar-red" id="compBarGas"></div></div>
+                        </div>
+                        <div class="comp-divider"></div>
+                        <div class="comp-item comp-balance">
+                            <div class="comp-label">Balance</div>
+                            <div class="comp-value comp-balance-val" id="compBalance">$0</div>
+                        </div>
+                        <div class="comp-item comp-margin">
+                            <div class="comp-label">Margen</div>
+                            <div class="comp-value comp-margin-val" id="compMargin">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== TABLA VIEW ===================== -->
         <section class="view" id="viewTabla">
             <div class="table-controls">
                 <input type="text" class="table-search" id="tableSearch" placeholder="🔍 Buscar por fecha...">
@@ -285,15 +338,7 @@
             <div class="table-container">
                 <table class="data-table" id="dataTable">
                     <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Panadería</th>
-                            <th>Sweet Hiper</th>
-                            <th>Chango</th>
-                            <th>Mayoristas</th>
-                            <th>Caja Semanal</th>
-                            <th>Obligaciones</th>
-                        </tr>
+                        <tr id="tableHead"></tr>
                     </thead>
                     <tbody id="tableBody">
                     </tbody>
