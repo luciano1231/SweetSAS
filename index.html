@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sweet SAS — Dashboard Financiero</title>
+    <meta name="description" content="Tablero financiero interno de Sweet SAS — Balance de locales">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader">
+            <div class="loader-ring"></div>
+            <p class="loader-text">Cargando datos...</p>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="brand">
+                <div class="brand-icon">S</div>
+                <div class="brand-text">
+                    <h1>Sweet SAS</h1>
+                    <span>Balance de Locales</span>
+                </div>
+            </div>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Cerrar menú">✕</button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-view="overview">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Resumen General</span>
+            </a>
+            <a href="#" class="nav-item" data-view="ingresos">
+                <span class="nav-icon">💰</span>
+                <span class="nav-label">Ingresos</span>
+            </a>
+            <a href="#" class="nav-item" data-view="gastos">
+                <span class="nav-icon">📉</span>
+                <span class="nav-label">Gastos & Obligaciones</span>
+            </a>
+            <a href="#" class="nav-item" data-view="tabla">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Tabla Detallada</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="connection-status" id="connectionStatus">
+                <span class="status-dot offline"></span>
+                <span class="status-text">Datos de ejemplo</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle" aria-label="Abrir menú">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="topbar-info">
+                <h2 id="viewTitle">Resumen General</h2>
+                <span class="topbar-date" id="currentDate"></span>
+            </div>
+            <div class="topbar-actions">
+                <div class="period-selector">
+                    <select id="periodFilter">
+                        <option value="all">Todo el período</option>
+                        <option value="month">Este mes</option>
+                        <option value="week">Esta semana</option>
+                    </select>
+                </div>
+                <button class="btn-refresh" id="btnRefresh" title="Actualizar datos">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M23 4v6h-6M1 20v-6h6"/>
+                        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Overview View -->
+        <section class="view active" id="viewOverview">
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card kpi-ingresos">
+                    <div class="kpi-icon">💰</div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Ingresos Totales</span>
+                        <span class="kpi-value" id="kpiIngresos">$0</span>
+                        <span class="kpi-sub" id="kpiIngresosCount">0 registros</span>
+                    </div>
+                    <div class="kpi-glow"></div>
+                </div>
+                <div class="kpi-card kpi-gastos">
+                    <div class="kpi-icon">📉</div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Gastos Totales</span>
+                        <span class="kpi-value" id="kpiGastos">$0</span>
+                        <span class="kpi-sub" id="kpiGastosCount">0 registros</span>
+                    </div>
+                    <div class="kpi-glow"></div>
+                </div>
+                <div class="kpi-card kpi-balance">
+                    <div class="kpi-icon">⚖️</div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Balance Neto</span>
+                        <span class="kpi-value" id="kpiBalance">$0</span>
+                        <span class="kpi-sub" id="kpiBalancePct">—</span>
+                    </div>
+                    <div class="kpi-glow"></div>
+                </div>
+                <div class="kpi-card kpi-caja">
+                    <div class="kpi-icon">🏦</div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Caja Semanal Total</span>
+                        <span class="kpi-value" id="kpiCaja">$0</span>
+                        <span class="kpi-sub" id="kpiCajaProm">Promedio: $0</span>
+                    </div>
+                    <div class="kpi-glow"></div>
+                </div>
+            </div>
+
+            <!-- Charts Row 1 -->
+            <div class="charts-grid">
+                <div class="chart-card chart-large">
+                    <div class="chart-header">
+                        <h3>Evolución de Ingresos por Local</h3>
+                        <div class="chart-legend" id="legendIngresos"></div>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="chartIngresos"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card chart-small">
+                    <div class="chart-header">
+                        <h3>Distribución por Local</h3>
+                    </div>
+                    <div class="chart-body chart-body-donut">
+                        <canvas id="chartDistribucion"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 2 -->
+            <div class="charts-grid">
+                <div class="chart-card chart-small">
+                    <div class="chart-header">
+                        <h3>Gastos & Obligaciones</h3>
+                    </div>
+                    <div class="chart-body chart-body-donut">
+                        <canvas id="chartGastos"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card chart-large">
+                    <div class="chart-header">
+                        <h3>Balance Semanal (Ingresos vs Gastos)</h3>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="chartBalance"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Performers -->
+            <div class="performers-grid">
+                <div class="performer-card">
+                    <h3>🏆 Mejor Semana en Ingresos</h3>
+                    <div class="performer-value" id="bestWeek">—</div>
+                    <div class="performer-detail" id="bestWeekDetail">—</div>
+                </div>
+                <div class="performer-card">
+                    <h3>📍 Local con Mayor Ingreso</h3>
+                    <div class="performer-value" id="bestLocal">—</div>
+                    <div class="performer-detail" id="bestLocalDetail">—</div>
+                </div>
+                <div class="performer-card">
+                    <h3>📆 Último Registro</h3>
+                    <div class="performer-value" id="lastRecord">—</div>
+                    <div class="performer-detail" id="lastRecordDetail">—</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ingresos View -->
+        <section class="view" id="viewIngresos">
+            <div class="charts-grid single">
+                <div class="chart-card chart-full">
+                    <div class="chart-header">
+                        <h3>Ingresos por Local — Detalle Semanal</h3>
+                    </div>
+                    <div class="chart-body chart-body-tall">
+                        <canvas id="chartIngresosDetalle"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="local-cards-grid">
+                <div class="local-card local-panaderia">
+                    <h4>🍞 Panadería</h4>
+                    <div class="local-total" id="totalPanaderia">$0</div>
+                    <div class="local-bar"><div class="local-bar-fill" id="barPanaderia"></div></div>
+                </div>
+                <div class="local-card local-sweethiper">
+                    <h4>🛒 Sweet Hiper</h4>
+                    <div class="local-total" id="totalSweetHiper">$0</div>
+                    <div class="local-bar"><div class="local-bar-fill" id="barSweetHiper"></div></div>
+                </div>
+                <div class="local-card local-chango">
+                    <h4>🏪 Chango</h4>
+                    <div class="local-total" id="totalChango">$0</div>
+                    <div class="local-bar"><div class="local-bar-fill" id="barChango"></div></div>
+                </div>
+                <div class="local-card local-mayoristas">
+                    <h4>📦 Mayoristas</h4>
+                    <div class="local-total" id="totalMayoristas">$0</div>
+                    <div class="local-bar"><div class="local-bar-fill" id="barMayoristas"></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gastos View -->
+        <section class="view" id="viewGastos">
+            <div class="charts-grid single">
+                <div class="chart-card chart-full">
+                    <div class="chart-header">
+                        <h3>Desglose de Gastos y Obligaciones</h3>
+                    </div>
+                    <div class="chart-body chart-body-tall">
+                        <canvas id="chartGastosDetalle"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="gastos-summary-grid">
+                <div class="gasto-item">
+                    <span class="gasto-label">Caja Chica (Panadería)</span>
+                    <span class="gasto-value" id="gastoCajaPanaderia">$0</span>
+                </div>
+                <div class="gasto-item">
+                    <span class="gasto-label">Caja Chica (Sweet Hiper)</span>
+                    <span class="gasto-value" id="gastoCajaSweetHiper">$0</span>
+                </div>
+                <div class="gasto-item">
+                    <span class="gasto-label">Caja Chica (Chango)</span>
+                    <span class="gasto-value" id="gastoCajaChango">$0</span>
+                </div>
+                <div class="gasto-item">
+                    <span class="gasto-label">Obligaciones</span>
+                    <span class="gasto-value" id="gastoObligaciones">$0</span>
+                </div>
+                <div class="gasto-item">
+                    <span class="gasto-label">Remitos Internos</span>
+                    <span class="gasto-value" id="gastoRemitos">$0</span>
+                </div>
+                <div class="gasto-item">
+                    <span class="gasto-label">Gastos Personales (Obligaciones)</span>
+                    <span class="gasto-value" id="gastoPersonalesOblig">$0</span>
+                </div>
+                <div class="gasto-item">
+                    <span class="gasto-label">Inversiones Obligaciones</span>
+                    <span class="gasto-value" id="gastoInvOblig">$0</span>
+                </div>
+                <div class="gasto-item">
+                    <span class="gasto-label">Gastos Personales (Caja Chica)</span>
+                    <span class="gasto-value" id="gastoPersonalesCaja">$0</span>
+                </div>
+                <div class="gasto-item">
+                    <span class="gasto-label">Inversiones Caja Chica</span>
+                    <span class="gasto-value" id="gastoInvCaja">$0</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tabla View -->
+        <section class="view" id="viewTabla">
+            <div class="table-controls">
+                <input type="text" class="table-search" id="tableSearch" placeholder="🔍 Buscar por fecha...">
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Panadería</th>
+                            <th>Sweet Hiper</th>
+                            <th>Chango</th>
+                            <th>Mayoristas</th>
+                            <th>Caja Semanal</th>
+                            <th>Obligaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Config Modal (for Google Sheets connection) -->
+    <div class="modal-overlay" id="configModal">
+        <div class="modal">
+            <h3>⚙️ Conectar Google Sheets</h3>
+            <p>Pegá la URL de tu Google Sheet publicado como CSV para conectar los datos en tiempo real.</p>
+            <div class="modal-field">
+                <label for="sheetUrl">URL del Google Sheet (CSV)</label>
+                <input type="url" id="sheetUrl" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+            </div>
+            <div class="modal-instructions">
+                <h4>¿Cómo publicar tu Sheet?</h4>
+                <ol>
+                    <li>Abrí tu Google Sheet</li>
+                    <li>Archivo → Compartir → <strong>Publicar en la web</strong></li>
+                    <li>Seleccioná la pestaña "Balance de los locales"</li>
+                    <li>Elegí formato: <strong>Valores separados por coma (.csv)</strong></li>
+                    <li>Clic en <strong>Publicar</strong></li>
+                    <li>Copiá el enlace y pegalo arriba</li>
+                </ol>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="btnCloseModal">Cancelar</button>
+                <button class="btn btn-primary" id="btnConnect">Conectar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
