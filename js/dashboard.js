@@ -314,7 +314,7 @@ function switchView(v) {
 
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  document.querySelectorAll('.nav-item').forEach(i => i.addEventListener('click', e => { e.preventDefault(); switchView(i.dataset.view); }));
+  document.querySelectorAll('.nav-item[data-view]').forEach(i => i.addEventListener('click', e => { e.preventDefault(); switchView(i.dataset.view); }));
   document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
   document.getElementById('sidebarClose').addEventListener('click', () => document.getElementById('sidebar').classList.remove('open'));
   document.getElementById('tableSearch').addEventListener('input', e => renderTable(e.target.value));

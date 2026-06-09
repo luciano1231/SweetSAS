@@ -336,6 +336,9 @@
 </div>
 
 <script>
+// Limpiar la autenticación del dashboard de balance para evitar que los empleados accedan desde el editor
+sessionStorage.removeItem('sweetSAS_auth');
+
 // ──────────────────────────────────────────────
 //  PALETA DE COLORES
 // ──────────────────────────────────────────────
