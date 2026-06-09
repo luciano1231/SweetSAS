@@ -21,7 +21,7 @@
     (function() {
       // Hash SHA-256 de la contraseña actual: "sweet2026"
       // Para generar un nuevo hash: sweetAdmin.changePassword('nueva') en consola
-      const PASS_HASH = '5e9a3e4d4a7cb4d6d25fd14dc6a0d7a3c0f8e9b1a2c7f3e0d5b6a8c1e4f2d9a7';
+      const PASS_HASH = 'b330784a85b8b6f99303ea6929723bd9b8bb87e96b29fa1d2579124f2385adde';
 
       async function hashStr(s) {
         const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
