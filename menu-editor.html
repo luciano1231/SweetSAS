@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de Menú — Sweet & Pop Express</title>
+  <meta name="description" content="Editor visual de menú para Sweet & Pop Express">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/menu.css">
+  <style>
+    /* ── COMBO FEATURED BANNER ── */
+    .menu-category.featured {
+      background: linear-gradient(135deg, #1d5c45 0%, #2a7a5e 50%, #1d5c45 100%);
+      border-radius: 10px;
+      padding: 16px 20px 14px;
+      margin-bottom: 6px;
+      position: relative;
+      overflow: hidden;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    .menu-category.featured::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at top right, rgba(158,158,203,0.18) 0%, transparent 60%);
+    }
+    .menu-category.featured .menu-cat-title {
+      color: white;
+      border-bottom-color: rgba(255,255,255,0.35);
+      display: flex; align-items: center; gap: 10px;
+      font-size: 1.02rem;
+      font-family: 'DM Serif Display', serif;
+      font-style: italic;
+      letter-spacing: 0;
+    }
+    /* El badge ya sirve de marcador: suprimir el ornamento ✦ dentro del featured */
+    .menu-category.featured .menu-cat-title::before {
+      display: none;
+    }
+    .combo-badge {
+      background: #9e9ecb;
+      color: white;
+      font-size: 0.68rem;
+      font-weight: 900;
+      padding: 3px 9px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .menu-category.featured .menu-product-row {
+      border-bottom-color: rgba(255,255,255,0.12);
+    }
+    .menu-category.featured .menu-prod-name { color: rgba(255,255,255,0.93); font-weight: 700; font-size: 0.88rem; }
+    .menu-category.featured .menu-prod-name .prod-detail { color: rgba(255,255,255,0.6); font-weight: 400; font-size: 0.76rem; }
+    .menu-category.featured .menu-prod-dots { border-bottom-color: rgba(255,255,255,0.2); }
+    .menu-category.featured .menu-prod-price {
+      color: #c8c8e8;
+      font-size: 0.92rem;
+      font-weight: 900;
+    }
+    .combo-grid {
+      display: flex;
+      flex-direction: column;
+      position: relative; z-index: 1;
+    }
+    .combo-aesthetic {
+      width: 80%;
+      height: auto;
+      max-height: 36px;
+      object-fit: contain;
+      margin: 12px auto 4px;
+      opacity: 0.45;
+      display: block;
+    }
+
+    /* Vertical column divider */
+    .menu-body-1::before,
+    .menu-body-2::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 12px;
+      bottom: 12px;
+      width: 1px;
+      background: rgba(29,92,69,0.18);
+      z-index: 0;
+    }
+    .menu-body-1,
+    .menu-body-2 {
+      position: relative;
+    }
+
+    /* QR Code */
+    .menu-qr {
+      position: absolute;
+      bottom: 70px;
+      right: 48px;
+      width: 90px;
+      height: 90px;
+      z-index: 5;
+      border-radius: 8px;
+      border: 3px solid var(--verde);
+      background: white;
+      padding: 4px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .menu-qr canvas, .menu-qr img {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Estrella decorativa fondo */
+    .menu-category.featured::after {
+      content: '★';
+      position: absolute;
+      right: 14px; top: 8px;
+      font-size: 4rem;
+      color: rgba(255,255,255,0.05);
+      pointer-events: none;
+    }
+
+    /* ── SALUDABLE con fondo suave ── */
+    .menu-category.saludable {
+      background: rgba(143,173,150,0.09);
+      border: 1px solid rgba(143,173,150,0.25);
+      border-radius: 8px;
+      padding: 10px 12px 8px;
+    }
+    .menu-category.saludable .menu-cat-title {
+      color: #3a7a60;
+      border-bottom-color: #3a7a60;
+    }
+
+    /* Panel featured toggle */
+    .feat-toggle {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 0.72rem; color: #9e9ecb; font-weight: 700;
+      cursor: pointer; margin-left: auto;
+    }
+    .feat-toggle input { accent-color: #9e9ecb; width: 13px; height: 13px; cursor: pointer; }
+
+    /* Selector de columna */
+    .col-toggle {
+      display: flex; align-items: center; gap: 0;
+      font-size: 0.68rem; font-weight: 800;
+      border-radius: 6px; overflow: hidden;
+      border: 1px solid rgba(143,173,150,0.25);
+      flex-shrink: 0;
+    }
+    .col-btn {
+      background: none; border: none;
+      color: var(--text3, #4d6655);
+      padding: 3px 7px; cursor: pointer;
+      font-size: 0.66rem; font-weight: 800;
+      font-family: inherit; transition: all 0.15s;
+    }
+    .col-btn.active { background: #1d5c45; color: white; }
+    .col-btn:hover:not(.active) { background: rgba(143,173,150,0.15); color: #8fad96; }
+
+    /* Preview scaling wrapper */
+    .page-scale-wrap {
+      width: 794px;
+      transform-origin: top left;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── STORE SELECTOR ── */
+    .store-selector {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 4px 5px;
+    }
+    .store-selector-label {
+      font-size: 0.64rem; font-weight: 800;
+      color: var(--text3, #4d6655);
+      text-transform: uppercase; letter-spacing: 1px;
+      padding: 0 6px 0 3px;
+      flex-shrink: 0;
+    }
+    .store-btn {
+      background: none; border: none;
+      color: var(--text2, #8faa96);
+      padding: 5px 12px;
+      border-radius: 7px;
+      font-size: 0.78rem; font-weight: 800;
+      cursor: pointer; font-family: inherit;
+      transition: all 0.18s;
+      white-space: nowrap;
+    }
+    .store-btn:hover:not(.active) {
+      background: rgba(143,173,150,0.1);
+      color: #8fad96;
+    }
+    .store-btn.active {
+      background: var(--verde, #1d5c45);
+      color: white;
+      box-shadow: 0 2px 8px rgba(29,92,69,0.4);
+    }
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <img class="topbar-logo" src="Menu/Recursos/Logo transparente.png" alt="Logo Sweet &amp; Pop Express">
+    <div>
+      <h1>Editor de Menú</h1>
+      <span>Sweet &amp; Pop Express</span>
+    </div>
+  </div>
+
+  <!-- Selector de local -->
+  <div class="store-selector" id="storeSelector">
+    <span class="store-selector-label">Local:</span>
+    <button class="store-btn active" id="store-rissione"   onclick="switchStore('rissione')"  >Sweet Rissione</button>
+    <button class="store-btn"        id="store-hiper"      onclick="switchStore('hiper')"     >Sweet Hiper</button>
+    <button class="store-btn"        id="store-changoMas" onclick="switchStore('changoMas')" >Sweet Chango Más</button>
+  </div>
+
+  <div class="topbar-actions">
+    <a href="index.html" class="btn-back">← Dashboard</a>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Descargar PDF</button>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- ══════ PANEL EDITOR ══════ -->
+  <aside class="editor-panel">
+
+    <!-- Tabs -->
+    <div>
+      <div class="panel-title" style="margin-bottom:8px">Carilla a editar</div>
+      <div class="page-tabs">
+        <button class="page-tab active" id="tab1" onclick="switchTab(1)">🌿 Carilla 1 (Frente)</button>
+        <button class="page-tab" id="tab2" onclick="switchTab(2)">✦ Carilla 2 (Reverso)</button>
+      </div>
+    </div>
+
+    <!-- Header Config C1 -->
+    <div class="config-section" id="headerConfig1">
+      <div class="panel-title" style="margin-bottom:10px">Encabezado Carilla 1</div>
+      <label for="menuTagline">Tagline (arriba del logo)</label>
+      <input class="config-input" id="menuTagline" type="text" value="Menú" placeholder="Menú / Carta..." oninput="render()">
+      <label for="menuSubtitle">Subtítulo</label>
+      <input class="config-input" id="menuSubtitle" type="text" value="Cafetería & Panadería" placeholder="Subtítulo..." oninput="render()">
+    </div>
+
+    <!-- Header Config C2 -->
+    <div class="config-section" id="headerConfig2" style="display:none">
+      <div class="panel-title" style="margin-bottom:10px">Encabezado Carilla 2</div>
+      <label for="menuTitle2">Título carilla 2</label>
+      <input class="config-input" id="menuTitle2" type="text" value="y algo más..." placeholder="Título..." oninput="render()">
+    </div>
+
+    <!-- Footer -->
+    <div class="config-section">
+      <div class="panel-title" style="margin-bottom:10px">Pie de página</div>
+      <label for="menuFooter">Texto del pie (Instagram, dirección, etc.)</label>
+      <input class="config-input" id="menuFooter" type="text" placeholder="@sweetpopexpress · Dirección · Tel..." oninput="render()">
+    </div>
+
+    <!-- Categorías -->
+    <div>
+      <div class="panel-title" id="catsLabel" style="margin-bottom:8px">Categorías — Carilla 1</div>
+      <div class="categories-list" id="categoriesList"></div>
+      <button class="btn-add-category" onclick="addCategory()">＋ Nueva categoría</button>
+    </div>
+
+  </aside>
+
+  <!-- ══════ VISTA PREVIA ══════ -->
+  <main class="preview-area" id="previewArea">
+
+    <!-- Wrapper que se escala para caber en la pantalla -->
+    <div class="page-scale-wrap" id="pageScaleWrap">
+
+      <div class="preview-label">Vista previa — Carilla 1 (Frente)</div>
+
+      <!-- ═══ CARILLA 1 ═══ -->
+      <div class="a4-page" id="page1">
+        <div class="carilla-1">
+          <div class="menu-header-1">
+            <img class="header-esquina" src="Menu/Recursos/Esquina derecha superior.png" alt="">
+            <div class="header-inner-1">
+              <img class="header-logo" src="Menu/Recursos/Logo transparente.png" alt="Sweet & Pop Express">
+              <div class="header-text">
+                <div class="header-tagline" id="prevTagline">Menú</div>
+                <div class="header-subtitle" id="prevSubtitle">Cafetería &amp; Panadería</div>
+              </div>
+            </div>
+            <div class="color-stripe"></div>
+          </div>
+          <div class="menu-body-1" id="menuBody1"></div>
+          <div class="menu-qr" id="codigo-qr-1"></div>
+          <div class="menu-footer-1">
+            <img class="footer-logo-sm" src="Menu/Recursos/Logo transparente.png" alt="">
+            <div class="footer-text" id="prevFooter1">Sweet &amp; Pop Express</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-label">Vista previa — Carilla 2 (Reverso)</div>
+
+      <!-- ═══ CARILLA 2 ═══ -->
+      <div class="a4-page" id="page2">
+        <div class="carilla-2">
+          <div class="menu-header-2">
+            <img class="header-esquina-2" src="Menu/Recursos/Esquina Inf derecha.png" alt="">
+            <div class="header-inner-2">
+              <img class="header-logo-2" src="Menu/Recursos/Logo transparente.png" alt="">
+              <div class="header-title-2" id="prevTitle2">y algo más...</div>
+            </div>
+            <div class="color-stripe"></div>
+          </div>
+          <div class="menu-body-2" id="menuBody2"></div>
+          <div class="menu-qr" id="codigo-qr-2"></div>
+          <div class="menu-footer-2">
+            <img class="footer-logo-sm" src="Menu/Recursos/Logo transparente.png" alt="">
+            <div class="footer-text" id="prevFooter2">Sweet &amp; Pop Express</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-scale-wrap -->
+  </main>
+</div>
+
+<script>
+// ──────────────────────────────────────────────
+//  PALETA DE COLORES
+// ──────────────────────────────────────────────
+const CAT_COLORS = [
+  '#1d5c45','#6b6baa','#8fad96','#9e9ecb',
+  '#3a7a60','#5a5a9a','#4a8a70','#7a7ac0',
+];
+
+// ──────────────────────────────────────────────
+//  DATOS INICIALES — con precios de ejemplo
+// ──────────────────────────────────────────────
+const defaultData = {
+  menuTagline:  'Menú',
+  menuSubtitle: 'Cafetería & Panadería',
+  menuTitle2:   'y algo más...',
+  menuFooter:   '',
+  page1: [
+    {
+      id: uid(), name: 'Cafetería', color: CAT_COLORS[0], featured: false,
+      products: [
+        {id:uid(), name:'Café chico expreso',     price:'$2.500'},
+        {id:uid(), name:'Doble expreso',          price:'$3.200'},
+        {id:uid(), name:'Café con leche',         price:'$3.500'},
+        {id:uid(), name:'Lágrima',                price:'$3.000'},
+        {id:uid(), name:'Cortado',                price:'$3.000'},
+        {id:uid(), name:'Cappuccino',             price:'$4.200'},
+        {id:uid(), name:'Latte',                  price:'$4.500'},
+        {id:uid(), name:'Machiatto',              price:'$4.000'},
+        {id:uid(), name:'Mocacchino',             price:'$4.800'},
+        {id:uid(), name:'Caramel macchiato',      price:'$5.200'},
+        {id:uid(), name:'Ice latte',              price:'$5.500'},
+        {id:uid(), name:'Pistacho latte',         price:'$5.800'},
+        {id:uid(), name:'Submarino',              price:'$4.500'},
+        {id:uid(), name:'Variedades de té',       price:'$3.200'},
+      ]
+    },
+    {
+      id: uid(), name: 'Panadería', color: CAT_COLORS[2], featured: false,
+      products: [
+        {id:uid(), name:'Croissant',                             price:'$2.800'},
+        {id:uid(), name:'Facturas',                              price:'$2.200'},
+        {id:uid(), name:'Medialunas (x3)',                       price:'$3.500'},
+        {id:uid(), name:'Chipa (100g)',                          price:'$3.200'},
+        {id:uid(), name:'Biscochos clásicos',                    price:'$2.500'},
+        {id:uid(), name:'Biscochos de queso',                    price:'$2.800'},
+        {id:uid(), name:'Alfajores',                             price:'$3.500'},
+        {id:uid(), name:'Donas (clásicas, rellenas, chocolate)', price:'$3.800'},
+        {id:uid(), name:'Masas secas (100g)',                    price:'$4.200'},
+        {id:uid(), name:'Masas húmedas (100g)',                  price:'$4.500'},
+        {id:uid(), name:'Medialuna de jamón y queso',            price:'$4.000'},
+        {id:uid(), name:'Tortas individuales',                   price:'$5.500'},
+        {id:uid(), name:'Wafles',                                price:'$6.500'},
+      ]
+    },
+    {
+      id: uid(), name: 'Combos', color: CAT_COLORS[0], featured: true,
+      products: [
+        {id:uid(), name:'Café + 2 med/fact o 100g de chipa',           price:'$7.500'},
+        {id:uid(), name:'Café + 2 med/fact o 100g chipa + jugo chico', price:'$8.000'},
+        {id:uid(), name:'Jugo + 100g chipa o 2 facturas',              price:'$7.500'},
+        {id:uid(), name:'Submarino + dona',                            price:'$7.500'},
+        {id:uid(), name:'Submarino + facturas',                        price:'$7.500'},
+        {id:uid(), name:'Chocolatada + dona',                          price:'$8.000'},
+      ]
+    }
+  ],
+  page2: [
+    {
+      id: uid(), name: 'Bebidas Frías', color: CAT_COLORS[1], featured: false,
+      products: [
+        {id:uid(), name:'Jugo de naranja',                       price:'$4.000'},
+        {id:uid(), name:'Limonada',                              price:'$3.800'},
+        {id:uid(), name:'Smoothies',                             price:'$5.500'},
+        {id:uid(), name:'Batidos',                               price:'$5.200'},
+        {id:uid(), name:'Licuados',                              price:'$5.000'},
+        {id:uid(), name:'Jugo detox (jengibre, apio, manzana)', price:'$5.800'},
+      ]
+    },
+    {
+      id: uid(), name: 'Comidas', color: CAT_COLORS[0], featured: false,
+      products: [
+        {id:uid(), name:'Tostados clásicos',                                              price:'$5.500'},
+        {id:uid(), name:'Triples tostados',                                               price:'$7.000'},
+        {id:uid(), name:'Pizzas (muzza, especial, 4 quesos, pepperoni)',                  price:'$9.500'},
+        {id:uid(), name:'Empanadas — c/u (árabes, espinaca, humita, j&q, tucumanas...)', price:'$2.800'},
+      ]
+    },
+    {
+      id: uid(), name: 'Saludable', color: CAT_COLORS[2], featured: false, saludable: true,
+      products: [
+        {id:uid(), name:'Avocado toast',                    price:'$7.500'},
+        {id:uid(), name:'Bowl de frutas con granola',       price:'$6.800'},
+        {id:uid(), name:'Ensalada fresca del día',          price:'$6.500'},
+        {id:uid(), name:'Tostada integral con hummus',      price:'$5.500'},
+        {id:uid(), name:'Pizeta veggie con topping',        price:'$8.000'},
+        {id:uid(), name:'Cookies integrales',               price:'$2.800'},
+        {id:uid(), name:'Barritas de cereal caseras',       price:'$2.500'},
+        {id:uid(), name:'Productos Keto (consultar)',       price:'—'},
+        {id:uid(), name:'Infusiones detox',                 price:'$3.500'},
+        {id:uid(), name:'Shot de jengibre',                 price:'$2.200'},
+      ]
+    }
+  ]
+};
+
+// ──────────────────────────────────────────────
+//  UTILIDADES
+// ──────────────────────────────────────────────
+function uid() { return Math.random().toString(36).slice(2,10); }
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function formatName(s) {
+  const escaped = esc(s);
+  return escaped.replace(/\(([^)]+)\)/g, '<span class="prod-detail">($1)</span>');
+}
+
+// ──────────────────────────────────────────────
+//  MULTI-STORE
+// ──────────────────────────────────────────────
+const STORES = {
+  rissione:  'Sweet Rissione',
+  hiper:     'Sweet Hiper',
+  changoMas: 'Sweet Chango Más'
+};
+const STORE_KEY_PREFIX  = 'sweetpop_menu_v3_';
+const ACTIVE_STORE_KEY  = 'sweetpop_active_store';
+
+let currentStore = localStorage.getItem(ACTIVE_STORE_KEY) || 'rissione';
+
+function loadData() {
+  // Migración automática: si existe la clave vieja y NO la de rissione, migrarla
+  const oldKey = 'sweetpop_menu_v3';
+  const newKey = STORE_KEY_PREFIX + 'rissione';
+  if (localStorage.getItem(oldKey) && !localStorage.getItem(newKey)) {
+    localStorage.setItem(newKey, localStorage.getItem(oldKey));
+    // No borramos la vieja para no romper nada
+  }
+  try {
+    const s = localStorage.getItem(STORE_KEY_PREFIX + currentStore);
+    return s ? JSON.parse(s) : JSON.parse(JSON.stringify(defaultData));
+  } catch(e) { return JSON.parse(JSON.stringify(defaultData)); }
+}
+function saveData() {
+  localStorage.setItem(STORE_KEY_PREFIX + currentStore, JSON.stringify(data));
+  localStorage.setItem(ACTIVE_STORE_KEY, currentStore);
+}
+
+function switchStore(store) {
+  if (store === currentStore) return;
+  // Guardar datos del local actual antes de cambiar
+  saveData();
+  currentStore = store;
+  localStorage.setItem(ACTIVE_STORE_KEY, store);
+  // Actualizar botones activos
+  Object.keys(STORES).forEach(k => {
+    const btn = document.getElementById('store-' + k);
+    if (btn) btn.classList.toggle('active', k === store);
+  });
+  // Recargar datos y UI del nuevo local
+  data = loadData();
+  activeTab = 1;
+  switchTab(1);
+  render();
+  // Sincronizar inputs de config con los datos del local cargado
+  document.getElementById('menuTagline').value  = data.menuTagline  || '';
+  document.getElementById('menuSubtitle').value = data.menuSubtitle || '';
+  document.getElementById('menuTitle2').value   = data.menuTitle2   || '';
+  document.getElementById('menuFooter').value   = data.menuFooter   || '';
+}
+
+// Variables de estado global
+let data = loadData();
+let activeTab = 1;
+
+// ──────────────────────────────────────────────
+//  TAB SWITCHING
+// ──────────────────────────────────────────────
+function switchTab(n) {
+  activeTab = n;
+  document.getElementById('tab1').classList.toggle('active', n===1);
+  document.getElementById('tab2').classList.toggle('active', n===2);
+  document.getElementById('headerConfig1').style.display = n===1 ? '' : 'none';
+  document.getElementById('headerConfig2').style.display = n===2 ? '' : 'none';
+  document.getElementById('catsLabel').textContent = `Categorías — Carilla ${n}`;
+  buildEditor();
+}
+
+// ──────────────────────────────────────────────
+//  EDITOR PANEL
+// ──────────────────────────────────────────────
+function buildEditor() {
+  const cats = activeTab===1 ? data.page1 : data.page2;
+  const list = document.getElementById('categoriesList');
+  list.innerHTML = '';
+  cats.forEach((cat, ci) => {
+    const block = document.createElement('div');
+    block.className = 'category-block';
+    if(cat.featured) block.style.borderColor = 'rgba(29,92,69,0.5)';
+
+    const featLabel = cat.featured
+      ? `<label class="feat-toggle"><input type="checkbox" checked onchange="toggleFeatured(${ci},this.checked)"> ⭐ Destacada</label>`
+      : `<label class="feat-toggle"><input type="checkbox" onchange="toggleFeatured(${ci},this.checked)"> Destacar</label>`;
+
+    // Selector de columna (solo para categorías no destacadas)
+    const col = cat.col || 'left';
+    const colSelector = !cat.featured ? `
+      <div class="col-toggle" title="Elegí en qué columna aparece esta categoría">
+        <button class="col-btn ${col==='left'?'active':''}" onclick="toggleCol(${ci},'left')">◀ Izq</button>
+        <button class="col-btn ${col==='right'?'active':''}" onclick="toggleCol(${ci},'right')">Der ▶</button>
+      </div>` : '';
+
+    block.innerHTML = `
+      <div class="cat-header">
+        <div class="cat-color-dot" style="background:${cat.color}"></div>
+        <input class="cat-name-input" value="${esc(cat.name)}" placeholder="Nombre categoría"
+          oninput="updateCatName(${ci},this.value)">
+        ${colSelector}
+        ${featLabel}
+        <button class="btn-del-cat" onclick="deleteCategory(${ci})" title="Eliminar">🗑</button>
+      </div>
+      <div class="products-list" id="pl_${ci}">
+        ${cat.products.map((p,pi) => prodRowHTML(ci,pi,p)).join('')}
+      </div>
+      <button class="btn-add-product" onclick="addProduct(${ci})">＋ Agregar producto</button>`;
+    list.appendChild(block);
+  });
+}
+
+function prodRowHTML(ci, pi, p) {
+  return `<div class="product-row">
+    <input class="prod-name" value="${esc(p.name)}" placeholder="Nombre del producto"
+      oninput="updateProd(${ci},${pi},'name',this.value)">
+    <input class="prod-price" type="text" value="${esc(p.price)}" placeholder="$0"
+      oninput="updateProd(${ci},${pi},'price',this.value)">
+    <button class="btn-del-prod" onclick="deleteProd(${ci},${pi})" title="Eliminar">✕</button>
+  </div>`;
+}
+
+function getCats() { return activeTab===1 ? data.page1 : data.page2; }
+
+function updateCatName(ci,v)      { getCats()[ci].name=v; saveRender(); }
+function updateProd(ci,pi,f,v)    { getCats()[ci].products[pi][f]=v; saveRender(); }
+function toggleFeatured(ci, val)  { getCats()[ci].featured=val; saveRender(); buildEditor(); }
+function toggleCol(ci, val)       { getCats()[ci].col=val; saveRender(); buildEditor(); }
+
+function addCategory() {
+  const idx = getCats().length % CAT_COLORS.length;
+  getCats().push({id:uid(), name:'Nueva Categoría', color:CAT_COLORS[idx], featured:false, products:[]});
+  saveRender(); buildEditor();
+}
+function deleteCategory(ci) {
+  if(!confirm('¿Eliminar esta categoría?')) return;
+  getCats().splice(ci,1); saveRender(); buildEditor();
+}
+function addProduct(ci) {
+  getCats()[ci].products.push({id:uid(), name:'', price:''});
+  saveRender(); buildEditor();
+  setTimeout(()=>{
+    const pl = document.getElementById(`pl_${ci}`);
+    if(pl){ const ins=pl.querySelectorAll('.prod-name'); if(ins.length) ins[ins.length-1].focus(); }
+  },60);
+}
+function deleteProd(ci,pi) {
+  getCats()[ci].products.splice(pi,1); saveRender(); buildEditor();
+}
+
+function saveRender() { syncFields(); saveData(); render(); }
+
+function syncFields() {
+  data.menuTagline  = document.getElementById('menuTagline').value;
+  data.menuSubtitle = document.getElementById('menuSubtitle').value;
+  data.menuTitle2   = document.getElementById('menuTitle2').value;
+  data.menuFooter   = document.getElementById('menuFooter').value;
+}
+
+// ──────────────────────────────────────────────
+//  RENDER PREVIEW
+// ──────────────────────────────────────────────
+function render() {
+  const d = data;
+  document.getElementById('prevTagline').textContent  = d.menuTagline  || 'Menú';
+  document.getElementById('prevSubtitle').textContent = d.menuSubtitle || '';
+  document.getElementById('prevTitle2').textContent   = d.menuTitle2   || 'y algo más...';
+  const ft = d.menuFooter || 'Sweet & Pop Express';
+  document.getElementById('prevFooter1').textContent = ft;
+  document.getElementById('prevFooter2').textContent = ft;
+  renderPage('menuBody1', d.page1);
+  renderPage('menuBody2', d.page2);
+}
+
+function renderPage(id, cats) {
+  const body = document.getElementById(id);
+  body.innerHTML = '';
+  if(!cats||cats.length===0){
+    body.innerHTML = '<div style="flex:1;text-align:center;color:#bbb;padding:48px 0;font-style:italic;font-size:0.82rem;">Sin categorías — agregá desde el panel izquierdo</div>';
+    return;
+  }
+
+  // Crear los dos contenedores de columna independientes
+  const colLeft  = document.createElement('div');
+  const colRight = document.createElement('div');
+  colLeft.className  = 'menu-col-left';
+  colRight.className = 'menu-col-right';
+
+  cats.forEach(cat => {
+    if(!cat.products||cat.products.length===0) return;
+
+    if(cat.featured) {
+      // ── COMBO DESTACADO → columna derecha (siempre) ──
+      const block = document.createElement('div');
+      block.className = 'menu-category featured';
+
+      const makeRows = (prods) => prods.map(p => {
+        const hp = p.price && p.price.trim();
+        return `<div class="menu-product-row">
+          <span class="menu-prod-name">${formatName(p.name||'—')}</span>
+          <span class="menu-prod-dots"></span>
+          <span class="menu-prod-price">${hp ? esc(p.price) : '—'}</span>
+        </div>`;
+      }).join('');
+
+      block.innerHTML = `
+        <div class="menu-cat-title" style="--cat-color:white">
+          ${esc(cat.name)}
+          <span class="combo-badge">⭐ Más vendidos</span>
+        </div>
+        <div class="combo-grid">
+          ${makeRows(cat.products)}
+        </div>
+        <img class="combo-aesthetic" src="Menu/Recursos/Texto aethetic.png" alt="Aesthetic">`;
+      colRight.appendChild(block);
+
+    } else {
+      // ── CATEGORÍA NORMAL → columna según cat.col ('left' por defecto) ──
+      const block = document.createElement('div');
+      block.className = 'menu-category' + (cat.saludable ? ' saludable' : '');
+      block.style.setProperty('--cat-color', cat.color);
+
+      const rows = cat.products.map(p => {
+        const hp = p.price && p.price.trim();
+        return `<div class="menu-product-row">
+          <span class="menu-prod-name">${formatName(p.name||'—')}</span>
+          <span class="menu-prod-dots"></span>
+          <span class="menu-prod-price ${hp?'':'no-price'}">${hp?esc(p.price):'—'}</span>
+        </div>`;
+      }).join('');
+
+      block.innerHTML = `<div class="menu-cat-title">${esc(cat.name)}</div>${rows}`;
+
+      // Respetar la columna elegida por el usuario
+      if(cat.col === 'right') {
+        colRight.appendChild(block);
+      } else {
+        colLeft.appendChild(block);
+      }
+    }
+  });
+
+  body.appendChild(colLeft);
+  body.appendChild(colRight);
+}
+
+// ──────────────────────────────────────────────
+//  ESCALA AUTOMÁTICA DEL PREVIEW
+// ──────────────────────────────────────────────
+function scalePreview() {
+  const area  = document.getElementById('previewArea');
+  const wrap  = document.getElementById('pageScaleWrap');
+  if (!area || !wrap) return;
+  const available = area.clientWidth - 40; // padding 20px cada lado
+  const pageW     = 794;
+  const scale     = available < pageW ? available / pageW : 1;
+  wrap.style.transform     = `scale(${scale})`;
+  wrap.style.transformOrigin = 'top left';
+  // Ajustar la altura real del wrapper para no dejar espacio vacío
+  const wrappedH = wrap.scrollHeight;
+  wrap.style.marginBottom  = `${(scale - 1) * wrappedH}px`;
+}
+
+// ──────────────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────────────
+function init() {
+  // Marcar el botón del local activo
+  Object.keys(STORES).forEach(k => {
+    const btn = document.getElementById('store-' + k);
+    if (btn) btn.classList.toggle('active', k === currentStore);
+  });
+  document.getElementById('menuTagline').value  = data.menuTagline  || '';
+  document.getElementById('menuSubtitle').value = data.menuSubtitle || '';
+  document.getElementById('menuTitle2').value   = data.menuTitle2   || '';
+  document.getElementById('menuFooter').value   = data.menuFooter   || '';
+  buildEditor();
+  render();
+  // Escalar el preview luego de que el DOM renderice
+  setTimeout(scalePreview, 50);
+}
+
+init();
+
+// Re-escalar cuando cambia el tamaño de la ventana
+window.addEventListener('resize', scalePreview);
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  function renderQR(id) {
+    new QRCode(document.getElementById(id), {
+      text: "https://menu.fu.do/sweetandpopavrissione",
+      width: 256,
+      height: 256,
+      colorDark : "#000000",
+      colorLight : "#ffffff",
+      correctLevel : QRCode.CorrectLevel.H
+    });
+  }
+  // Initialize QR codes for both pages
+  renderQR("codigo-qr-1");
+  renderQR("codigo-qr-2");
+</script>
+
+</body>
+</html>
