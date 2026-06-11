@@ -188,7 +188,8 @@
     }
     .col-btn {
       background: none; border: none;
-      color: var(--text3, #4d6655);
+      color: var(--text2, #8faa96);
+      background: rgba(143,173,150,0.06);
       padding: 3px 7px; cursor: pointer;
       font-size: 0.66rem; font-weight: 800;
       font-family: inherit; transition: all 0.15s;
@@ -622,7 +623,7 @@ function buildEditor() {
     if(cat.featured) block.style.borderColor = 'rgba(29,92,69,0.5)';
 
     const featLabel = cat.featured
-      ? `<label class="feat-toggle"><input type="checkbox" checked onchange="toggleFeatured(${ci},this.checked)"> ⭐ Destacada</label>`
+      ? `<label class="feat-toggle"><input type="checkbox" checked onchange="toggleFeatured(${ci},this.checked)"> <span style="display:inline-flex;align-items:center;gap:3px"><span style="font-size:0.8em;line-height:1">⭐</span>Destacada</span></label>`
       : `<label class="feat-toggle"><input type="checkbox" onchange="toggleFeatured(${ci},this.checked)"> Destacar</label>`;
 
     // Selector de columna (solo para categorías no destacadas)
