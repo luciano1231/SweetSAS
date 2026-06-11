@@ -309,6 +309,18 @@
   </div>
 
   <div class="topbar-actions">
+    <!-- Indicador de sincronización con la nube -->
+    <div id="syncStatus" style="
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:0.72rem; font-weight:700;
+      padding:5px 12px; border-radius:8px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.1);
+      color:#8faa96; transition:all 0.3s;
+    ">
+      <span id="syncDot" style="width:7px;height:7px;border-radius:50%;background:#8faa96;flex-shrink:0;"></span>
+      <span id="syncText">Conectando...</span>
+    </div>
     <a href="index.html" class="btn-back">← Dashboard</a>
     <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Descargar PDF</button>
   </div>
@@ -549,44 +561,147 @@ const STORES = {
 };
 const STORE_KEY_PREFIX  = 'sweetpop_menu_v3_';
 const ACTIVE_STORE_KEY  = 'sweetpop_active_store';
+const API_BASE          = '/api/menu';   // Cloudflare Pages Function
 
 let currentStore = localStorage.getItem(ACTIVE_STORE_KEY) || 'rissione';
 
-function loadData() {
-  // Migración automática: si existe la clave vieja y NO la de rissione, migrarla
+// ── Estado de sincronización ──────────────────
+function setSyncStatus(state, msg) {
+  const dot  = document.getElementById('syncDot');
+  const text = document.getElementById('syncText');
+  const wrap = document.getElementById('syncStatus');
+  if (!dot || !text) return;
+  const colors = { ok: '#10b981', saving: '#f59e0b', error: '#ef4444', offline: '#6b7280' };
+  dot.style.background  = colors[state] || colors.offline;
+  text.textContent      = msg;
+  wrap.style.borderColor = (colors[state] || '#6b7280') + '44';
+}
+
+// ── Leer menú desde Cloudflare KV ────────────
+async function fetchFromCloud(store) {
+  try {
+    const res = await fetch(`${API_BASE}?store=${store}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    return json;   // null si no hay datos guardados aún
+  } catch (e) {
+    console.warn('[KV] Error al leer de la nube:', e);
+    return undefined;  // undefined = fallo de red
+  }
+}
+
+// ── Guardar menú en Cloudflare KV ────────────
+async function saveToCloud(store, menuData) {
+  try {
+    const res = await fetch(API_BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ store, data: menuData }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return true;
+  } catch (e) {
+    console.warn('[KV] Error al guardar en la nube:', e);
+    return false;
+  }
+}
+
+// ── Leer caché local (fallback offline) ──────
+function loadFromCache(store) {
+  // Migración automática de clave vieja
   const oldKey = 'sweetpop_menu_v3';
   const newKey = STORE_KEY_PREFIX + 'rissione';
   if (localStorage.getItem(oldKey) && !localStorage.getItem(newKey)) {
     localStorage.setItem(newKey, localStorage.getItem(oldKey));
-    // No borramos la vieja para no romper nada
   }
   try {
-    const s = localStorage.getItem(STORE_KEY_PREFIX + currentStore);
-    return s ? JSON.parse(s) : JSON.parse(JSON.stringify(defaultData));
-  } catch(e) { return JSON.parse(JSON.stringify(defaultData)); }
-}
-function saveData() {
-  localStorage.setItem(STORE_KEY_PREFIX + currentStore, JSON.stringify(data));
-  localStorage.setItem(ACTIVE_STORE_KEY, currentStore);
+    const s = localStorage.getItem(STORE_KEY_PREFIX + store);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
 }
 
-function switchStore(store) {
+// ── Guardar caché local ───────────────────────
+function saveToCache(store, menuData) {
+  try {
+    localStorage.setItem(STORE_KEY_PREFIX + store, JSON.stringify(menuData));
+    localStorage.setItem(ACTIVE_STORE_KEY, store);
+  } catch { /* storage lleno o modo privado */ }
+}
+
+// ── loadData: cloud primero, caché como fallback ──
+async function loadData(store) {
+  setSyncStatus('saving', 'Cargando...');
+  const cloud = await fetchFromCloud(store);
+
+  if (cloud !== undefined) {
+    // Red disponible
+    if (cloud !== null) {
+      // Datos encontrados en KV
+      saveToCache(store, cloud);  // actualizar caché local
+      setSyncStatus('ok', '☁️ Sincronizado');
+      return cloud;
+    } else {
+      // Primera vez: no hay datos en KV — usar caché local o defaults
+      const cached = loadFromCache(store);
+      if (cached) {
+        // Subir la caché local a KV (migración automática)
+        setSyncStatus('saving', 'Migrando a la nube...');
+        await saveToCloud(store, cached);
+        setSyncStatus('ok', '☁️ Sincronizado');
+        return cached;
+      }
+      setSyncStatus('ok', '☁️ Datos nuevos');
+      return JSON.parse(JSON.stringify(defaultData));
+    }
+  } else {
+    // Sin red — usar caché local
+    const cached = loadFromCache(store);
+    setSyncStatus('offline', '⚠️ Sin conexión — caché local');
+    return cached || JSON.parse(JSON.stringify(defaultData));
+  }
+}
+
+// ── saveData: guarda en KV y en caché local ──
+let _saveTimer = null;
+function saveData() {
+  saveToCache(currentStore, data);  // guardar inmediatamente en caché
+  setSyncStatus('saving', '💾 Guardando...');
+
+  // Debounce: esperar 800ms tras el último cambio antes de enviar a KV
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(async () => {
+    const ok = await saveToCloud(currentStore, data);
+    if (ok) {
+      setSyncStatus('ok', '✅ Guardado en la nube');
+      // Volver a "Sincronizado" luego de 2 segundos
+      setTimeout(() => setSyncStatus('ok', '☁️ Sincronizado'), 2000);
+    } else {
+      setSyncStatus('error', '⚠️ Error al guardar — guardado local');
+    }
+  }, 800);
+}
+
+async function switchStore(store) {
   if (store === currentStore) return;
   // Guardar datos del local actual antes de cambiar
-  saveData();
+  saveToCache(currentStore, data);
+  await saveToCloud(currentStore, data);
+
   currentStore = store;
   localStorage.setItem(ACTIVE_STORE_KEY, store);
+
   // Actualizar botones activos
   Object.keys(STORES).forEach(k => {
     const btn = document.getElementById('store-' + k);
     if (btn) btn.classList.toggle('active', k === store);
   });
-  // Recargar datos y UI del nuevo local
-  data = loadData();
+
+  // Recargar datos del nuevo local desde la nube
+  data = await loadData(store);
   activeTab = 1;
   switchTab(1);
   render();
-  // Sincronizar inputs de config con los datos del local cargado
+
   document.getElementById('menuTagline').value  = data.menuTagline  || '';
   document.getElementById('menuSubtitle').value = data.menuSubtitle || '';
   document.getElementById('menuTitle2').value   = data.menuTitle2   || '';
@@ -594,7 +709,7 @@ function switchStore(store) {
 }
 
 // Variables de estado global
-let data = loadData();
+let data = JSON.parse(JSON.stringify(defaultData));  // se reemplaza en initApp()
 let activeTab = 1;
 
 // ──────────────────────────────────────────────
@@ -888,12 +1003,16 @@ function scalePreview() {
 // ──────────────────────────────────────────────
 //  INIT
 // ──────────────────────────────────────────────
-function init() {
+async function initApp() {
   // Marcar el botón del local activo
   Object.keys(STORES).forEach(k => {
     const btn = document.getElementById('store-' + k);
     if (btn) btn.classList.toggle('active', k === currentStore);
   });
+
+  // Cargar datos desde la nube (o caché si no hay red)
+  data = await loadData(currentStore);
+
   document.getElementById('menuTagline').value  = data.menuTagline  || '';
   document.getElementById('menuSubtitle').value = data.menuSubtitle || '';
   document.getElementById('menuTitle2').value   = data.menuTitle2   || '';
@@ -904,7 +1023,7 @@ function init() {
   setTimeout(scalePreview, 50);
 }
 
-init();
+initApp();
 
 // Re-escalar cuando cambia el tamaño de la ventana
 window.addEventListener('resize', scalePreview);
