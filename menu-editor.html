@@ -196,6 +196,53 @@
     .col-btn.active { background: #1d5c45; color: white; }
     .col-btn:hover:not(.active) { background: rgba(143,173,150,0.15); color: #8fad96; }
 
+    /* ── MOVE UP/DOWN BUTTONS ── */
+    .cat-move-btns {
+      display: flex;
+      flex-direction: row;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .cat-move-btn {
+      background: none;
+      border: 1px solid rgba(143,173,150,0.25);
+      border-radius: 5px;
+      color: var(--text3, #4d6655);
+      width: 26px;
+      height: 24px;
+      line-height: 1;
+      font-size: 0.65rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      padding: 0;
+      font-family: inherit;
+    }
+    .cat-move-btn:hover:not(:disabled) {
+      background: #1d5c45;
+      color: white;
+      border-color: #1d5c45;
+    }
+    .cat-move-btn:disabled {
+      opacity: 0.2;
+      cursor: default;
+    }
+
+    /* Cat header — two-row layout */
+    .cat-header {
+      flex-direction: column !important;
+      gap: 6px !important;
+      padding: 8px 10px !important;
+    }
+    .cat-header-row1 {
+      display: flex; align-items: center; gap: 8px; width: 100%;
+    }
+    .cat-header-row2 {
+      display: flex; align-items: center; gap: 6px; width: 100%;
+    }
+
     /* Preview scaling wrapper */
     .page-scale-wrap {
       width: 794px;
@@ -586,14 +633,28 @@ function buildEditor() {
         <button class="col-btn ${col==='right'?'active':''}" onclick="toggleCol(${ci},'right')">Der ▶</button>
       </div>` : '';
 
+    // Botones de subir / bajar categoría
+    const totalCats = cats.length;
+    const moveBtns = `
+      <div class="cat-move-btns" title="Mover categoría arriba/abajo">
+        <button class="cat-move-btn" onclick="moveCategory(${ci},-1)" ${ci===0?'disabled':''} title="Subir">▲</button>
+        <button class="cat-move-btn" onclick="moveCategory(${ci},+1)" ${ci===totalCats-1?'disabled':''} title="Bajar">▼</button>
+      </div>`;
+
     block.innerHTML = `
       <div class="cat-header">
-        <div class="cat-color-dot" style="background:${cat.color}"></div>
-        <input class="cat-name-input" value="${esc(cat.name)}" placeholder="Nombre categoría"
-          oninput="updateCatName(${ci},this.value)">
-        ${colSelector}
-        ${featLabel}
-        <button class="btn-del-cat" onclick="deleteCategory(${ci})" title="Eliminar">🗑</button>
+        <div class="cat-header-row1">
+          <div class="cat-color-dot" style="background:${cat.color}"></div>
+          <input class="cat-name-input" value="${esc(cat.name)}" placeholder="Nombre categoría"
+            oninput="updateCatName(${ci},this.value)">
+          <button class="btn-del-cat" onclick="deleteCategory(${ci})" title="Eliminar">🗑</button>
+        </div>
+        <div class="cat-header-row2">
+          ${colSelector}
+          ${moveBtns}
+          <div style="flex:1"></div>
+          ${featLabel}
+        </div>
       </div>
       <div class="products-list" id="pl_${ci}">
         ${cat.products.map((p,pi) => prodRowHTML(ci,pi,p)).join('')}
@@ -626,6 +687,18 @@ function updateCatName(ci,v)      { getCats()[ci].name=v; saveRender(); }
 function updateProd(ci,pi,f,v)    { getCats()[ci].products[pi][f]=v; saveRender(); }
 function toggleFeatured(ci, val)  { getCats()[ci].featured=val; saveRender(); buildEditor(); }
 function toggleCol(ci, val)       { getCats()[ci].col=val; saveRender(); buildEditor(); }
+
+function moveCategory(ci, dir) {
+  const cats = getCats();
+  const newIdx = ci + dir;
+  if (newIdx < 0 || newIdx >= cats.length) return;
+  // Intercambiar posiciones
+  const temp = cats[ci];
+  cats[ci] = cats[newIdx];
+  cats[newIdx] = temp;
+  saveRender();
+  buildEditor();
+}
 
 function addCategory() {
   const idx = getCats().length % CAT_COLORS.length;
