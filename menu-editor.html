@@ -30,7 +30,7 @@
       color: white;
       border-bottom-color: rgba(255,255,255,0.35);
       display: flex; align-items: center; gap: 10px;
-      font-size: 1.02rem;
+      font-size: 1.12rem;
       font-family: 'DM Serif Display', serif;
       font-style: italic;
       letter-spacing: 0;
@@ -54,7 +54,7 @@
     .menu-category.featured .menu-product-row {
       border-bottom-color: rgba(255,255,255,0.12);
     }
-    .menu-category.featured .menu-prod-name { color: rgba(255,255,255,0.93); font-weight: 700; font-size: 0.88rem; }
+    .menu-category.featured .menu-prod-name { color: rgba(255,255,255,0.93); font-weight: 400; font-size: 0.88rem; }
     .menu-category.featured .menu-prod-name .prod-detail { color: rgba(255,255,255,0.6); font-weight: 400; font-size: 0.76rem; }
     .menu-category.featured .menu-prod-dots { border-bottom-color: rgba(255,255,255,0.2); }
     .menu-category.featured .menu-prod-price {
@@ -706,6 +706,9 @@ async function switchStore(store) {
   document.getElementById('menuSubtitle').value = data.menuSubtitle || '';
   document.getElementById('menuTitle2').value   = data.menuTitle2   || '';
   document.getElementById('menuFooter').value   = data.menuFooter   || '';
+
+  // Actualizar QR al nuevo local
+  if (window._renderQRsForStore) window._renderQRsForStore(store);
 }
 
 // Variables de estado global
@@ -945,12 +948,10 @@ function renderPage(id, cats) {
       block.innerHTML = `
         <div class="menu-cat-title" style="--cat-color:white">
           ${esc(cat.name)}
-          <span class="combo-badge">⭐ Más vendidos</span>
         </div>
         <div class="combo-grid">
           ${makeRows(cat.products)}
-        </div>
-        <img class="combo-aesthetic" src="Menu/Recursos/Texto aethetic.png" alt="Aesthetic">`;
+        </div>`;
       colRight.appendChild(block);
 
     } else {
@@ -1031,9 +1032,19 @@ window.addEventListener('resize', scalePreview);
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
-  function renderQR(id) {
-    new QRCode(document.getElementById(id), {
-      text: "https://menu.fu.do/sweetandpopavrissione",
+  // URLs del menú digital por local
+  const QR_URLS = {
+    rissione:  'https://menu.fu.do/sweetandpopavrissione',
+    hiper:     'https://menu.fu.do/sweetandpoph\u00edperlibertad/qr-menu',
+    changoMas: 'https://menu.fu.do/sweetandpopavrissione'  // ← actualizar cuando esté disponible
+  };
+
+  function renderQR(id, url) {
+    // Limpiar cualquier QR anterior antes de generar uno nuevo
+    const el = document.getElementById(id);
+    el.innerHTML = '';
+    new QRCode(el, {
+      text: url,
       width: 256,
       height: 256,
       colorDark : "#000000",
@@ -1041,9 +1052,39 @@ window.addEventListener('resize', scalePreview);
       correctLevel : QRCode.CorrectLevel.H
     });
   }
-  // Initialize QR codes for both pages
-  renderQR("codigo-qr-1");
-  renderQR("codigo-qr-2");
+
+  // QR estático para locales con imagen propia
+  const QR_STATIC_IMGS = {
+    hiper: 'Menu/Recursos/QR Sweet Hiper.png'
+  };
+
+  function renderQRsForStore(store) {
+    ['codigo-qr-1', 'codigo-qr-2'].forEach(function(id) {
+      const el = document.getElementById(id);
+      el.innerHTML = '';
+      if (QR_STATIC_IMGS[store]) {
+        // Usar imagen estática (ej: Sweet Hiper)
+        const img = document.createElement('img');
+        img.src   = QR_STATIC_IMGS[store];
+        img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;';
+        img.alt   = 'QR ' + store;
+        el.appendChild(img);
+      } else {
+        // Generar QR con librería
+        const url = QR_URLS[store] || QR_URLS.rissione;
+        renderQR(id, url);
+      }
+    });
+  }
+
+  // DOMContentLoaded ya disparó → llamar directo con pequeño tick
+  setTimeout(function() {
+    const activeStore = localStorage.getItem('sweetpop_active_store') || 'rissione';
+    renderQRsForStore(activeStore);
+  }, 0);
+
+  // Exponer para que switchStore pueda actualizar el QR al cambiar de local
+  window._renderQRsForStore = renderQRsForStore;
 </script>
 
 </body>
