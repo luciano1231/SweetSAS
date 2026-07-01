@@ -106,6 +106,15 @@ function populateDateFilters() {
     from.innerHTML += `<option value="${i}">${lbl}</option>`;
     to.innerHTML += `<option value="${i}">${lbl}</option>`;
   });
+  
+  if (dashboardData.length > 0) {
+    const now = new Date();
+    const currentLbl = MONTHS_ES[now.getMonth()] + ' ' + now.getFullYear();
+    let defaultIndex = dashboardData.findIndex(r => formatDateLabel(r.fecha) === currentLbl);
+    if (defaultIndex === -1) defaultIndex = dashboardData.length - 1;
+    from.value = defaultIndex;
+    to.value = defaultIndex;
+  }
 }
 
 function applyDateFilter() {
