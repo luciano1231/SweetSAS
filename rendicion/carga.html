@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script>
+    // Aplicar el tema guardado antes de pintar, para evitar el flash del tema incorrecto
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('rendicion_theme') === 'light' ? 'light' : 'dark');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carga de Rendición — Sistema de Caja</title>
+  <meta name="description" content="Formulario de carga de rendición de caja diaria">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* Prevenir FOUC (flash de contenido no autorizado) */
+    html:not(.authenticated) body > :not(#authGate) {
+      display: none !important;
+    }
+  </style>
+  <script src="/js/auth-gate.js"></script>
+</head>
+<body>
+
+  <!-- ────────────────────────────────────────────────
+       PANTALLA DE ACCESO ADMIN (compartida con el dashboard de Sweet SAS)
+  ──────────────────────────────────────────────── -->
+  <div id="authGate" style="
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(135deg, #080d10 0%, #0d1a14 50%, #080d10 100%);
+    align-items: center; justify-content: center;
+    font-family: 'Inter', sans-serif;
+  ">
+    <style>
+      @keyframes authFadeIn  { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes authShake   { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+      @keyframes authPulse   { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.4)} 50%{box-shadow:0 0 0 12px rgba(16,185,129,0)} }
+      #authBox {
+        background: linear-gradient(160deg, #111e18 0%, #0d1810 100%);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px;
+        padding: 48px 44px 44px;
+        width: 100%; max-width: 380px;
+        animation: authFadeIn 0.5s ease forwards;
+        box-shadow: 0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+      }
+      .auth-icon {
+        width: 64px; height: 64px;
+        background: linear-gradient(135deg, #064e35, #0f7a50);
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto 24px;
+        animation: authPulse 2.5s ease infinite;
+      }
+      .auth-title {
+        text-align: center;
+        color: #eef2ee;
+        font-size: 1.35rem; font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .auth-subtitle {
+        text-align: center;
+        color: #4d6655;
+        font-size: 0.82rem; margin-bottom: 32px;
+        text-transform: uppercase; letter-spacing: 1.2px;
+      }
+      .auth-label {
+        display: block;
+        color: #6b8c78;
+        font-size: 0.72rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.8px;
+        margin-bottom: 8px;
+      }
+      #authPassword {
+        width: 100%; box-sizing: border-box;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #eef2ee;
+        padding: 13px 16px;
+        border-radius: 10px;
+        font-size: 1rem; font-family: 'Inter', sans-serif;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        letter-spacing: 2px;
+      }
+      #authPassword:focus {
+        border-color: rgba(16,185,129,0.5);
+        box-shadow: 0 0 0 3px rgba(16,185,129,0.12);
+      }
+      #authSubmit {
+        width: 100%; margin-top: 16px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border: none; color: white;
+        padding: 14px;
+        border-radius: 10px;
+        font-size: 0.9rem; font-weight: 700;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.15s;
+        letter-spacing: 0.3px;
+      }
+      #authSubmit:hover  { opacity: 0.9; transform: translateY(-1px); }
+      #authSubmit:active { transform: translateY(0); opacity: 1; }
+      #authError {
+        text-align: center;
+        color: #f87171;
+        font-size: 0.8rem; font-weight: 600;
+        margin-top: 12px;
+        opacity: 0;
+        transition: opacity 0.25s;
+        min-height: 20px;
+      }
+      .auth-footer {
+        text-align: center;
+        color: #2d3f35;
+        font-size: 0.7rem;
+        margin-top: 28px;
+      }
+    </style>
+
+    <div id="authBox">
+      <div class="auth-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      </div>
+      <div class="auth-title">Acceso Restringido</div>
+      <div class="auth-subtitle">Sweet SAS — Área Admin</div>
+      <label class="auth-label" for="authPassword">Contraseña</label>
+      <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+      <button id="authSubmit">→ Ingresar al Dashboard</button>
+      <div id="authError">Contraseña incorrecta</div>
+      <div class="auth-footer">Solo administradores — Sweet &amp; Pop Express</div>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header animate-in">
+      <div class="app-header__brand">
+        <div class="app-header__logo">$</div>
+        <div>
+          <h1 class="app-header__title">Carga de Rendición</h1>
+          <p class="app-header__subtitle" id="header-local">Cargando...</p>
+        </div>
+      </div>
+      <nav class="app-header__nav">
+        <button type="button" class="nav-link" id="theme-toggle">☀️ Claro</button>
+        <a href="../index.html" class="nav-link">← Dashboard</a>
+        <a href="index.html" class="nav-link">← Locales</a>
+        <a href="historial.html" class="nav-link">📊 Historial</a>
+      </nav>
+    </header>
+
+    <form id="rendicion-form" novalidate>
+      <!-- ================================ -->
+      <!-- SECCIÓN 1: IDENTIFICACIÓN       -->
+      <!-- ================================ -->
+      <div class="card animate-in animate-in--delay-1">
+        <div class="card__header">
+          <div class="card__icon card__icon--id">📋</div>
+          <div>
+            <h2 class="card__title">Datos del Turno</h2>
+            <p class="card__description">Completá la información del turno actual</p>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label form-label--required" for="turno">Turno</label>
+            <select class="form-select" id="turno" required>
+              <option value="">Seleccionar turno...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label form-label--required" for="fecha">Fecha</label>
+            <div class="date-field">
+              <input type="date" class="form-input date-field__input" id="fecha" required>
+              <span class="date-field__display" id="fecha-display" aria-hidden="true"></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label form-label--required" for="empleado">Empleado</label>
+            <select class="form-select" id="empleado" required>
+              <option value="">Seleccionar empleado...</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================ -->
+      <!-- SECCIÓN 2: CONTEO DE EFECTIVO   -->
+      <!-- ================================ -->
+      <div class="card animate-in animate-in--delay-2">
+        <div class="card__header">
+          <div class="card__icon card__icon--cash">💵</div>
+          <div>
+            <h2 class="card__title">Conteo de Efectivo</h2>
+            <p class="card__description">Ingresá la cantidad de cada billete</p>
+          </div>
+        </div>
+
+        <div class="form-grid form-grid--bills" id="bills-grid">
+          <!-- Generated by JS -->
+        </div>
+
+        <!-- Total Efectivo -->
+        <div class="summary-row summary-row--subtotal" style="margin-top: var(--space-lg);">
+          <span class="summary-row__label">Total Efectivo</span>
+          <span class="summary-row__value" id="total-efectivo">$0</span>
+        </div>
+      </div>
+
+      <!-- ================================ -->
+      <!-- SECCIÓN 3: MEDIOS ELECTRÓNICOS  -->
+      <!-- ================================ -->
+      <div class="card animate-in animate-in--delay-3">
+        <div class="card__header">
+          <div class="card__icon card__icon--electronic">💳</div>
+          <div>
+            <h2 class="card__title">Medios Electrónicos</h2>
+            <p class="card__description">Ingresá los montos de cada medio de pago</p>
+          </div>
+        </div>
+
+        <div class="form-grid form-grid--payments" id="payments-grid">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <!-- ================================ -->
+      <!-- SECCIÓN 4: CIERRE / RESUMEN     -->
+      <!-- ================================ -->
+      <div class="card animate-in animate-in--delay-4">
+        <div class="card__header">
+          <div class="card__icon card__icon--summary">📊</div>
+          <div>
+            <h2 class="card__title">Cierre del Turno</h2>
+            <p class="card__description">Resumen y verificación contra el sistema</p>
+          </div>
+        </div>
+
+        <!-- Total Real -->
+        <div class="summary-row summary-row--total">
+          <span class="summary-row__label">Total Real</span>
+          <span class="summary-row__value" id="total-real">$0</span>
+        </div>
+
+        <!-- Registrado en Sistema -->
+        <div class="summary-input-row">
+          <span class="summary-input-row__label">Registrado en Sistema</span>
+          <div class="summary-input-row__input-wrapper">
+            <span class="summary-input-row__prefix">$</span>
+            <input type="number" class="summary-input-row__input" id="registrado-sistema" 
+                   placeholder="0" min="0" step="1" inputmode="numeric">
+          </div>
+        </div>
+
+        <!-- Diferencia -->
+        <div class="summary-row summary-row--difference summary-row--zero" id="diff-row">
+          <span class="summary-row__label">Diferencia</span>
+          <span class="summary-row__value diff-animate" id="diferencia">$0</span>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="form-group form-group--full" style="margin-top: var(--space-lg);">
+          <label class="form-label" for="observaciones">Observaciones</label>
+          <textarea class="form-textarea" id="observaciones" placeholder="Notas adicionales sobre el turno (opcional)..."></textarea>
+        </div>
+      </div>
+
+      <!-- ================================ -->
+      <!-- BOTONES DE ACCIÓN               -->
+      <!-- ================================ -->
+      <div class="form-actions animate-in animate-in--delay-4">
+        <button type="button" class="btn btn--ghost btn--lg" id="btn-limpiar">
+          🗑️ Limpiar
+        </button>
+        <button type="submit" class="btn btn--submit" id="btn-enviar">
+          📤 Enviar Rendición
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/carga.js"></script>
+</body>
+</html>
