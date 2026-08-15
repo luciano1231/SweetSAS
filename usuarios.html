@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script>window.__PAGE_PERMISSION = 'dashboard';</script>
+  <script src="js/auth-gate.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Usuarios — Sweet SAS</title>
+  <meta name="description" content="Alta y permisos de usuarios internos — Sweet SAS">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    /* Prevenir FOUC (flash de contenido no autorizado) */
+    html:not(.authenticated) body > :not(#authGate) {
+      display: none !important;
+    }
+
+    body { display: block; padding: 40px 24px 80px; max-width: 880px; margin: 0 auto; }
+
+    .page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+    .page-header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; }
+    .page-header p { color: var(--text-secondary); font-size: .85rem; margin-top: 4px; }
+    .back-link {
+      color: var(--text-secondary); text-decoration: none; font-size: .85rem;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 16px; border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+      transition: all var(--transition-fast); white-space: nowrap;
+    }
+    .back-link:hover { color: var(--text-primary); border-color: var(--accent-blue); background: rgba(59,130,246,0.06); }
+
+    .owner-note {
+      background: rgba(59,130,246,0.06); border: 1px solid rgba(59,130,246,0.15);
+      border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 24px;
+      font-size: .82rem; color: var(--text-secondary); line-height: 1.6;
+    }
+    .owner-note strong { color: var(--text-primary); }
+
+    .user-card {
+      background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg);
+      padding: 20px 24px; margin-bottom: 12px; display: flex; align-items: center;
+      justify-content: space-between; gap: 20px; flex-wrap: wrap;
+      transition: border-color var(--transition-fast);
+    }
+    .user-card:hover { border-color: var(--border-light); }
+    .user-card__info { flex: 1; min-width: 220px; }
+    .user-card__name { font-weight: 700; font-size: 1.02rem; margin-bottom: 2px; }
+    .user-card__role { font-size: .72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+    .user-card__perms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .perm-chip {
+      font-size: .72rem; padding: 3px 10px; border-radius: 999px;
+      background: rgba(59,130,246,0.12); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.25);
+    }
+    .perm-chip--menu { background: rgba(236,72,153,0.12); color: var(--accent-pink); border-color: rgba(236,72,153,0.25); }
+    .perm-chip--none { background: rgba(239,68,68,0.1); color: var(--accent-red); border-color: rgba(239,68,68,0.2); }
+    .user-card__actions { display: flex; gap: 8px; }
+    .btn-sm { padding: 8px 16px; font-size: .8rem; }
+    .btn-danger { background: rgba(239,68,68,0.1); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.2); }
+    .btn-danger:hover { background: rgba(239,68,68,0.2); }
+    .empty-note { color: var(--text-muted); font-size: .88rem; text-align: center; padding: 48px 0; }
+
+    #btnAddUser { margin-top: 12px; }
+
+    .field-label { display: block; font-size: .82rem; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+    .field-select {
+      width: 100%; background: var(--bg-input); border: 1px solid var(--border-light); color: var(--text-primary);
+      padding: 12px 16px; border-radius: var(--radius-sm); font-family: var(--font); font-size: .88rem; outline: none;
+    }
+    .perm-checks { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+    .perm-check-row { display: flex; align-items: center; gap: 10px; font-size: .85rem; color: var(--text-secondary); cursor: pointer; }
+    .perm-check-row input { width: 16px; height: 16px; accent-color: var(--accent-blue); cursor: pointer; }
+    .field-hint { font-size: .76rem; color: var(--text-muted); margin-top: 6px; }
+    .modal-error { color: var(--accent-red); font-size: .82rem; margin-top: -10px; margin-bottom: 18px; min-height: 18px; }
+  </style>
+</head>
+<body>
+
+  <!-- ────────────────────────────────────────────────
+       PANTALLA DE ACCESO ADMIN (compartida con el dashboard de Sweet SAS)
+  ──────────────────────────────────────────────── -->
+  <div id="authGate" style="
+    display: none;
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(135deg, #080d10 0%, #0d1a14 50%, #080d10 100%);
+    align-items: center; justify-content: center;
+    font-family: 'Inter', sans-serif;
+  ">
+    <style>
+      @keyframes authFadeIn  { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes authShake   { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+      @keyframes authPulse   { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.4)} 50%{box-shadow:0 0 0 12px rgba(16,185,129,0)} }
+      #authBox {
+        background: linear-gradient(160deg, #111e18 0%, #0d1810 100%);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px;
+        padding: 48px 44px 44px;
+        width: 100%; max-width: 380px;
+        animation: authFadeIn 0.5s ease forwards;
+        box-shadow: 0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+      }
+      .auth-icon {
+        width: 64px; height: 64px;
+        background: linear-gradient(135deg, #064e35, #0f7a50);
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto 24px;
+        animation: authPulse 2.5s ease infinite;
+      }
+      .auth-title {
+        text-align: center;
+        color: #eef2ee;
+        font-size: 1.35rem; font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .auth-subtitle {
+        text-align: center;
+        color: #4d6655;
+        font-size: 0.82rem; margin-bottom: 32px;
+        text-transform: uppercase; letter-spacing: 1.2px;
+      }
+      .auth-label {
+        display: block;
+        color: #6b8c78;
+        font-size: 0.72rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.8px;
+        margin-bottom: 8px;
+      }
+      #authPassword {
+        width: 100%; box-sizing: border-box;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #eef2ee;
+        padding: 13px 16px;
+        border-radius: 10px;
+        font-size: 1rem; font-family: 'Inter', sans-serif;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        letter-spacing: 2px;
+      }
+      #authPassword:focus {
+        border-color: rgba(16,185,129,0.5);
+        box-shadow: 0 0 0 3px rgba(16,185,129,0.12);
+      }
+      #authSubmit {
+        width: 100%; margin-top: 16px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border: none; color: white;
+        padding: 14px;
+        border-radius: 10px;
+        font-size: 0.9rem; font-weight: 700;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.15s;
+        letter-spacing: 0.3px;
+      }
+      #authSubmit:hover  { opacity: 0.9; transform: translateY(-1px); }
+      #authSubmit:active { transform: translateY(0); opacity: 1; }
+      #authError {
+        text-align: center;
+        color: #f87171;
+        font-size: 0.8rem; font-weight: 600;
+        margin-top: 12px;
+        opacity: 0;
+        transition: opacity 0.25s;
+        min-height: 20px;
+      }
+      .auth-footer {
+        text-align: center;
+        color: #2d3f35;
+        font-size: 0.7rem;
+        margin-top: 28px;
+      }
+    </style>
+
+    <div id="authBox">
+      <div class="auth-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      </div>
+      <div class="auth-title">Acceso Restringido</div>
+      <div class="auth-subtitle">Sweet SAS — Área Admin</div>
+      <label class="auth-label" for="authPassword">Contraseña</label>
+      <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+      <button id="authSubmit">→ Ingresar al Dashboard</button>
+      <div id="authError">Contraseña incorrecta</div>
+      <div class="auth-footer">Solo administradores — Sweet &amp; Pop Express</div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────────────────────
+       CLAVE DE ADMINISTRACIÓN (segunda puerta, solo para esta página —
+       protege el API de usuarios independientemente de la contraseña
+       del dashboard)
+  ──────────────────────────────────────────────── -->
+  <div id="tokenGate" style="
+    display: none;
+    position: fixed; inset: 0; z-index: 9998;
+    background: rgba(10,14,26,0.97);
+    align-items: center; justify-content: center;
+    font-family: 'Inter', sans-serif;
+  ">
+    <div style="
+      background: linear-gradient(160deg, #151b2e 0%, #111827 100%);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 48px 44px 44px;
+      width: 100%; max-width: 380px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+    ">
+      <div style="
+        width: 64px; height: 64px;
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        border-radius: 16px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 2rem;
+        margin: 0 auto 24px;
+      ">👥</div>
+      <div style="text-align:center;color:#eef1f5;font-size:1.25rem;font-weight:700;margin-bottom:4px;">Gestión de Usuarios</div>
+      <div style="text-align:center;color:var(--text-muted);font-size:.8rem;margin-bottom:28px;text-transform:uppercase;letter-spacing:1px;">Clave de administración</div>
+      <label style="display:block;color:var(--text-secondary);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">Clave</label>
+      <input id="tokenInput" type="password" placeholder="••••••••" autocomplete="off" style="
+        width:100%;box-sizing:border-box;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+        color:#eef1f5;padding:13px 16px;border-radius:10px;font-size:1rem;font-family:'Inter',sans-serif;outline:none;letter-spacing:2px;
+      ">
+      <button id="tokenSubmit" style="
+        width:100%;margin-top:16px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:none;color:white;
+        padding:14px;border-radius:10px;font-size:.9rem;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;
+      ">→ Ingresar</button>
+      <div id="tokenError" style="text-align:center;color:#f87171;font-size:.8rem;font-weight:600;margin-top:12px;opacity:0;transition:opacity .25s;min-height:20px;">Clave incorrecta</div>
+      <div style="text-align:center;color:var(--text-muted);font-size:.7rem;margin-top:20px;line-height:1.5;">
+        Es distinta de la contraseña del dashboard. La definís vos en Cloudflare
+        (variable de entorno <code>ADMIN_TOKEN</code>).
+      </div>
+    </div>
+  </div>
+
+  <!-- ────────────────────────────────────────────────
+       CONTENIDO (oculto hasta pasar la clave de administración)
+  ──────────────────────────────────────────────── -->
+  <div id="pageContent" style="display:none;">
+    <div class="page-header">
+      <div>
+        <h1>👥 Gestión de Usuarios</h1>
+        <p>Supervisor y locales — quién entra y a qué tiene acceso</p>
+      </div>
+      <a href="index.html" class="back-link">← Dashboard</a>
+    </div>
+
+    <div class="owner-note">
+      Solo vos (dueño) podés entrar acá. Cada usuario abajo inicia sesión con
+      su propio PIN — no necesita usuario, el PIN ya identifica quién es y
+      qué puede ver. El acceso al <strong>tablero financiero</strong> es
+      exclusivo del dueño y no se puede asignar.
+    </div>
+
+    <div id="usersList"></div>
+
+    <button class="btn btn-primary" id="btnAddUser">+ Agregar usuario</button>
+  </div>
+
+  <!-- Modal: crear / editar usuario -->
+  <div class="modal-overlay" id="userModal">
+    <div class="modal">
+      <h3 id="userModalTitle">Nuevo usuario</h3>
+      <p>Definí el nombre, el PIN de acceso y qué puede ver.</p>
+
+      <div class="modal-field">
+        <label for="fieldNombre">Nombre</label>
+        <input type="text" id="fieldNombre" placeholder="Ej: Sweet Rissione">
+      </div>
+
+      <div class="modal-field">
+        <label for="fieldRole" class="field-label">Tipo de usuario</label>
+        <select id="fieldRole" class="field-select">
+          <option value="local">Local (un solo local)</option>
+          <option value="supervisor">Supervisor (todos los locales)</option>
+        </select>
+      </div>
+
+      <div class="modal-field">
+        <label for="fieldPin">PIN (4 a 8 dígitos)</label>
+        <input type="text" id="fieldPin" inputmode="numeric" placeholder="Ej: 852741" maxlength="8">
+        <div class="field-hint" id="pinHint"></div>
+      </div>
+
+      <div class="modal-field">
+        <label class="field-label">Permisos</label>
+        <div class="perm-checks" id="permChecks">
+          <!-- Generado por JS: checkboxes de locales + editor de menú -->
+        </div>
+      </div>
+
+      <div class="modal-error" id="modalError"></div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="btnDeleteUser" style="margin-right:auto;display:none;">Eliminar usuario</button>
+        <button class="btn btn-secondary" id="btnCancelUser">Cancelar</button>
+        <button class="btn btn-primary" id="btnSaveUser">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/usuarios.js"></script>
+</body>
+</html>

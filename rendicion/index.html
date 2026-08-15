@@ -20,6 +20,7 @@
       display: none !important;
     }
   </style>
+  <script>window.__PAGE_PERMISSION = 'rendicion';</script>
   <script src="/js/auth-gate.js"></script>
 </head>
 <body>
@@ -168,21 +169,42 @@
   <script src="js/utils.js"></script>
   <script src="js/theme.js"></script>
   <script>
-    // Render local cards
-    const grid = document.getElementById('locals-grid');
-    
-    const icons = ['🍰', '🍕', '🍔', '☕', '🍣'];
-    
-    CONFIG.locales.forEach((local, i) => {
-      const card = document.createElement('a');
-      card.className = 'local-card';
-      card.href = `carga.html?local=${local.id}`;
-      card.innerHTML = `
-        <span class="local-card__icon">${icons[i % icons.length]}</span>
-        <div class="local-card__name">${local.nombre}</div>
-        <div class="local-card__action">Cargar rendición →</div>
-      `;
-      grid.appendChild(card);
+    // Mostrar solo los locales a los que este usuario tiene acceso.
+    // Si solo tiene uno, saltear la selección e ir directo a cargarlo.
+    window.sweetAuth.onReady(function (session) {
+      const permitidos = (session.permissions && session.permissions.locales) || [];
+      const locales = CONFIG.locales.filter(l => permitidos.includes(l.id));
+
+      if (locales.length === 1) {
+        location.replace(`carga.html?local=${locales[0].id}`);
+        return;
+      }
+
+      const grid = document.getElementById('locals-grid');
+      const icons = ['🍰', '🍕', '🍔', '☕', '🍣'];
+
+      if (locales.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column: 1 / -1;">
+            <span class="empty-state__icon">🔒</span>
+            <h3 class="empty-state__title">Sin locales asignados</h3>
+            <p class="empty-state__text">Tu usuario no tiene ningún local asignado. Consultá con el dueño.</p>
+          </div>
+        `;
+        return;
+      }
+
+      locales.forEach((local, i) => {
+        const card = document.createElement('a');
+        card.className = 'local-card';
+        card.href = `carga.html?local=${local.id}`;
+        card.innerHTML = `
+          <span class="local-card__icon">${icons[i % icons.length]}</span>
+          <div class="local-card__name">${local.nombre}</div>
+          <div class="local-card__action">Cargar rendición →</div>
+        `;
+        grid.appendChild(card);
+      });
     });
   </script>
 </body>

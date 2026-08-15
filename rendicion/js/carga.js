@@ -20,6 +20,14 @@
     return;
   }
 
+  // --- Permitir solo si este usuario tiene acceso a este local ---
+  window.sweetAuth.onReady(function (session) {
+    const permitidos = (session.permissions && session.permissions.locales) || [];
+    if (!permitidos.includes(localId)) {
+      window.location.href = 'index.html';
+    }
+  });
+
   // --- Set header ---
   document.getElementById('header-local').textContent = local.nombre;
   document.title = `Carga de Rendición — ${local.nombre}`;

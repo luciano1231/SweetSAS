@@ -12,28 +12,28 @@ const CONFIG = {
   },
 
   // --- Datos del negocio ---
+  // Mismos ids que usa el editor de menú (functions/api/menu.js, menu-editor.html)
   locales: [
-    { id: 'sweet', nombre: 'Sweet' },
-    { id: 'local-2', nombre: 'Local 2' },
-    { id: 'local-3', nombre: 'Local 3' },
+    { id: 'rissione', nombre: 'Sweet Rissione' },
+    { id: 'hiper', nombre: 'Sweet Hiper' },
+    { id: 'changoMas', nombre: 'Sweet Chango Más' },
   ],
 
   turnos: ['Mañana', 'Tarde'],
 
-  // Empleados por local
+  // Empleados por local (placeholder — reemplazar por los nombres reales cuando los tengas)
   empleados: {
-    'sweet': [
-      { id: 'emp-1', nombre: 'Juan Pérez' },
-      { id: 'emp-2', nombre: 'María García' },
-      { id: 'emp-3', nombre: 'Carlos López' },
+    'rissione': [
+      { id: 'emp-1', nombre: 'Empleado 1' },
+      { id: 'emp-2', nombre: 'Empleado 2' },
     ],
-    'local-2': [
-      { id: 'emp-4', nombre: 'Ana Rodríguez' },
-      { id: 'emp-5', nombre: 'Pedro Martínez' },
+    'hiper': [
+      { id: 'emp-3', nombre: 'Empleado 1' },
+      { id: 'emp-4', nombre: 'Empleado 2' },
     ],
-    'local-3': [
-      { id: 'emp-6', nombre: 'Laura Fernández' },
-      { id: 'emp-7', nombre: 'Diego Sánchez' },
+    'changoMas': [
+      { id: 'emp-5', nombre: 'Empleado 1' },
+      { id: 'emp-6', nombre: 'Empleado 2' },
     ],
   },
 

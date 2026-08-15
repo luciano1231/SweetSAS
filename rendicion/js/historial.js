@@ -5,6 +5,11 @@
 (function () {
   'use strict';
 
+  // Locales a los que este usuario tiene acceso (se completa antes de init(),
+  // ver el final del archivo). Se usa tanto para restringir el <select> como
+  // para filtrar los datos, sin depender de lo que haya seleccionado en el UI.
+  let permittedLocales = [];
+
   // ============================================
   // INITIALIZATION
   // ============================================
@@ -17,14 +22,23 @@
 
   // --- Populate filter dropdowns ---
   function populateFilters() {
-    // Locales
+    // Locales — solo los que este usuario puede ver
     const localSelect = document.getElementById('filter-local');
-    CONFIG.locales.forEach(local => {
+    const localesVisibles = CONFIG.locales.filter(l => permittedLocales.includes(l.id));
+
+    localesVisibles.forEach(local => {
       const opt = document.createElement('option');
       opt.value = local.id;
       opt.textContent = local.nombre;
       localSelect.appendChild(opt);
     });
+
+    if (localesVisibles.length === 1) {
+      // Un solo local permitido: fijarlo y no dejar elegir "todos"
+      localSelect.querySelector('option[value=""]').remove();
+      localSelect.value = localesVisibles[0].id;
+      localSelect.disabled = true;
+    }
 
     // Turnos
     const turnoSelect = document.getElementById('filter-turno');
@@ -69,7 +83,9 @@
       fechaDesde: document.getElementById('filter-desde').value || undefined,
       fechaHasta: document.getElementById('filter-hasta').value || undefined,
     };
-    return Storage.getFiltered(filters);
+    // Reforzar el scoping por permisos acá también, sin depender de lo que
+    // haya seleccionado el <select> (por si lo manipulan desde devtools).
+    return Storage.getFiltered(filters).filter(r => permittedLocales.includes(r.local_id));
   }
 
   // ============================================
@@ -240,5 +256,10 @@
   // INIT
   // ============================================
 
-  document.addEventListener('DOMContentLoaded', init);
+  document.addEventListener('DOMContentLoaded', function () {
+    window.sweetAuth.onReady(function (session) {
+      permittedLocales = (session.permissions && session.permissions.locales) || [];
+      init();
+    });
+  });
 })();
