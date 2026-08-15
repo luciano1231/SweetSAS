@@ -1,0 +1,13 @@
+{
+  "name": "sweetsas",
+  "compatibility_date": "2026-08-15",
+  "main": "worker.js",
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    { "binding": "MENU_DATA", "id": "e3b7c61bc3a94f22a7aa55b8d15b8234" },
+    { "binding": "USERS_DATA", "id": "f530e68605b245d8abff046ffb6464de" }
+  ]
+}

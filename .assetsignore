@@ -1,0 +1,15 @@
+# Archivos que NO deben publicarse como estáticos (solo usados por el Worker/CI)
+.git
+.git/**
+.gitignore
+.wrangler
+.wrangler/**
+.assetsignore
+functions
+functions/**
+worker.js
+wrangler.jsonc
+node_modules
+node_modules/**
+package.json
+package-lock.json
