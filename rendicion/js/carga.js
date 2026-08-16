@@ -384,8 +384,10 @@
     if (!confirmed) return;
 
     // Save to storage
+    const btnEnviar = document.getElementById('btn-enviar');
+    btnEnviar.disabled = true;
     try {
-      Storage.save(rendicion);
+      await Storage.save(rendicion);
       Utils.toast('✓ Rendición enviada correctamente', 'success');
 
       // Reset form after short delay
@@ -394,6 +396,8 @@
       }, 500);
     } catch (err) {
       Utils.toast('Error al guardar la rendición: ' + err.message, 'error');
+    } finally {
+      btnEnviar.disabled = false;
     }
   }
 

@@ -55,50 +55,46 @@ const CONFIG = {
 };
 
 // ============================================
-// FUNCIONES DE ALMACENAMIENTO (localStorage)
-// Se reemplazan por Supabase en Fase 2
+// FUNCIONES DE ALMACENAMIENTO
+// Backend real: Cloudflare D1 vía /api/rendiciones — se comparte entre
+// todos los locales y dispositivos (antes vivía solo en localStorage,
+// atrapado en cada navegador).
 // ============================================
 
 const Storage = {
-  getAll() {
-    const data = localStorage.getItem(CONFIG.storageKey);
-    return data ? JSON.parse(data) : [];
-  },
-
-  save(rendicion) {
-    const all = this.getAll();
-    rendicion.id = crypto.randomUUID();
-    rendicion.created_at = new Date().toISOString();
-    all.push(rendicion);
-    localStorage.setItem(CONFIG.storageKey, JSON.stringify(all));
-    return rendicion;
-  },
-
-  getFiltered({ localId, fechaDesde, fechaHasta, empleadoId, turno } = {}) {
-    let data = this.getAll();
-
-    if (localId) data = data.filter(r => r.local_id === localId);
-    if (empleadoId) data = data.filter(r => r.empleado_id === empleadoId);
-    if (turno) data = data.filter(r => r.turno === turno);
-    if (fechaDesde) data = data.filter(r => r.fecha >= fechaDesde);
-    if (fechaHasta) data = data.filter(r => r.fecha <= fechaHasta);
-
-    return data.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-  },
-
-  delete(id) {
-    const all = this.getAll().filter(r => r.id !== id);
-    localStorage.setItem(CONFIG.storageKey, JSON.stringify(all));
-  },
-
-  update(id, updates) {
-    const all = this.getAll();
-    const idx = all.findIndex(r => r.id === id);
-    if (idx !== -1) {
-      all[idx] = { ...all[idx], ...updates };
-      localStorage.setItem(CONFIG.storageKey, JSON.stringify(all));
-      return all[idx];
+  async save(rendicion) {
+    const res = await fetch('/api/rendiciones', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rendicion),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'No se pudo guardar la rendición.');
     }
-    return null;
-  }
+    return { ...rendicion, id: data.id };
+  },
+
+  async getFiltered({ localId, fechaDesde, fechaHasta, turno } = {}) {
+    const params = new URLSearchParams();
+    if (localId) params.set('local', localId);
+    if (turno) params.set('turno', turno);
+    if (fechaDesde) params.set('desde', fechaDesde);
+    if (fechaHasta) params.set('hasta', fechaHasta);
+
+    const res = await fetch(`/api/rendiciones?${params.toString()}`);
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'No se pudieron cargar las rendiciones.');
+    }
+    return data.rendiciones;
+  },
+
+  async delete(id) {
+    const res = await fetch(`/api/rendiciones?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'No se pudo eliminar la rendición.');
+    }
+  },
 };

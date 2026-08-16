@@ -9,6 +9,7 @@ functions
 functions/**
 worker.js
 wrangler.jsonc
+schema.sql
 node_modules
 node_modules/**
 package.json

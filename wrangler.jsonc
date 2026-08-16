@@ -9,5 +9,8 @@
   "kv_namespaces": [
     { "binding": "MENU_DATA", "id": "e3b7c61bc3a94f22a7aa55b8d15b8234" },
     { "binding": "USERS_DATA", "id": "f530e68605b245d8abff046ffb6464de" }
+  ],
+  "d1_databases": [
+    { "binding": "RENDICIONES_DB", "database_name": "sweetsas-rendiciones", "database_id": "0c27f5a8-0a69-4f3b-a881-2e3a7c55b234" }
   ]
 }

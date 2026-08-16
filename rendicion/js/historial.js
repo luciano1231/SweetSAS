@@ -17,7 +17,7 @@
   function init() {
     populateFilters();
     bindEvents();
-    renderTable();
+    renderTable(); // async, no need to await acá
   }
 
   // --- Populate filter dropdowns ---
@@ -76,25 +76,41 @@
   // GET FILTERED DATA
   // ============================================
 
-  function getFilteredData() {
+  async function getFilteredData() {
     const filters = {
       localId: document.getElementById('filter-local').value || undefined,
       turno: document.getElementById('filter-turno').value || undefined,
       fechaDesde: document.getElementById('filter-desde').value || undefined,
       fechaHasta: document.getElementById('filter-hasta').value || undefined,
     };
+    const data = await Storage.getFiltered(filters);
     // Reforzar el scoping por permisos acá también, sin depender de lo que
     // haya seleccionado el <select> (por si lo manipulan desde devtools).
-    return Storage.getFiltered(filters).filter(r => permittedLocales.includes(r.local_id));
+    return data.filter(r => permittedLocales.includes(r.local_id));
   }
 
   // ============================================
   // RENDER TABLE
   // ============================================
 
-  function renderTable() {
-    const data = getFilteredData();
+  async function renderTable() {
     const wrapper = document.getElementById('table-wrapper');
+    wrapper.innerHTML = '<div class="empty-state"><span class="empty-state__icon">⏳</span><p class="empty-state__text">Cargando...</p></div>';
+
+    let data;
+    try {
+      data = await getFilteredData();
+    } catch (err) {
+      wrapper.innerHTML = `
+        <div class="empty-state">
+          <span class="empty-state__icon">⚠️</span>
+          <h3 class="empty-state__title">No se pudo cargar el historial</h3>
+          <p class="empty-state__text">${err.message}</p>
+        </div>
+      `;
+      document.getElementById('totals-card').style.display = 'none';
+      return;
+    }
 
     if (data.length === 0) {
       wrapper.innerHTML = `
@@ -196,8 +212,14 @@
   // EXPORT TO CSV
   // ============================================
 
-  function exportCSV() {
-    const data = getFilteredData();
+  async function exportCSV() {
+    let data;
+    try {
+      data = await getFilteredData();
+    } catch (err) {
+      Utils.toast('No se pudieron cargar los datos: ' + err.message, 'error');
+      return;
+    }
 
     if (data.length === 0) {
       Utils.toast('No hay datos para exportar', 'warning');
