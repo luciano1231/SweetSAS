@@ -26,6 +26,7 @@
   let rendData = [];
   let rendCharts = {};
   let loaded = false;
+  let requestSeq = 0; // evita que una respuesta vieja pise a una más nueva si cambian filtros rápido
 
   function localNombre(id) {
     const l = LOCALES.find(x => x.id === id);
@@ -66,14 +67,26 @@
     const tbody = document.getElementById('rendTableBody');
     tbody.innerHTML = '<tr><td style="padding:24px;color:var(--text-muted);">Cargando...</td></tr>';
 
+    const mySeq = ++requestSeq;
+
+    let data, error;
     try {
       const res = await fetch(`/api/rendiciones?${params.toString()}`);
-      const data = await res.json();
+      data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Error al cargar');
-      rendData = data.rendiciones;
     } catch (err) {
-      tbody.innerHTML = `<tr><td style="padding:24px;color:var(--accent-red);">No se pudo cargar: ${err.message}</td></tr>`;
+      error = err;
+    }
+
+    // Si mientras esperábamos se disparó otro fetch más nuevo (otro cambio
+    // de filtro), descartamos esta respuesta para no pisar la más reciente.
+    if (mySeq !== requestSeq) return;
+
+    if (error) {
+      tbody.innerHTML = `<tr><td style="padding:24px;color:var(--accent-red);">No se pudo cargar: ${error.message}</td></tr>`;
       rendData = [];
+    } else {
+      rendData = data.rendiciones;
     }
 
     renderRendiciones();
