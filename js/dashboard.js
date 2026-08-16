@@ -317,8 +317,8 @@ function switchView(v) {
   currentView = v;
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const map = { overview: 'viewOverview', ingresos: 'viewIngresos', gastos: 'viewGastos', personales: 'viewPersonales', comparativo: 'viewComparativo', tabla: 'viewTabla' };
-  const titles = { overview: 'Resumen General', ingresos: 'Ingresos', gastos: 'Gastos Empresa', personales: 'Gastos Personales', comparativo: 'Comparativo', tabla: 'Tabla Detallada' };
+  const map = { overview: 'viewOverview', ingresos: 'viewIngresos', gastos: 'viewGastos', personales: 'viewPersonales', comparativo: 'viewComparativo', tabla: 'viewTabla', rendiciones: 'viewRendiciones' };
+  const titles = { overview: 'Resumen General', ingresos: 'Ingresos', gastos: 'Gastos Empresa', personales: 'Gastos Personales', comparativo: 'Comparativo', tabla: 'Tabla Detallada', rendiciones: 'Rendiciones de Caja' };
   document.getElementById(map[v]).classList.add('active');
   document.querySelector(`[data-view="${v}"]`).classList.add('active');
   document.getElementById('viewTitle').textContent = titles[v];
