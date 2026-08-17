@@ -36,3 +36,32 @@ CREATE TABLE IF NOT EXISTS rendiciones (
 
 CREATE INDEX IF NOT EXISTS idx_rendiciones_local ON rendiciones(local_id);
 CREATE INDEX IF NOT EXISTS idx_rendiciones_fecha ON rendiciones(fecha);
+
+-- ============================================
+-- CAJA CHICA (gastos e ingresos internos por local)
+-- ============================================
+-- Cada local carga movimientos sueltos (estado='pendiente') hasta que
+-- cierra la caja y los "envía": ese envío exige saldo (ingreso-egreso) en
+-- cero y pasa todas las filas pendientes a estado='enviado', agrupadas
+-- por lote_envio, pasando a formar parte de la planilla maestra del local
+-- (historial). Ver functions/api/caja-chica.js.
+CREATE TABLE IF NOT EXISTS caja_chica_movimientos (
+  id            TEXT PRIMARY KEY,
+  local_id      TEXT NOT NULL,
+  local_nombre  TEXT,
+  fecha         TEXT NOT NULL,
+  item          TEXT NOT NULL,
+  clasificacion TEXT NOT NULL,
+  detalle       TEXT,
+  ingreso       REAL DEFAULT 0,
+  egreso        REAL DEFAULT 0,
+  estado        TEXT NOT NULL DEFAULT 'pendiente',
+  lote_envio    TEXT,
+  fecha_envio   TEXT,
+  creado_por    TEXT,
+  created_at    TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_cajachica_local ON caja_chica_movimientos(local_id);
+CREATE INDEX IF NOT EXISTS idx_cajachica_estado ON caja_chica_movimientos(local_id, estado);
+CREATE INDEX IF NOT EXISTS idx_cajachica_fecha ON caja_chica_movimientos(fecha);

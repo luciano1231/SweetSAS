@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <script>
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('rendicion_theme') === 'light' ? 'light' : 'dark');
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caja Chica — Sweet & Pop Express</title>
+  <meta name="description" content="Carga de movimientos de caja chica">
+  <link rel="stylesheet" href="../rendicion/css/styles.css">
+  <link rel="stylesheet" href="css/caja-chica.css">
+  <link rel="icon" href="/assets/logo-64.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    html:not(.authenticated) body > :not(#authGate) { display: none !important; }
+  </style>
+  <script>window.__PAGE_PERMISSION = 'cajaChica';</script>
+  <script src="/js/auth-gate.js"></script>
+  <script src="/js/quick-nav.js"></script>
+</head>
+<body>
+
+  <div id="authGate" style="
+    display: none; position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(135deg, #080d10 0%, #0d1a14 50%, #080d10 100%);
+    align-items: center; justify-content: center; font-family: 'Inter', sans-serif;
+  ">
+    <style>
+      @keyframes authFadeIn  { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+      @keyframes authShake   { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+      @keyframes authPulse   { 0%,100%{box-shadow:0 0 0 0 rgba(29,138,99,0.4)} 50%{box-shadow:0 0 0 12px rgba(29,138,99,0)} }
+      #authBox { background: linear-gradient(160deg, #111e18 0%, #0d1810 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 48px 44px 44px; width: 100%; max-width: 380px; animation: authFadeIn 0.5s ease forwards; box-shadow: 0 32px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05); }
+      .auth-icon { width: 64px; height: 64px; background: linear-gradient(135deg, #0e4538, #1d8a63); border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 24px; animation: authPulse 2.5s ease infinite; }
+      .auth-title { text-align: center; color: #eef2ee; font-size: 1.35rem; font-weight: 700; margin-bottom: 4px; }
+      .auth-subtitle { text-align: center; color: #4d6655; font-size: 0.82rem; margin-bottom: 32px; text-transform: uppercase; letter-spacing: 1.2px; }
+      .auth-label { display: block; color: #6b8c78; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+      #authPassword { width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #eef2ee; padding: 13px 16px; border-radius: 10px; font-size: 1rem; font-family: 'Inter', sans-serif; outline: none; transition: border-color 0.2s, box-shadow 0.2s; letter-spacing: 2px; }
+      #authPassword:focus { border-color: rgba(29,138,99,0.5); box-shadow: 0 0 0 3px rgba(29,138,99,0.12); }
+      #authSubmit { width: 100%; margin-top: 16px; background: linear-gradient(135deg, #1d8a63, #156b4d); border: none; color: white; padding: 14px; border-radius: 10px; font-size: 0.9rem; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; transition: opacity 0.2s, transform 0.15s; letter-spacing: 0.3px; }
+      #authSubmit:hover  { opacity: 0.9; transform: translateY(-1px); }
+      #authSubmit:active { transform: translateY(0); opacity: 1; }
+      #authError { text-align: center; color: #f87171; font-size: 0.8rem; font-weight: 600; margin-top: 12px; opacity: 0; transition: opacity 0.25s; min-height: 20px; }
+      .auth-footer { text-align: center; color: #2d3f35; font-size: 0.7rem; margin-top: 28px; }
+    </style>
+
+    <div id="authBox">
+      <div class="auth-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      </div>
+      <div class="auth-title">Acceso Restringido</div>
+      <div class="auth-subtitle">Sweet SAS — Área Admin</div>
+      <label class="auth-label" for="authPassword">Contraseña</label>
+      <input id="authPassword" type="password" placeholder="••••••••" autocomplete="current-password">
+      <button id="authSubmit">→ Ingresar al Dashboard</button>
+      <div id="authError">Contraseña incorrecta</div>
+      <div class="auth-footer">Solo administradores — Sweet &amp; Pop Express</div>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <header class="app-header animate-in">
+      <div class="app-header__brand">
+        <div class="app-header__logo"><img src="/assets/logo-128.png" alt="Sweet &amp; Pop Express"></div>
+        <div>
+          <h1 class="app-header__title">Caja Chica</h1>
+          <p class="app-header__subtitle" id="header-local">Cargando...</p>
+        </div>
+      </div>
+      <nav class="app-header__nav">
+        <button type="button" class="nav-link" id="theme-toggle">Claro</button>
+        <a href="../index.html" class="nav-link">← Dashboard</a>
+        <a href="../usuarios.html" class="nav-link" id="navUsersBtn" style="display:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Usuarios</a>
+        <a href="index.html" class="nav-link">← Locales</a>
+        <a href="historial.html" class="nav-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg> Historial</a>
+      </nav>
+    </header>
+
+    <!-- ================================ -->
+    <!-- NUEVO MOVIMIENTO                -->
+    <!-- ================================ -->
+    <div class="card animate-in animate-in--delay-1">
+      <div class="card__header">
+        <div class="card__icon card__icon--cash"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+        <div>
+          <h2 class="card__title">Nuevo Movimiento</h2>
+          <p class="card__description">Cargá un ingreso o un gasto de la caja chica</p>
+        </div>
+      </div>
+
+      <form id="mov-form" novalidate>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label form-label--required" for="fecha">Fecha</label>
+            <div class="date-field">
+              <input type="date" class="form-input date-field__input" id="fecha" required>
+              <span class="date-field__display" id="fecha-display" aria-hidden="true"></span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label form-label--required" for="item">Ítem</label>
+            <select class="form-select" id="item" required>
+              <option value="">Seleccionar ítem...</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="detalle">Detalle</label>
+            <input type="text" class="form-input" id="detalle" placeholder="Comentario (opcional)" autocomplete="off">
+          </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: var(--space-md);">
+          <div class="form-group">
+            <label class="form-label form-label--required" for="monto">Monto</label>
+            <div class="payment-field__input-wrapper">
+              <span class="payment-field__prefix">$</span>
+              <input type="number" class="payment-field__input" id="monto" placeholder="0" min="0" step="1" inputmode="numeric" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="grid-column: span 2;">
+            <label class="form-label form-label--required">Tipo de movimiento</label>
+            <div class="direction-toggle">
+              <button type="button" class="direction-pill direction-pill--ingreso is-active" id="btn-ingreso" data-dir="ingreso">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                Ingreso
+              </button>
+              <button type="button" class="direction-pill direction-pill--egreso" id="btn-egreso" data-dir="egreso">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                Egreso
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions" style="margin-top: var(--space-lg);">
+          <button type="submit" class="btn btn--submit" id="btn-agregar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Agregar movimiento
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ================================ -->
+    <!-- SALDO + PENDIENTES               -->
+    <!-- ================================ -->
+    <div class="animate-in animate-in--delay-2">
+      <div class="saldo-banner" id="saldo-banner">
+        <div class="saldo-banner__stats">
+          <div class="saldo-banner__stat">
+            <span class="saldo-banner__stat-label">Ingresos</span>
+            <span class="saldo-banner__stat-value saldo-banner__stat-value--ingreso" id="saldo-ingresos">$0</span>
+          </div>
+          <div class="saldo-banner__stat">
+            <span class="saldo-banner__stat-label">Egresos</span>
+            <span class="saldo-banner__stat-value saldo-banner__stat-value--egreso" id="saldo-egresos">$0</span>
+          </div>
+          <div class="saldo-banner__stat">
+            <span class="saldo-banner__stat-label">Saldo</span>
+            <span class="saldo-banner__stat-value saldo-banner__stat-value--saldo" id="saldo-total">$0</span>
+          </div>
+        </div>
+        <p class="saldo-banner__hint" id="saldo-hint"></p>
+      </div>
+    </div>
+
+    <div class="card animate-in animate-in--delay-3" style="padding: 0; overflow: hidden;">
+      <div class="card__header" style="padding: 20px 24px 0;">
+        <div class="card__icon card__icon--summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg></div>
+        <div>
+          <h2 class="card__title">Movimientos Pendientes</h2>
+          <p class="card__description" id="pendientes-count">Todavía sin movimientos cargados</p>
+        </div>
+      </div>
+      <div class="table-wrapper" id="table-wrapper" style="margin-top: 16px;">
+        <!-- Generated by JS -->
+      </div>
+    </div>
+
+    <div class="form-actions animate-in animate-in--delay-4">
+      <button type="button" class="btn btn--submit" id="btn-cerrar" disabled>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        Cerrar Caja y Enviar
+      </button>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="../rendicion/js/utils.js"></script>
+  <script src="../rendicion/js/theme.js"></script>
+  <script src="js/carga.js"></script>
+</body>
+</html>

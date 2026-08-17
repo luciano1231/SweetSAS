@@ -12,6 +12,7 @@
 //   <script>window.__PAGE_PERMISSION = 'dashboard';</script>   // solo dueño
 //   <script>window.__PAGE_PERMISSION = 'menuEditor';</script>  // editor de menú
 //   <script>window.__PAGE_PERMISSION = 'rendicion';</script>   // al menos 1 local
+//   <script>window.__PAGE_PERMISSION = 'cajaChica';</script>   // permiso explícito + al menos 1 local
 // Si el usuario logueado no tiene ese permiso, se lo redirige automáticamente
 // al mejor destino posible para él (sin mostrar la página).
 //
@@ -67,6 +68,7 @@
     if (required === 'dashboard') return !!permissions.dashboard;
     if (required === 'menuEditor') return !!permissions.menuEditor;
     if (required === 'rendicion') return Array.isArray(permissions.locales) && permissions.locales.length > 0;
+    if (required === 'cajaChica') return !!permissions.cajaChica && Array.isArray(permissions.locales) && permissions.locales.length > 0;
     return true;
   }
 
@@ -159,7 +161,7 @@
           role: 'owner',
           userId: 'owner',
           userName: 'Dueño',
-          permissions: { dashboard: true, menuEditor: true, locales: ['rissione', 'hiper', 'changoMas'], userAdmin: true },
+          permissions: { dashboard: true, menuEditor: true, cajaChica: true, locales: ['rissione', 'hiper', 'changoMas'], userAdmin: true },
         };
       } else {
         try {

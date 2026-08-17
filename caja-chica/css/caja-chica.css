@@ -1,0 +1,107 @@
+/* ============================================
+   CAJA CHICA — estilos propios
+   (se cargan después de ../rendicion/css/styles.css, que aporta la base:
+   tokens, .card, .form-*, .data-table, .summary-row, .btn--*, etc.)
+   ============================================ */
+
+/* --- Selector de sentido: Ingreso / Egreso --- */
+.direction-toggle {
+  display: flex;
+  gap: var(--space-sm);
+}
+.direction-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+.direction-pill:hover { color: var(--text-primary); }
+.direction-pill--ingreso.is-active {
+  background: var(--success-bg);
+  border-color: var(--success-border);
+  color: var(--success);
+}
+.direction-pill--egreso.is-active {
+  background: var(--error-bg);
+  border-color: var(--error-border);
+  color: var(--error);
+}
+
+/* --- Banner de saldo pendiente --- */
+.saldo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  padding: 18px 22px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+  border: 1px solid var(--border-color, rgba(255,255,255,0.08));
+  background: var(--bg-card);
+}
+.saldo-banner__stats { display: flex; gap: var(--space-xl); flex-wrap: wrap; }
+.saldo-banner__stat { display: flex; flex-direction: column; gap: 2px; }
+.saldo-banner__stat-label { font-size: var(--font-size-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+.saldo-banner__stat-value { font-size: 1.35rem; font-weight: 800; }
+.saldo-banner__stat-value--ingreso { color: var(--success); }
+.saldo-banner__stat-value--egreso { color: var(--error); }
+.saldo-banner--balanced .saldo-banner__stat-value--saldo { color: var(--success); }
+.saldo-banner--unbalanced .saldo-banner__stat-value--saldo { color: var(--warning); }
+.saldo-banner__hint {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  max-width: 320px;
+  line-height: 1.5;
+}
+.saldo-banner--unbalanced .saldo-banner__hint { color: var(--warning); }
+
+/* --- Tabla de movimientos pendientes / historial --- */
+.data-table .cell--ingreso { color: var(--success); font-weight: 600; }
+.data-table .cell--egreso { color: var(--error); font-weight: 600; }
+.data-table .cell--saldo { font-weight: 700; }
+.clasificacion-tag {
+  display: inline-block;
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 3px 9px;
+  border-radius: var(--radius-full);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.btn-row-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: 6px;
+  display: inline-flex;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.btn-row-delete:hover { color: var(--error); background: var(--error-bg); }
+
+/* --- Formulario de carga rápida --- */
+.quick-add-grid {
+  display: grid;
+  grid-template-columns: 150px 1fr 1fr 160px auto;
+  gap: var(--space-md);
+  align-items: end;
+}
+@media (max-width: 900px) {
+  .quick-add-grid { grid-template-columns: 1fr 1fr; }
+}
