@@ -42,6 +42,18 @@ export async function onRequest(context) {
     return json({ error: 'Binding D1 "RENDICIONES_DB" no encontrado.' }, 500);
   }
 
+  try {
+    return await handle(method, url, request, env);
+  } catch (err) {
+    const msg = String(err && err.message || err);
+    const hint = /no such table/i.test(msg)
+      ? ' — falta ejecutar el schema.sql de la tabla "empleados" en la consola de D1.'
+      : '';
+    return json({ error: 'Error inesperado: ' + msg + hint }, 500);
+  }
+}
+
+async function handle(method, url, request, env) {
   // ── LISTAR (público — lo necesita el formulario de carga) ─────
   if (method === 'GET') {
     const local = url.searchParams.get('local');
