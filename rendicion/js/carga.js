@@ -42,7 +42,6 @@
 
   function init() {
     populateTurnos();
-    populateEmpleados(); // async, no bloquea el resto del init
     setFechaHoy();
     generateBillFields();
     generatePaymentFields();
@@ -56,37 +55,6 @@
       const opt = document.createElement('option');
       opt.value = turno;
       opt.textContent = turno;
-      select.appendChild(opt);
-    });
-  }
-
-  // --- Populate empleados dropdown (filtered by local) ---
-  // Vienen de /api/empleados (Cloudflare D1) — se administran desde
-  // empleados.html, ya no están hardcodeados acá.
-  async function populateEmpleados() {
-    const select = document.getElementById('empleado');
-    let empleados = [];
-    try {
-      const res = await fetch(`/api/empleados?local=${encodeURIComponent(localId)}`);
-      const data = await res.json();
-      if (data.ok) empleados = data.empleados;
-    } catch (err) {
-      // sin conexión: dejamos el desplegable vacío, el usuario puede reintentar
-    }
-
-    if (empleados.length === 0) {
-      const opt = document.createElement('option');
-      opt.value = '';
-      opt.textContent = 'No hay empleados cargados para este local';
-      opt.disabled = true;
-      select.appendChild(opt);
-      return;
-    }
-
-    empleados.forEach(emp => {
-      const opt = document.createElement('option');
-      opt.value = emp.id;
-      opt.textContent = emp.nombre;
       select.appendChild(opt);
     });
   }
@@ -293,9 +261,8 @@
     // Validate required fields
     const turno = document.getElementById('turno').value;
     const fecha = document.getElementById('fecha').value;
-    const empleadoSelect = document.getElementById('empleado');
-    const empleado = empleadoSelect.value;
-    const empleadoNombre = empleadoSelect.selectedOptions[0] ? empleadoSelect.selectedOptions[0].textContent : '';
+    const empleadoNombre = document.getElementById('empleado').value.trim();
+    const empleado = empleadoNombre;
 
     if (!turno || !fecha || !empleado) {
       Utils.toast('Completá todos los campos obligatorios (turno, fecha, empleado)', 'error');
@@ -449,7 +416,7 @@
     document.getElementById('registrado-sistema').value = '';
     document.getElementById('observaciones').value = '';
     document.getElementById('turno').selectedIndex = 0;
-    document.getElementById('empleado').selectedIndex = 0;
+    document.getElementById('empleado').value = '';
 
     // Keep fecha as today
     setFechaHoy();

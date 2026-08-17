@@ -34,7 +34,6 @@
     const ICON_HISTORY = svg('<line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line>');
     const ICON_MENU = svg('<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path>');
     const ICON_USERS = svg('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>');
-    const ICON_EMPLOYEE = svg('<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>');
 
     const links = [];
     if (role === 'owner') links.push({ href: '/index.html', label: ICON_DASHBOARD + ' Dashboard' });
@@ -42,7 +41,6 @@
     links.push({ href: '/rendicion/historial.html', label: ICON_HISTORY + ' Historial' });
     links.push({ href: '/menu-editor.html', label: ICON_MENU + ' Editor de Menú' });
     if (role === 'owner') links.push({ href: '/usuarios.html', label: ICON_USERS + ' Gestión de Usuarios' });
-    if (role === 'owner') links.push({ href: '/empleados.html', label: ICON_EMPLOYEE + ' Empleados' });
 
     // No listar la página en la que ya estamos
     return links.filter(l => normalizePath(l.href) !== here);
