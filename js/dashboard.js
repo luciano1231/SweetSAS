@@ -211,7 +211,7 @@ function renderIngresosView() {
         backgroundColor: c.color + 'cc', borderColor: c.color, borderRadius: type === 'bar' ? 4 : 0,
         tension: .4, fill: type === 'line', pointRadius: type === 'line' ? 3 : 0, pointHoverRadius: 6
       }))
-    }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { y: { stacked: type === 'bar', ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { stacked: type === 'bar', grid: { display: false } } } }
+    }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtFull(ctx.raw) } } }, scales: { y: { stacked: type === 'bar', ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { stacked: type === 'bar', grid: { display: false } } } }
   });
 
   const grid = document.getElementById('ingresosCards'); grid.innerHTML = '';
@@ -231,7 +231,7 @@ function renderGastosView() {
         backgroundColor: c.color + 'cc', borderColor: c.color, borderRadius: type === 'bar' ? 4 : 0,
         tension: .4, fill: type === 'line', pointRadius: type === 'line' ? 3 : 0, pointHoverRadius: 6
       }))
-    }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { y: { stacked: type === 'bar', ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { stacked: type === 'bar', grid: { display: false } } } }
+    }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtFull(ctx.raw) } } }, scales: { y: { stacked: type === 'bar', ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { stacked: type === 'bar', grid: { display: false } } } }
   });
 
   const totals = EXPENSE_COLS.map(c => sumF(filteredData, c.key));
@@ -252,7 +252,7 @@ function renderPersonalesView() {
         backgroundColor: c.color + 'cc', borderColor: c.color, borderRadius: type === 'bar' ? 4 : 0,
         tension: .4, fill: type === 'line', pointRadius: type === 'line' ? 3 : 0, pointHoverRadius: 6
       }))
-    }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, scales: { y: { stacked: type === 'bar', ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { stacked: type === 'bar', grid: { display: false } } } }
+    }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtFull(ctx.raw) } } }, scales: { y: { stacked: type === 'bar', ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { stacked: type === 'bar', grid: { display: false } } } }
   });
 
   const totals = PERSONAL_COLS.map(c => sumF(filteredData, c.key));
@@ -273,10 +273,10 @@ function renderComparativoView() {
         { label: 'Ingresos', data: ingArr, backgroundColor: '#10b981cc', borderRadius: 6, barPercentage: .35, categoryPercentage: .8 },
         { label: 'Gastos Empresa', data: gasArr, backgroundColor: '#ef4444cc', borderRadius: 6, barPercentage: .35, categoryPercentage: .8 }
       ]
-    }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index' }, plugins: { tooltip: { callbacks: { afterBody: items => { const i = items[0].dataIndex; return 'Balance: ' + fmtFull(balArr[i]); } } } }, scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { display: false } } } }
+    }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index' }, plugins: { tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtFull(ctx.raw), afterBody: items => { const i = items[0].dataIndex; return 'Balance: ' + fmtFull(balArr[i]); } } } }, scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { display: false } } } }
   });
 
-  charts.balanceNeto = new Chart(document.getElementById('chartBalanceNeto'), { type: 'bar', data: { labels, datasets: [{ label: 'Balance Neto', data: balArr, backgroundColor: balArr.map(v => v >= 0 ? '#10b981cc' : '#ef4444cc'), borderRadius: 6, barPercentage: .6 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { display: false } } } } });
+  charts.balanceNeto = new Chart(document.getElementById('chartBalanceNeto'), { type: 'bar', data: { labels, datasets: [{ label: 'Balance Neto', data: balArr, backgroundColor: balArr.map(v => v >= 0 ? '#10b981cc' : '#ef4444cc'), borderRadius: 6, barPercentage: .6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtFull(ctx.raw) } } }, scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { display: false } } } } });
 
   const ti = ingArr.reduce((a, v) => a + v, 0), te = gasArr.reduce((a, v) => a + v, 0), bal = ti - te, mx = Math.max(ti, te) || 1;
   document.getElementById('compIngresos').textContent = fmtFull(ti);
