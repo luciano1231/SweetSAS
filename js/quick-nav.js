@@ -15,11 +15,19 @@
   let domReady = false;
   let mounted = false;
 
+  // Cloudflare sirve las páginas sin ".html" y colapsa "/index" al
+  // directorio (ej: "/menu-editor.html" y "/menu-editor" son la misma
+  // página) — normalizamos antes de comparar para no listar la actual.
+  function normalizePath(path) {
+    const stripped = path.replace(/\.html$/, '').replace(/\/index$/, '').replace(/\/$/, '');
+    return stripped || '/';
+  }
+
   function buildLinks(session) {
     const role = session.role;
     if (role !== 'owner' && role !== 'supervisor') return null;
 
-    const here = location.pathname.replace(/\/$/, '') || '/';
+    const here = normalizePath(location.pathname);
     const links = [];
     if (role === 'owner') links.push({ href: '/index.html', label: '📊 Dashboard' });
     links.push({ href: '/rendicion/index.html', label: '💵 Carga de Rendición' });
@@ -28,7 +36,7 @@
     if (role === 'owner') links.push({ href: '/usuarios.html', label: '👥 Gestión de Usuarios' });
 
     // No listar la página en la que ya estamos
-    return links.filter(l => l.href !== here);
+    return links.filter(l => normalizePath(l.href) !== here);
   }
 
   function mount(session) {
