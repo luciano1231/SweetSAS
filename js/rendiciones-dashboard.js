@@ -5,9 +5,9 @@
   'use strict';
 
   const LOCALES = [
-    { id: 'rissione', nombre: 'Sweet Rissione', color: '#3b82f6' },
-    { id: 'hiper', nombre: 'Sweet Hiper', color: '#8b5cf6' },
-    { id: 'changoMas', nombre: 'Sweet Chango Más', color: '#10b981' },
+    { id: 'rissione', nombre: 'Sweet Rissione', color: '#1d8a63' },
+    { id: 'hiper', nombre: 'Sweet Hiper', color: '#7a7ec0' },
+    { id: 'changoMas', nombre: 'Sweet Chango Más', color: '#0e4538' },
   ];
 
   const MEDIOS = [
@@ -131,7 +131,7 @@
         labels: mesesKeys.map(k => mesLabel(k + '-01')),
         datasets: [{
           label: 'Total Real', data: mesesKeys.map(k => mesesMap[k]),
-          backgroundColor: '#3b82f6cc', borderRadius: 6, barPercentage: .6,
+          backgroundColor: '#1d8a63cc', borderRadius: 6, barPercentage: .6,
         }],
       },
       options: {

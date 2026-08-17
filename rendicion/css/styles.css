@@ -29,11 +29,12 @@
   --text-muted: #555570;
   --text-inverse: #0a0a0f;
 
-  /* Accent — Purple/Violet */
-  --accent-primary: #8b5cf6;
-  --accent-primary-hover: #7c3aed;
-  --accent-primary-glow: rgba(139, 92, 246, 0.25);
-  --accent-gradient: linear-gradient(135deg, #8b5cf6, #6366f1, #818cf8);
+  /* Accent — Verde & Lavanda (paleta de marca Sweet & Pop Express) */
+  --accent-primary: #1d8a63;
+  --accent-primary-hover: #156b4d;
+  --accent-primary-glow: rgba(29, 138, 99, 0.25);
+  --accent-gradient: linear-gradient(135deg, #1d8a63, #156b4d, #0e4538);
+  --accent-secondary: #b6bae0;
 
   /* Semantic */
   --success: #22c55e;
@@ -106,7 +107,7 @@ html[data-theme="light"] {
   --text-muted: #8f8fa3;
   --text-inverse: #ffffff;
 
-  --accent-primary-glow: rgba(139, 92, 246, 0.18);
+  --accent-primary-glow: rgba(29, 138, 99, 0.18);
 
   --success-bg: rgba(34, 197, 94, 0.12);
   --error-bg: rgba(239, 68, 68, 0.12);
@@ -157,9 +158,9 @@ body::before {
   width: 100%;
   height: 100%;
   background:
-    radial-gradient(ellipse at 20% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 100%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(129, 140, 248, 0.03) 0%, transparent 70%);
+    radial-gradient(ellipse at 20% 0%, rgba(29, 138, 99, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(14, 69, 56, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(182, 186, 224, 0.03) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -234,16 +235,16 @@ img {
 .app-header__logo {
   width: 40px;
   height: 40px;
-  background: var(--accent-gradient);
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: white;
   flex-shrink: 0;
   box-shadow: 0 4px 16px var(--accent-primary-glow);
+  border-radius: 50%;
+}
+
+.app-header__logo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
 }
 
 .app-header__title {
@@ -288,8 +289,8 @@ img {
 .nav-link:hover,
 .nav-link--active {
   color: var(--text-primary);
-  background: rgba(139, 92, 246, 0.1);
-  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(29, 138, 99, 0.1);
+  border-color: rgba(29, 138, 99, 0.3);
 }
 
 @media (max-width: 640px) {
@@ -353,8 +354,8 @@ img {
 }
 
 .card__icon--summary {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.05));
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: linear-gradient(135deg, rgba(29, 138, 99, 0.2), rgba(29, 138, 99, 0.05));
+  border: 1px solid rgba(29, 138, 99, 0.2);
 }
 
 .card__icon--id {
@@ -684,8 +685,8 @@ img {
 }
 
 .summary-row--total {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12), rgba(99, 102, 241, 0.08));
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: linear-gradient(135deg, rgba(29, 138, 99, 0.12), rgba(14, 69, 56, 0.08));
+  border: 1px solid rgba(29, 138, 99, 0.2);
 }
 
 .summary-row--difference {
@@ -839,7 +840,7 @@ img {
 }
 
 .btn--primary:hover {
-  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.4);
+  box-shadow: 0 6px 24px rgba(29, 138, 99, 0.4);
   transform: translateY(-1px);
 }
 
@@ -919,7 +920,7 @@ img {
 }
 
 .btn--submit:hover {
-  box-shadow: 0 6px 32px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 6px 32px rgba(29, 138, 99, 0.5);
   transform: translateY(-2px);
 }
 
@@ -1150,7 +1151,7 @@ img {
 .local-card:hover {
   border-color: var(--accent-primary);
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(139, 92, 246, 0.15);
+  box-shadow: 0 12px 40px rgba(29, 138, 99, 0.15);
 }
 
 .local-card__icon {
@@ -1189,7 +1190,7 @@ img {
 }
 
 .data-table th {
-  background: rgba(139, 92, 246, 0.08);
+  background: rgba(29, 138, 99, 0.08);
   padding: var(--space-sm) var(--space-sm);
   text-align: left;
   font-weight: 600;
@@ -1430,7 +1431,7 @@ img {
 }
 
 .badge--night {
-  background: rgba(139, 92, 246, 0.15);
-  color: #8b5cf6;
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  background: rgba(29, 138, 99, 0.15);
+  color: #1d8a63;
+  border: 1px solid rgba(29, 138, 99, 0.2);
 }

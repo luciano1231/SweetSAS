@@ -65,7 +65,7 @@
     btn.type = 'button';
     btn.setAttribute('aria-label', 'Accesos rápidos');
     btn.title = 'Accesos rápidos';
-    btn.style.cssText = 'width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:white;font-size:1.35rem;box-shadow:0 8px 24px rgba(59,130,246,0.45);display:flex;align-items:center;justify-content:center;transition:transform .2s;';
+    btn.style.cssText = 'width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#1d8a63,#0e4538);color:white;font-size:1.35rem;box-shadow:0 8px 24px rgba(29,138,99,0.45);display:flex;align-items:center;justify-content:center;transition:transform .2s;';
     btn.textContent = '☰';
     btn.addEventListener('mouseenter', () => btn.style.transform = 'scale(1.08)');
     btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
