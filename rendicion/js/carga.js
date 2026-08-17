@@ -42,7 +42,7 @@
 
   function init() {
     populateTurnos();
-    populateEmpleados();
+    populateEmpleados(); // async, no bloquea el resto del init
     setFechaHoy();
     generateBillFields();
     generatePaymentFields();
@@ -61,14 +61,23 @@
   }
 
   // --- Populate empleados dropdown (filtered by local) ---
-  function populateEmpleados() {
+  // Vienen de /api/empleados (Cloudflare D1) — se administran desde
+  // empleados.html, ya no están hardcodeados acá.
+  async function populateEmpleados() {
     const select = document.getElementById('empleado');
-    const empleados = CONFIG.empleados[localId] || [];
+    let empleados = [];
+    try {
+      const res = await fetch(`/api/empleados?local=${encodeURIComponent(localId)}`);
+      const data = await res.json();
+      if (data.ok) empleados = data.empleados;
+    } catch (err) {
+      // sin conexión: dejamos el desplegable vacío, el usuario puede reintentar
+    }
 
     if (empleados.length === 0) {
       const opt = document.createElement('option');
       opt.value = '';
-      opt.textContent = 'No hay empleados para este local';
+      opt.textContent = 'No hay empleados cargados para este local';
       opt.disabled = true;
       select.appendChild(opt);
       return;
@@ -284,7 +293,9 @@
     // Validate required fields
     const turno = document.getElementById('turno').value;
     const fecha = document.getElementById('fecha').value;
-    const empleado = document.getElementById('empleado').value;
+    const empleadoSelect = document.getElementById('empleado');
+    const empleado = empleadoSelect.value;
+    const empleadoNombre = empleadoSelect.selectedOptions[0] ? empleadoSelect.selectedOptions[0].textContent : '';
 
     if (!turno || !fecha || !empleado) {
       Utils.toast('Completá todos los campos obligatorios (turno, fecha, empleado)', 'error');
@@ -311,7 +322,7 @@
       local_id: localId,
       local_nombre: local.nombre,
       empleado_id: empleado,
-      empleado_nombre: Utils.getEmpleadoName(empleado),
+      empleado_nombre: empleadoNombre,
       fecha: fecha,
       turno: turno,
       total_efectivo: calculateTotalEfectivo(),

@@ -159,16 +159,13 @@ const Utils = {
   },
 
   /**
-   * Obtiene el nombre de un empleado por ID
+   * Fallback si un registro viejo no tiene empleado_nombre guardado
+   * (los nuevos siempre lo traen directo desde el formulario de carga).
    * @param {string} empleadoId
    * @returns {string}
    */
   getEmpleadoName(empleadoId) {
-    for (const empleados of Object.values(CONFIG.empleados)) {
-      const emp = empleados.find(e => e.id === empleadoId);
-      if (emp) return emp.nombre;
-    }
-    return empleadoId;
+    return empleadoId || 'Sin especificar';
   },
 
   /**

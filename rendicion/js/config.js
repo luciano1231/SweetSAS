@@ -21,21 +21,9 @@ const CONFIG = {
 
   turnos: ['Mañana', 'Tarde'],
 
-  // Empleados por local (placeholder — reemplazar por los nombres reales cuando los tengas)
-  empleados: {
-    'rissione': [
-      { id: 'emp-1', nombre: 'Empleado 1' },
-      { id: 'emp-2', nombre: 'Empleado 2' },
-    ],
-    'hiper': [
-      { id: 'emp-3', nombre: 'Empleado 1' },
-      { id: 'emp-4', nombre: 'Empleado 2' },
-    ],
-    'changoMas': [
-      { id: 'emp-5', nombre: 'Empleado 1' },
-      { id: 'emp-6', nombre: 'Empleado 2' },
-    ],
-  },
+  // Los empleados por local ya NO están hardcodeados acá — se administran
+  // desde empleados.html y se leen en vivo vía /api/empleados
+  // (ver rendicion/js/carga.js → populateEmpleados()).
 
   // Denominaciones de billetes (en pesos)
   denominaciones: [10, 20, 50, 100, 200, 500, 1000, 2000, 10000, 20000],
