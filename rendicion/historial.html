@@ -20,7 +20,7 @@
       display: none !important;
     }
   </style>
-  <script>window.__PAGE_PERMISSION = 'rendicion';</script>
+  <script>window.__PAGE_PERMISSION = 'rendicionHistorial';</script>
   <script src="/js/auth-gate.js"></script>
   <script src="/js/quick-nav.js"></script>
 </head>
@@ -151,8 +151,9 @@
       <nav class="app-header__nav">
         <button type="button" class="nav-link" id="theme-toggle">Claro</button>
         <a href="../index.html" class="nav-link">← Dashboard</a>
-        <a href="../usuarios.html" class="nav-link" id="navUsersBtn" style="display:none;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Usuarios</a>
+        <a href="../usuarios.html" class="nav-link" id="navUsersBtn" style="display:none;" data-role-gate="owner"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Usuarios</a>
         <a href="index.html" class="nav-link">← Locales</a>
+        <a href="../caja-chica/historial.html" class="nav-link" title="Ir al Historial de Caja Chica"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg> Caja Chica</a>
         <button class="nav-link" id="btn-export" title="Exportar a CSV"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Exportar</button>
       </nav>
     </header>

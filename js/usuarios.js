@@ -5,7 +5,6 @@
   'use strict';
 
   const ICON_MENU = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>';
-  const ICON_CAJACHICA = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>';
 
   const LOCALES = [
     { id: 'rissione', nombre: 'Sweet Rissione' },
@@ -84,9 +83,7 @@
       ).join('');
       const menu = u.permissions.menuEditor
         ? `<span class="perm-chip perm-chip--menu">${ICON_MENU}Editor de Menú</span>` : '';
-      const cajaChica = u.permissions.cajaChica
-        ? `<span class="perm-chip perm-chip--menu">${ICON_CAJACHICA}Caja Chica</span>` : '';
-      const none = (!u.permissions.locales || u.permissions.locales.length === 0) && !u.permissions.menuEditor && !u.permissions.cajaChica
+      const none = (!u.permissions.locales || u.permissions.locales.length === 0) && !u.permissions.menuEditor
         ? `<span class="perm-chip perm-chip--none">Sin accesos asignados</span>` : '';
 
       return `
@@ -94,7 +91,7 @@
           <div class="user-card__info">
             <div class="user-card__name">${u.nombre}</div>
             <div class="user-card__role">${u.role === 'supervisor' ? 'Supervisor' : 'Local'}</div>
-            <div class="user-card__perms">${locales}${menu}${cajaChica}${none}</div>
+            <div class="user-card__perms">${locales}${menu}${none}</div>
           </div>
           <div class="user-card__actions">
             <button class="btn btn-secondary btn-sm" data-action="edit" data-id="${u.id}">Editar</button>
@@ -112,7 +109,7 @@
   // MODAL CREAR / EDITAR
   // ============================================
   function buildPermChecks(permissions) {
-    const perms = permissions || { locales: [], menuEditor: false, cajaChica: false };
+    const perms = permissions || { locales: [], menuEditor: false };
     const container = document.getElementById('permChecks');
     container.innerHTML = LOCALES.map(l => `
       <label class="perm-check-row">
@@ -123,10 +120,6 @@
       <label class="perm-check-row">
         <input type="checkbox" id="permMenuEditor" ${perms.menuEditor ? 'checked' : ''}>
         ${ICON_MENU}Editor de Menú
-      </label>
-      <label class="perm-check-row">
-        <input type="checkbox" id="permCajaChica" ${perms.cajaChica ? 'checked' : ''}>
-        ${ICON_CAJACHICA}Caja Chica
       </label>
     `;
   }
@@ -154,8 +147,7 @@
   function collectPermissions() {
     const locales = Array.from(document.querySelectorAll('.perm-local:checked')).map(el => el.value);
     const menuEditor = document.getElementById('permMenuEditor').checked;
-    const cajaChica = document.getElementById('permCajaChica').checked;
-    return { locales, menuEditor, cajaChica };
+    return { locales, menuEditor };
   }
 
   async function saveUser() {

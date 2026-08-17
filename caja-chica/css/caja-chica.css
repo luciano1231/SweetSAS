@@ -95,6 +95,48 @@
 }
 .btn-row-delete:hover { color: var(--error); background: var(--error-bg); }
 
+/* --- Buscador de ítem (autocompletar) --- */
+.combobox { position: relative; }
+.combobox__list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+  border-radius: var(--radius-sm);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  z-index: var(--z-dropdown, 100);
+  padding: 6px;
+}
+.combobox__group {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--text-muted);
+  padding: 8px 10px 4px;
+}
+.combobox__option {
+  padding: 9px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+.combobox__option:hover,
+.combobox__option.is-active {
+  background: var(--accent-primary-glow);
+}
+.combobox__empty {
+  padding: 16px 10px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+}
+
 /* --- Formulario de carga rápida --- */
 .quick-add-grid {
   display: grid;

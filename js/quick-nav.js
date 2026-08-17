@@ -34,15 +34,18 @@
     const ICON_HISTORY = svg('<line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line>');
     const ICON_MENU = svg('<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path>');
     const ICON_USERS = svg('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>');
-    const ICON_CAJACHICA = svg('<rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path>');
+    const ICON_CAJACHICA = svg('<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>');
+    const ICON_LIST = svg('<line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>');
 
     const links = [];
     if (role === 'owner') links.push({ href: '/index.html', label: ICON_DASHBOARD + ' Dashboard' });
-    links.push({ href: '/rendicion/index.html', label: ICON_CASH + ' Carga de Rendición' });
-    links.push({ href: '/rendicion/historial.html', label: ICON_HISTORY + ' Historial' });
-    if (session.permissions && session.permissions.cajaChica) {
-      links.push({ href: '/caja-chica/index.html', label: ICON_CAJACHICA + ' Caja Chica' });
-    }
+    // "Locales": el mismo local da acceso a cargar tanto Ingresos (Rendición)
+    // como Egresos (Caja Chica) — se agrupan acá bajo un mismo encabezado.
+    links.push({ group: 'Locales', href: '/rendicion/index.html', label: ICON_CASH + ' Ingresos (Rendición)' });
+    links.push({ group: 'Locales', href: '/caja-chica/index.html', label: ICON_CAJACHICA + ' Egresos (Caja Chica)' });
+    links.push({ href: '/rendicion/historial.html', label: ICON_HISTORY + ' Historial de Rendición' });
+    links.push({ href: '/caja-chica/historial.html', label: ICON_HISTORY + ' Historial de Caja Chica' });
+    links.push({ href: '/caja-chica/items.html', label: ICON_LIST + ' Ítems de Caja Chica' });
     links.push({ href: '/menu-editor.html', label: ICON_MENU + ' Editor de Menú' });
     if (role === 'owner') links.push({ href: '/usuarios.html', label: ICON_USERS + ' Gestión de Usuarios' });
 
@@ -63,9 +66,17 @@
     const menu = document.createElement('div');
     menu.id = 'quickNavMenu';
     menu.style.cssText = 'display:none;position:absolute;bottom:64px;right:0;min-width:230px;background:#151b2e;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:8px;box-shadow:0 16px 48px rgba(0,0,0,0.5);';
-    menu.innerHTML = links.map(l =>
-      `<a href="${l.href}" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:9px;color:#e5e7eb;text-decoration:none;font-size:.86rem;font-weight:500;transition:background .15s;">${l.label}</a>`
-    ).join('');
+    let menuHtml = '';
+    let lastGroup = null;
+    links.forEach(function (l) {
+      if (l.group && l.group !== lastGroup) {
+        menuHtml += `<div style="padding:10px 14px 4px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280;">${l.group}</div>`;
+      }
+      lastGroup = l.group || null;
+      const indent = l.group ? 'padding-left:26px;' : '';
+      menuHtml += `<a href="${l.href}" style="display:flex;align-items:center;gap:10px;padding:11px 14px;${indent}border-radius:9px;color:#e5e7eb;text-decoration:none;font-size:.86rem;font-weight:500;transition:background .15s;">${l.label}</a>`;
+    });
+    menu.innerHTML = menuHtml;
     menu.querySelectorAll('a').forEach(a => {
       a.addEventListener('mouseenter', () => a.style.background = 'rgba(255,255,255,0.07)');
       a.addEventListener('mouseleave', () => a.style.background = 'transparent');
@@ -91,21 +102,21 @@
     document.body.appendChild(root);
   }
 
-  // Botón fijo "Usuarios" en el header (además del menú flotante) — lo
-  // declara cada página como <a id="navUsersBtn" style="display:none;">
-  // y acá solo se revela si corresponde.
-  function updateHeaderUsersButton(session) {
-    const btn = document.getElementById('navUsersBtn');
-    if (!btn) return;
-    if (session.permissions && session.permissions.dashboard) {
-      btn.style.display = '';
-    }
+  // Botones fijos en el header que solo aplican a ciertos roles (ej. el
+  // link a Historial, reservado a dueño/supervisor). Cada página los
+  // declara con style="display:none" y data-role-gate="owner,supervisor";
+  // acá se revelan si el rol de la sesión está en esa lista.
+  function applyRoleGates(session) {
+    document.querySelectorAll('[data-role-gate]').forEach(function (el) {
+      const allowed = el.dataset.roleGate.split(',').map(function (s) { return s.trim(); });
+      if (allowed.indexOf(session.role) !== -1) el.style.display = '';
+    });
   }
 
   function tryMount() {
     if (domReady && pendingSession) {
       mount(pendingSession);
-      updateHeaderUsersButton(pendingSession);
+      applyRoleGates(pendingSession);
     }
   }
 

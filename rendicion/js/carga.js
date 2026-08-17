@@ -32,6 +32,9 @@
   document.getElementById('header-local').textContent = local.nombre;
   document.title = `Carga de Rendición — ${local.nombre}`;
 
+  const cajaChicaBtn = document.getElementById('navCajaChicaBtn');
+  if (cajaChicaBtn) cajaChicaBtn.href = `../caja-chica/carga.html?local=${encodeURIComponent(localId)}`;
+
   // --- State ---
   let billValues = {};   // { '10': 0, '20': 0, ... }
   let paymentValues = {}; // { 'debito': 0, 'credito': 0, ... }

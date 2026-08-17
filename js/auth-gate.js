@@ -9,10 +9,17 @@
 //      desde Gestión de Usuarios.
 //
 // Cada página declara qué necesita ANTES de este <script>:
-//   <script>window.__PAGE_PERMISSION = 'dashboard';</script>   // solo dueño
-//   <script>window.__PAGE_PERMISSION = 'menuEditor';</script>  // editor de menú
-//   <script>window.__PAGE_PERMISSION = 'rendicion';</script>   // al menos 1 local
-//   <script>window.__PAGE_PERMISSION = 'cajaChica';</script>   // permiso explícito + al menos 1 local
+//   <script>window.__PAGE_PERMISSION = 'dashboard';</script>          // solo dueño
+//   <script>window.__PAGE_PERMISSION = 'menuEditor';</script>         // editor de menú
+//   <script>window.__PAGE_PERMISSION = 'rendicion';</script>          // al menos 1 local (cualquier rol)
+//   <script>window.__PAGE_PERMISSION = 'cajaChica';</script>          // al menos 1 local (cualquier rol)
+//   <script>window.__PAGE_PERMISSION = 'rendicionHistorial';</script> // planilla maestra: solo dueño/supervisor
+//   <script>window.__PAGE_PERMISSION = 'cajaChicaHistorial';</script> // planilla maestra: solo dueño/supervisor
+//   <script>window.__PAGE_PERMISSION = 'cajaChicaItems';</script>     // gestión de ítems: solo dueño/supervisor
+// El acceso a un local (permissions.locales) ya alcanza para cargar tanto
+// Rendición como Caja Chica de ese local — no hace falta un permiso aparte
+// por sistema. Lo que sí queda reservado a dueño/supervisor son las
+// planillas maestras (historial) y la gestión del catálogo de ítems.
 // Si el usuario logueado no tiene ese permiso, se lo redirige automáticamente
 // al mejor destino posible para él (sin mostrar la página).
 //
@@ -63,12 +70,17 @@
     sessionStorage.removeItem(PERM_KEY);
   }
 
-  function hasPagePermission(permissions, required) {
+  function hasPagePermission(role, permissions, required) {
     if (!required) return true;
     if (required === 'dashboard') return !!permissions.dashboard;
     if (required === 'menuEditor') return !!permissions.menuEditor;
-    if (required === 'rendicion') return Array.isArray(permissions.locales) && permissions.locales.length > 0;
-    if (required === 'cajaChica') return !!permissions.cajaChica && Array.isArray(permissions.locales) && permissions.locales.length > 0;
+    if (required === 'rendicion' || required === 'cajaChica') {
+      return Array.isArray(permissions.locales) && permissions.locales.length > 0;
+    }
+    // Planillas maestras y gestión del catálogo de ítems: solo dueño y supervisor.
+    if (required === 'rendicionHistorial' || required === 'cajaChicaHistorial' || required === 'cajaChicaItems') {
+      return role === 'owner' || role === 'supervisor';
+    }
     return true;
   }
 
@@ -120,7 +132,7 @@
 
   // Ya había una sesión válida guardada (misma pestaña/ventana)
   if (existing) {
-    if (hasPagePermission(existing.permissions, required)) {
+    if (hasPagePermission(existing.role, existing.permissions, required)) {
       document.documentElement.classList.add('authenticated');
       markReady(existing);
       return;
@@ -161,7 +173,7 @@
           role: 'owner',
           userId: 'owner',
           userName: 'Dueño',
-          permissions: { dashboard: true, menuEditor: true, cajaChica: true, locales: ['rissione', 'hiper', 'changoMas'], userAdmin: true },
+          permissions: { dashboard: true, menuEditor: true, locales: ['rissione', 'hiper', 'changoMas'], userAdmin: true },
         };
       } else {
         try {
@@ -200,7 +212,7 @@
 
       setSession(session);
 
-      if (!hasPagePermission(session.permissions, required)) {
+      if (!hasPagePermission(session.role, session.permissions, required)) {
         const dest = landingFor(session.permissions);
         if (dest) { location.href = dest; return; }
         const errEl = document.getElementById('authError');

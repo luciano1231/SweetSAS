@@ -7,10 +7,22 @@
 
   let permittedLocales = [];
 
-  function init() {
+  async function init() {
     populateFilters();
     bindEvents();
     renderTable();
+    try {
+      const catalogo = await Storage.cargarCatalogo();
+      const clasifSelect = document.getElementById('filter-clasificacion');
+      catalogo.clasificaciones.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        clasifSelect.appendChild(opt);
+      });
+    } catch (err) {
+      Utils.toast('No se pudo cargar la lista de clasificaciones: ' + err.message, 'error');
+    }
   }
 
   function populateFilters() {
@@ -26,14 +38,6 @@
 
     if (localesVisibles.length > 0) localSelect.value = localesVisibles[0].id;
     if (localesVisibles.length === 1) localSelect.disabled = true;
-
-    const clasifSelect = document.getElementById('filter-clasificacion');
-    CONFIG.clasificaciones.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = c;
-      opt.textContent = c;
-      clasifSelect.appendChild(opt);
-    });
 
     const today = new Date();
     const thirtyAgo = new Date(today);

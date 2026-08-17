@@ -113,7 +113,7 @@ function sanitizePermissions(input) {
   const locales = Array.isArray(input?.locales)
     ? input.locales.filter(l => VALID_LOCALES.includes(l))
     : [];
-  return { menuEditor: !!input?.menuEditor, cajaChica: !!input?.cajaChica, locales };
+  return { menuEditor: !!input?.menuEditor, locales };
 }
 
 export async function onRequest(context) {

@@ -32,8 +32,14 @@
   document.getElementById('header-local').textContent = local.nombre;
   document.title = `Caja Chica — ${local.nombre}`;
 
+  const rendicionBtn = document.getElementById('navRendicionBtn');
+  if (rendicionBtn) rendicionBtn.href = `../rendicion/carga.html?local=${encodeURIComponent(localId)}`;
+
   let direction = 'ingreso'; // 'ingreso' | 'egreso'
   let pendientes = [];
+  let catalogItems = [];
+  let catalogClasificaciones = [];
+  let selectedItem = null; // { item, clasificacion } — lo que eligió del buscador
 
   const ICON_TRASH = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
 
@@ -41,28 +47,120 @@
   // INICIALIZACIÓN
   // ============================================
 
-  function init() {
-    populateItems();
+  async function init() {
     setFechaHoy();
     bindEvents();
+    setupCombobox();
     loadPendientes();
+    try {
+      const catalogo = await Storage.cargarCatalogo();
+      catalogItems = catalogo.items;
+      catalogClasificaciones = catalogo.clasificaciones;
+    } catch (err) {
+      Utils.toast('No se pudo cargar el catálogo de ítems: ' + err.message, 'error');
+    }
   }
 
-  function populateItems() {
-    const select = document.getElementById('item');
-    CONFIG.clasificaciones.forEach(clasif => {
-      const items = CONFIG.itemsCajaChica.filter(i => i.clasificacion === clasif);
-      if (items.length === 0) return;
-      const group = document.createElement('optgroup');
-      group.label = clasif;
-      items.forEach(i => {
-        const opt = document.createElement('option');
-        opt.value = i.item;
-        opt.textContent = i.item;
-        opt.dataset.clasificacion = i.clasificacion;
-        group.appendChild(opt);
+  // ============================================
+  // BUSCADOR DE ÍTEM (autocompletar, como un buscador de Google)
+  // ============================================
+
+  function setupCombobox() {
+    const input = document.getElementById('item-search');
+    const list = document.getElementById('item-list');
+    let activeIndex = -1;
+
+    function normalize(s) {
+      return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    function filtered(query) {
+      const q = normalize(query);
+      if (!q) return catalogItems;
+      return catalogItems.filter(i => normalize(i.item).includes(q));
+    }
+
+    function renderList(query) {
+      const items = filtered(query);
+      activeIndex = -1;
+
+      if (items.length === 0) {
+        list.innerHTML = '<div class="combobox__empty">Sin resultados</div>';
+        list.hidden = false;
+        return;
+      }
+
+      let html = '';
+      let lastGroup = null;
+      catalogClasificaciones.forEach(clasif => {
+        const grupo = items.filter(i => i.clasificacion === clasif);
+        if (grupo.length === 0) return;
+        html += `<div class="combobox__group">${clasif}</div>`;
+        grupo.forEach(i => {
+          html += `<div class="combobox__option" data-item="${i.item.replace(/"/g, '&quot;')}" data-clasificacion="${i.clasificacion.replace(/"/g, '&quot;')}">${i.item}</div>`;
+        });
       });
-      select.appendChild(group);
+      list.innerHTML = html;
+      list.hidden = false;
+
+      list.querySelectorAll('.combobox__option').forEach(opt => {
+        opt.addEventListener('mousedown', (e) => {
+          e.preventDefault(); // evita el blur del input antes del click
+          pick(opt.dataset.item, opt.dataset.clasificacion);
+        });
+      });
+    }
+
+    function pick(item, clasificacion) {
+      input.value = item;
+      document.getElementById('item-value').value = item;
+      selectedItem = { item, clasificacion };
+      list.hidden = true;
+
+      if (CONFIG.itemsTipicamenteIngreso.includes(item)) setDirection('ingreso');
+      else setDirection('egreso');
+    }
+
+    function setActive(idx) {
+      const opts = list.querySelectorAll('.combobox__option');
+      opts.forEach(o => o.classList.remove('is-active'));
+      if (idx >= 0 && idx < opts.length) {
+        opts[idx].classList.add('is-active');
+        opts[idx].scrollIntoView({ block: 'nearest' });
+      }
+      activeIndex = idx;
+    }
+
+    input.addEventListener('input', () => {
+      selectedItem = null;
+      document.getElementById('item-value').value = '';
+      renderList(input.value);
+    });
+
+    input.addEventListener('focus', () => renderList(input.value));
+
+    input.addEventListener('keydown', (e) => {
+      const opts = () => list.querySelectorAll('.combobox__option');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (list.hidden) { renderList(input.value); return; }
+        setActive(Math.min(activeIndex + 1, opts().length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActive(Math.max(activeIndex - 1, 0));
+      } else if (e.key === 'Enter') {
+        if (!list.hidden && activeIndex >= 0) {
+          e.preventDefault();
+          const opt = opts()[activeIndex];
+          if (opt) pick(opt.dataset.item, opt.dataset.clasificacion);
+        }
+      } else if (e.key === 'Escape') {
+        list.hidden = true;
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!document.getElementById('item-combobox').contains(e.target)) list.hidden = true;
     });
   }
 
@@ -91,13 +189,6 @@
 
     document.getElementById('btn-ingreso').addEventListener('click', () => setDirection('ingreso'));
     document.getElementById('btn-egreso').addEventListener('click', () => setDirection('egreso'));
-
-    // Al elegir un ítem, sugerir el sentido más probable (el usuario puede cambiarlo igual)
-    document.getElementById('item').addEventListener('change', (e) => {
-      const val = e.target.value;
-      if (CONFIG.itemsTipicamenteIngreso.includes(val)) setDirection('ingreso');
-      else if (val) setDirection('egreso');
-    });
 
     document.getElementById('mov-form').addEventListener('submit', handleSubmit);
     document.getElementById('btn-cerrar').addEventListener('click', handleCerrar);
@@ -214,16 +305,16 @@
     e.preventDefault();
 
     const fecha = document.getElementById('fecha').value;
-    const itemSelect = document.getElementById('item');
-    const item = itemSelect.value;
-    const clasificacion = itemSelect.selectedOptions[0]?.dataset.clasificacion || '';
     const detalle = document.getElementById('detalle').value.trim();
     const monto = Math.max(0, Number(document.getElementById('monto').value) || 0);
 
-    if (!fecha || !item || !monto) {
-      Utils.toast('Completá fecha, ítem y un monto mayor a $0', 'error');
+    if (!fecha || !selectedItem || !monto) {
+      Utils.toast('Completá fecha, ítem (elegilo de la lista) y un monto mayor a $0', 'error');
       return;
     }
+
+    const item = selectedItem.item;
+    const clasificacion = selectedItem.clasificacion;
 
     const mov = {
       local_id: localId,
@@ -252,7 +343,9 @@
   }
 
   function resetForm() {
-    document.getElementById('item').value = '';
+    document.getElementById('item-search').value = '';
+    document.getElementById('item-value').value = '';
+    selectedItem = null;
     document.getElementById('detalle').value = '';
     document.getElementById('monto').value = '';
     setDirection('ingreso');

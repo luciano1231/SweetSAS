@@ -10,107 +10,9 @@ const CONFIG = {
     { id: 'changoMas', nombre: 'Sweet Chango Más' },
   ],
 
-  // Clasificaciones (para filtrar y, más adelante, graficar). El orden acá
-  // define el orden de los <optgroup> en el selector de ítem.
-  clasificaciones: [
-    'MOVIMIENTO INTERNO',
-    'SUELDOS',
-    'INGREDIENTES / INSUMOS',
-    'PROVEEDORES',
-    'SERVICIOS',
-    'MANTENIMIENTO',
-    'TRANSPORTE',
-    'LIMPIEZA',
-    'UTILES DE OFICINA',
-    'IMPUESTO',
-    'GASTOS PERSONALES',
-    'GASTOS EXTRA',
-  ],
-
-  // Catálogo de ítems de gasto/ingreso, con su clasificación — tal cual las
-  // planillas históricas de Caja Chica de cada local (Excel).
-  itemsCajaChica: [
-    { item: 'DEPOSITO A SUB CAJA CHICA', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'Devolucion Saldo de caja chica', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'INGRESO DE CAJAS DIARIAS', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'ENTREGA EFVO CARLOS/PABLO', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'Ingreso a Caja chica Chango Mas Walter', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'Ingreso a Caja chica Chango Mas', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'Pago a personal Sweet Chango Mas', clasificacion: 'SUELDOS' },
-    { item: 'INICIO DE CAJA SEMANAL', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'INGRESO DEVOLUCION SALDO DE SUB CAJA CHICA', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'Pago Asig decreto personal pago', clasificacion: 'SUELDOS' },
-    { item: 'Pago Bono a personal', clasificacion: 'SUELDOS' },
-    { item: 'Pago liquidacion final personal', clasificacion: 'SUELDOS' },
-    { item: 'Pago personal Feriado', clasificacion: 'SUELDOS' },
-    { item: 'Pago personal semana', clasificacion: 'SUELDOS' },
-    { item: 'Pago sueldo personal mes', clasificacion: 'SUELDOS' },
-    { item: 'Articulos de Limpieza', clasificacion: 'LIMPIEZA' },
-    { item: 'Articulos de oficina', clasificacion: 'UTILES DE OFICINA' },
-    { item: 'AADI CAPIF', clasificacion: 'IMPUESTO' },
-    { item: 'Agua botellas', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Agua servicio', clasificacion: 'SERVICIOS' },
-    { item: 'Ajuste empleados sueldo hora', clasificacion: 'SUELDOS' },
-    { item: 'Alimentaria Chaco', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Arreglos - reparaciones - mantenimiento', clasificacion: 'MANTENIMIENTO' },
-    { item: 'Agua Bidones', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'CACIQUE', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Caja Inicial', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'Car Car', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Coca Cola', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Combustible - Nafta', clasificacion: 'TRANSPORTE' },
-    { item: 'Combustible Kangoo', clasificacion: 'TRANSPORTE' },
-    { item: 'COMBUSTIBLE MERCEDES', clasificacion: 'TRANSPORTE' },
-    { item: 'Compra Chango Mas ingredientes', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Compra Chango Mas productos', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Compra libreria papelería', clasificacion: 'UTILES DE OFICINA' },
-    { item: 'Compra medicamentos remedios farmacia', clasificacion: 'GASTOS EXTRA' },
-    { item: 'Compra Verduleria - Fruteria', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Compra verduras frutas', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Compras varias, arreglos mantenimiento', clasificacion: 'MANTENIMIENTO' },
-    { item: 'Detergente', clasificacion: 'LIMPIEZA' },
-    { item: 'El Pibe Distribuidora - Mayorista', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Electricidad - Electricista', clasificacion: 'MANTENIMIENTO' },
-    { item: 'ENTREGA EFVO CUÑADO CARLOS', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'Ferreteria', clasificacion: 'MANTENIMIENTO' },
-    { item: 'FRIAR', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Fruteria', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Fumigacion - Control', clasificacion: 'SERVICIOS' },
-    { item: 'Hamburguesas Caseras Swift', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Jugo de naranja', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'La virginia', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Leche', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Limpieza', clasificacion: 'LIMPIEZA' },
-    { item: 'Motomandado - envios - flete', clasificacion: 'TRANSPORTE' },
-    { item: 'Naranjas', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'OSECAC', clasificacion: 'SERVICIOS' },
-    { item: 'Pago Tarjeta Cencosud (Carlos)', clasificacion: 'GASTOS PERSONALES' },
-    { item: 'Pan de miga', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Pan superpancho', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Piramide Distribuidora - Mayorista', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Plomero tecnico electricista gasista', clasificacion: 'MANTENIMIENTO' },
-    { item: 'Quesos', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Recor SRL', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Record Levadura', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Remis', clasificacion: 'TRANSPORTE' },
-    { item: 'Retiro Efectivo Cristian Rissione', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'SMP mayorista', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Swift Hamburguesas Caseras', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Tomate', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Tregar Leche', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Verduleria', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Vital Mayorista distribuidora', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Yaguar Mayorista distribuidora', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Pago de vacaciones personal', clasificacion: 'SUELDOS' },
-    { item: 'Polo Sur', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'Compra Hiper Libertad', clasificacion: 'INGREDIENTES / INSUMOS' },
-    { item: 'REINGRESO (CAJA CHICA)', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'INGRESO A CAJA CHICA', clasificacion: 'MOVIMIENTO INTERNO' },
-    { item: 'Adelanto sueldo', clasificacion: 'SUELDOS' },
-    { item: 'Horas extras', clasificacion: 'SUELDOS' },
-    { item: 'Manfrey', clasificacion: 'PROVEEDORES' },
-    { item: 'PAGO PERSONAL CHANGO MAS', clasificacion: 'SUELDOS' },
-  ],
+  // El catálogo de clasificaciones/ítems ya NO está fijo acá — vive en KV y
+  // se administra desde caja-chica/items.html (dueño/supervisor). Ver
+  // Storage.cargarCatalogo() más abajo.
 
   // Ítems que casi siempre son un ingreso (para preseleccionar el sentido
   // del movimiento en el formulario — el usuario igual puede cambiarlo).
@@ -167,5 +69,67 @@ const Storage = {
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo cerrar la caja.');
     return data;
+  },
+
+  // ── Catálogo de ítems / clasificaciones (editable desde items.html) ──
+  async cargarCatalogo() {
+    const res = await fetch('/api/caja-chica-items');
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo cargar el catálogo de ítems.');
+    return { items: data.items, clasificaciones: data.clasificaciones };
+  },
+
+  async crearItem(item, clasificacion) {
+    const res = await fetch('/api/caja-chica-items?action=item', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ item, clasificacion }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo crear el ítem.');
+    return data.item;
+  },
+
+  async editarItem(id, cambios) {
+    const res = await fetch(`/api/caja-chica-items?action=item&id=${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cambios),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo editar el ítem.');
+    return data.item;
+  },
+
+  async eliminarItem(id) {
+    const res = await fetch(`/api/caja-chica-items?action=item&id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo eliminar el ítem.');
+  },
+
+  async crearClasificacion(nombre) {
+    const res = await fetch('/api/caja-chica-items?action=clasificacion', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo crear la clasificación.');
+  },
+
+  async renombrarClasificacion(nombreViejo, nombreNuevo) {
+    const res = await fetch(`/api/caja-chica-items?action=clasificacion&nombre=${encodeURIComponent(nombreViejo)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre: nombreNuevo }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo renombrar la clasificación.');
+  },
+
+  async eliminarClasificacion(nombre) {
+    const res = await fetch(`/api/caja-chica-items?action=clasificacion&nombre=${encodeURIComponent(nombre)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo eliminar la clasificación.');
   },
 };
