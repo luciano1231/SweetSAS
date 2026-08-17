@@ -87,8 +87,22 @@
     document.body.appendChild(root);
   }
 
+  // Botón fijo "Usuarios" en el header (además del menú flotante) — lo
+  // declara cada página como <a id="navUsersBtn" style="display:none;">
+  // y acá solo se revela si corresponde.
+  function updateHeaderUsersButton(session) {
+    const btn = document.getElementById('navUsersBtn');
+    if (!btn) return;
+    if (session.permissions && session.permissions.dashboard) {
+      btn.style.display = '';
+    }
+  }
+
   function tryMount() {
-    if (domReady && pendingSession) mount(pendingSession);
+    if (domReady && pendingSession) {
+      mount(pendingSession);
+      updateHeaderUsersButton(pendingSession);
+    }
   }
 
   if (window.sweetAuth && window.sweetAuth.onReady) {
