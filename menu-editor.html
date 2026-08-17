@@ -7,6 +7,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Editor de Menú — Sweet & Pop Express</title>
+  <link rel="icon" href="/assets/logo-64.png">
   <meta name="description" content="Editor visual de menú para Sweet & Pop Express">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -445,7 +446,7 @@
       <span id="syncText">Conectando...</span>
     </div>
     <a href="index.html" class="btn-back">← Dashboard</a>
-    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Descargar PDF</button>
+    <button class="btn-print" onclick="window.print()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>Imprimir / Descargar PDF</button>
   </div>
 </header>
 
@@ -759,7 +760,7 @@ async function loadData(store) {
     if (cloud !== null) {
       // Datos encontrados en KV
       saveToCache(store, cloud);  // actualizar caché local
-      setSyncStatus('ok', '☁️ Sincronizado');
+      setSyncStatus('ok', 'Sincronizado');
       return cloud;
     } else {
       // Primera vez: no hay datos en KV — usar caché local o defaults
@@ -768,16 +769,16 @@ async function loadData(store) {
         // Subir la caché local a KV (migración automática)
         setSyncStatus('saving', 'Migrando a la nube...');
         await saveToCloud(store, cached);
-        setSyncStatus('ok', '☁️ Sincronizado');
+        setSyncStatus('ok', 'Sincronizado');
         return cached;
       }
-      setSyncStatus('ok', '☁️ Datos nuevos');
+      setSyncStatus('ok', 'Datos nuevos');
       return JSON.parse(JSON.stringify(defaultData));
     }
   } else {
     // Sin red — usar caché local
     const cached = loadFromCache(store);
-    setSyncStatus('offline', '⚠️ Sin conexión — caché local');
+    setSyncStatus('offline', 'Sin conexión — caché local');
     return cached || JSON.parse(JSON.stringify(defaultData));
   }
 }
@@ -786,18 +787,18 @@ async function loadData(store) {
 let _saveTimer = null;
 function saveData() {
   saveToCache(currentStore, data);  // guardar inmediatamente en caché
-  setSyncStatus('saving', '💾 Guardando...');
+  setSyncStatus('saving', 'Guardando...');
 
   // Debounce: esperar 800ms tras el último cambio antes de enviar a KV
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(async () => {
     const ok = await saveToCloud(currentStore, data);
     if (ok) {
-      setSyncStatus('ok', '✅ Guardado en la nube');
+      setSyncStatus('ok', 'Guardado en la nube');
       // Volver a "Sincronizado" luego de 2 segundos
-      setTimeout(() => setSyncStatus('ok', '☁️ Sincronizado'), 2000);
+      setTimeout(() => setSyncStatus('ok', 'Sincronizado'), 2000);
     } else {
-      setSyncStatus('error', '⚠️ Error al guardar — guardado local');
+      setSyncStatus('error', 'Error al guardar — guardado local');
     }
   }, 800);
 }
@@ -887,7 +888,7 @@ function buildEditor() {
           <div class="cat-color-dot" style="background:${cat.color}"></div>
           <input class="cat-name-input" value="${esc(cat.name)}" placeholder="Nombre categoría"
             oninput="updateCatName(${ci},this.value)">
-          <button class="btn-del-cat" onclick="deleteCategory(${ci})" title="Eliminar">🗑</button>
+          <button class="btn-del-cat" onclick="deleteCategory(${ci})" title="Eliminar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
         </div>
         <div class="cat-header-row2">
           ${colSelector}

@@ -4,6 +4,8 @@
 (function () {
   'use strict';
 
+  const ICON_MENU = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:3px;"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>';
+
   const LOCALES = [
     { id: 'rissione', nombre: 'Sweet Rissione' },
     { id: 'hiper', nombre: 'Sweet Hiper' },
@@ -80,7 +82,7 @@
         `<span class="perm-chip">${localName(id)}</span>`
       ).join('');
       const menu = u.permissions.menuEditor
-        ? `<span class="perm-chip perm-chip--menu">📋 Editor de Menú</span>` : '';
+        ? `<span class="perm-chip perm-chip--menu">${ICON_MENU}Editor de Menú</span>` : '';
       const none = (!u.permissions.locales || u.permissions.locales.length === 0) && !u.permissions.menuEditor
         ? `<span class="perm-chip perm-chip--none">Sin accesos asignados</span>` : '';
 
@@ -117,7 +119,7 @@
     `).join('') + `
       <label class="perm-check-row">
         <input type="checkbox" id="permMenuEditor" ${perms.menuEditor ? 'checked' : ''}>
-        📋 Editor de Menú
+        ${ICON_MENU}Editor de Menú
       </label>
     `;
   }

@@ -1,11 +1,16 @@
 /* Sweet SAS Dashboard JS — Rebuilt */
 const MONTHS_ES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+const ICON_STORE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:2px;"><path d="m2 7 1.5-4.5A2 2 0 0 1 5.4 1h13.2a2 2 0 0 1 1.9 1.5L22 7"/><path d="M4 7h16v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M9 21v-5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v5"/></svg>';
+const ICON_CART = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:2px;"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>';
+const ICON_TRUCK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:2px;"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>';
+const ICON_PACKAGE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:2px;"><path d="M16.5 9.4 7.55 4.24"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>';
+
 const INCOME_COLS = [
-  { key: 'panaderia', label: 'Ingreso Panadería', color: '#3b82f6', icon: '🍞' },
-  { key: 'sweetHiper', label: 'Ingreso Sweet Hiper', color: '#8b5cf6', icon: '🛒' },
-  { key: 'chango', label: 'Ingreso Chango', color: '#10b981', icon: '🏪' },
-  { key: 'mayoristasExt', label: 'Ingreso Mayoristas Ext.', color: '#f59e0b', icon: '📦' },
-  { key: 'mayoristasInt', label: 'Ingreso Mayoristas Int.', color: '#06b6d4', icon: '📋' }
+  { key: 'panaderia', label: 'Ingreso Panadería', color: '#3b82f6', icon: ICON_STORE },
+  { key: 'sweetHiper', label: 'Ingreso Sweet Hiper', color: '#8b5cf6', icon: ICON_CART },
+  { key: 'chango', label: 'Ingreso Chango', color: '#10b981', icon: ICON_STORE },
+  { key: 'mayoristasExt', label: 'Ingreso Mayoristas Ext.', color: '#f59e0b', icon: ICON_TRUCK },
+  { key: 'mayoristasInt', label: 'Ingreso Mayoristas Int.', color: '#06b6d4', icon: ICON_PACKAGE }
 ];
 const EXPENSE_COLS = [
   { key: 'cajaChicaPan', label: 'Caja Chica Panadería', color: '#ef4444' },

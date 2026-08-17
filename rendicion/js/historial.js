@@ -95,7 +95,7 @@
 
   async function renderTable() {
     const wrapper = document.getElementById('table-wrapper');
-    wrapper.innerHTML = '<div class="empty-state"><span class="empty-state__icon">⏳</span><p class="empty-state__text">Cargando...</p></div>';
+    wrapper.innerHTML = '<div class="empty-state"><span class="empty-state__icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><p class="empty-state__text">Cargando...</p></div>';
 
     let data;
     try {
@@ -103,7 +103,7 @@
     } catch (err) {
       wrapper.innerHTML = `
         <div class="empty-state">
-          <span class="empty-state__icon">⚠️</span>
+          <span class="empty-state__icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></span>
           <h3 class="empty-state__title">No se pudo cargar el historial</h3>
           <p class="empty-state__text">${err.message}</p>
         </div>
@@ -115,7 +115,7 @@
     if (data.length === 0) {
       wrapper.innerHTML = `
         <div class="empty-state">
-          <span class="empty-state__icon">📭</span>
+          <span class="empty-state__icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"></path></svg></span>
           <h3 class="empty-state__title">No hay rendiciones</h3>
           <p class="empty-state__text">No se encontraron rendiciones con los filtros seleccionados</p>
         </div>
@@ -169,7 +169,7 @@
           <td class="cell--currency" style="font-weight:600;">${Utils.formatCurrency(r.total_real)}</td>
           <td class="cell--currency">${Utils.formatCurrency(r.registrado_sistema)}</td>
           <td class="cell--currency ${diffClass}">${Utils.formatCurrency(r.diferencia)}</td>
-          <td title="${r.observaciones || ''}">${r.observaciones ? '📝' : ''}</td>
+          <td title="${r.observaciones || ''}">${r.observaciones ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>' : ''}</td>
         </tr>
       `;
     });

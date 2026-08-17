@@ -28,12 +28,19 @@
     if (role !== 'owner' && role !== 'supervisor') return null;
 
     const here = normalizePath(location.pathname);
+    const svg = (inner) => `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:-3px;margin-right:9px;">${inner}</svg>`;
+    const ICON_DASHBOARD = svg('<rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect>');
+    const ICON_CASH = svg('<rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path>');
+    const ICON_HISTORY = svg('<line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line>');
+    const ICON_MENU = svg('<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path>');
+    const ICON_USERS = svg('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>');
+
     const links = [];
-    if (role === 'owner') links.push({ href: '/index.html', label: '📊 Dashboard' });
-    links.push({ href: '/rendicion/index.html', label: '💵 Carga de Rendición' });
-    links.push({ href: '/rendicion/historial.html', label: '📋 Historial' });
-    links.push({ href: '/menu-editor.html', label: '🍽️ Editor de Menú' });
-    if (role === 'owner') links.push({ href: '/usuarios.html', label: '👥 Gestión de Usuarios' });
+    if (role === 'owner') links.push({ href: '/index.html', label: ICON_DASHBOARD + ' Dashboard' });
+    links.push({ href: '/rendicion/index.html', label: ICON_CASH + ' Carga de Rendición' });
+    links.push({ href: '/rendicion/historial.html', label: ICON_HISTORY + ' Historial' });
+    links.push({ href: '/menu-editor.html', label: ICON_MENU + ' Editor de Menú' });
+    if (role === 'owner') links.push({ href: '/usuarios.html', label: ICON_USERS + ' Gestión de Usuarios' });
 
     // No listar la página en la que ya estamos
     return links.filter(l => normalizePath(l.href) !== here);
@@ -66,7 +73,7 @@
     btn.setAttribute('aria-label', 'Accesos rápidos');
     btn.title = 'Accesos rápidos';
     btn.style.cssText = 'width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,#1d8a63,#0e4538);color:white;font-size:1.35rem;box-shadow:0 8px 24px rgba(29,138,99,0.45);display:flex;align-items:center;justify-content:center;transition:transform .2s;';
-    btn.textContent = '☰';
+    btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
     btn.addEventListener('mouseenter', () => btn.style.transform = 'scale(1.08)');
     btn.addEventListener('mouseleave', () => btn.style.transform = 'scale(1)');
     btn.addEventListener('click', function (e) {
