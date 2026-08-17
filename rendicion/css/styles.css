@@ -276,11 +276,16 @@ img {
   flex-shrink: 0;
 }
 
-.nav-link--icon {
+.nav-link.nav-link--icon {
   padding: var(--space-sm);
   width: 40px;
   height: 40px;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+.nav-link.nav-link--icon svg {
+  flex-shrink: 0;
 }
 
 /* --- Menú "hamburguesa" del header: agrupa los nav-link secundarios --- */
