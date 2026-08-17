@@ -120,6 +120,51 @@
     }
   }
 
+  // Colapsa la fila de nav-link del header (Dashboard, Locales, Historial,
+  // etc.) dentro de un botón "hamburguesa", dejando el toggle de tema
+  // suelto y compacto. Es puro reordenamiento de DOM — no depende de la
+  // sesión, así que corre apenas el header existe. Los nav-link con
+  // data-role-gate siguen ocultos/visibles igual que antes (ver
+  // applyRoleGates), solo cambia dónde viven.
+  function setupHeaderHamburger() {
+    const nav = document.querySelector('.app-header__nav');
+    if (!nav || nav.dataset.hamburgerReady) return;
+    nav.dataset.hamburgerReady = '1';
+
+    const themeBtn = document.getElementById('theme-toggle');
+    const resto = Array.from(nav.children).filter(function (el) { return el !== themeBtn; });
+    if (resto.length === 0) return;
+
+    if (themeBtn) themeBtn.classList.add('nav-link--icon');
+
+    const panel = document.createElement('div');
+    panel.className = 'header-menu__panel';
+    panel.hidden = true;
+    resto.forEach(function (el) { panel.appendChild(el); });
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'header-menu__toggle';
+    toggle.setAttribute('aria-label', 'Más opciones');
+    toggle.title = 'Más opciones';
+    toggle.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
+    toggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      panel.hidden = !panel.hidden;
+      toggle.classList.toggle('is-active', !panel.hidden);
+    });
+    document.addEventListener('click', function () {
+      panel.hidden = true;
+      toggle.classList.remove('is-active');
+    });
+
+    const wrap = document.createElement('div');
+    wrap.className = 'header-menu';
+    wrap.appendChild(toggle);
+    wrap.appendChild(panel);
+    nav.appendChild(wrap);
+  }
+
   if (window.sweetAuth && window.sweetAuth.onReady) {
     window.sweetAuth.onReady(function (session) {
       pendingSession = session;
@@ -128,9 +173,10 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { domReady = true; tryMount(); });
+    document.addEventListener('DOMContentLoaded', function () { domReady = true; setupHeaderHamburger(); tryMount(); });
   } else {
     domReady = true;
+    setupHeaderHamburger();
     tryMount();
   }
 })();

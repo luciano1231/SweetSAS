@@ -224,12 +224,16 @@ img {
   justify-content: space-between;
   margin-bottom: var(--space-2xl);
   gap: var(--space-md);
+  position: relative;
+  z-index: 20; /* que el menú hamburguesa quede siempre por encima de las cards (backdrop-filter) */
 }
 
 .app-header__brand {
   display: flex;
   align-items: center;
   gap: var(--space-md);
+  flex: 1;
+  min-width: 0;
 }
 
 .app-header__logo {
@@ -267,7 +271,69 @@ img {
 
 .app-header__nav {
   display: flex;
+  align-items: center;
   gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
+.nav-link--icon {
+  padding: var(--space-sm);
+  width: 40px;
+  height: 40px;
+  justify-content: center;
+}
+
+/* --- Menú "hamburguesa" del header: agrupa los nav-link secundarios --- */
+.header-menu {
+  position: relative;
+}
+
+.header-menu__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.header-menu__toggle:hover,
+.header-menu__toggle.is-active {
+  color: var(--text-primary);
+  background: rgba(29, 138, 99, 0.1);
+  border-color: rgba(29, 138, 99, 0.3);
+}
+
+.header-menu__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 230px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+  padding: 8px;
+  z-index: var(--z-dropdown);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.header-menu__panel[hidden] {
+  display: none;
+}
+
+.header-menu__panel .nav-link {
+  width: 100%;
+  box-sizing: border-box;
+  justify-content: flex-start;
 }
 
 .nav-link {

@@ -20,7 +20,9 @@
   function updateToggleUI(theme) {
     const btn = document.getElementById('theme-toggle');
     if (!btn) return;
-    btn.innerHTML = (theme === 'light' ? ICON_MOON : ICON_SUN) + (theme === 'light' ? ' Oscuro' : ' Claro');
+    // Solo el ícono (sin texto) — el botón queda compacto en el header,
+    // que ahora agrupa el resto de los accesos en el menú hamburguesa.
+    btn.innerHTML = theme === 'light' ? ICON_MOON : ICON_SUN;
     btn.title = theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
   }
 
