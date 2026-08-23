@@ -125,6 +125,7 @@ export async function onRequest(context) {
 
   const nombreBanco = banco === 'GALICIA' ? 'Banco Galicia' : 'Mercado Pago';
   const ahora = new Date().toISOString();
+  const archivoId = crypto.randomUUID(); // identifica esta carga puntual, para poder deshacerla entera
   const stmts = [];
   const categoriasNuevas = new Set();
   let insertadas = 0;
@@ -141,21 +142,22 @@ export async function onRequest(context) {
 
     stmts.push(env.RENDICIONES_DB.prepare(
       `INSERT INTO obligaciones_movimientos
-        (id, fecha, obligacion, de_quien_la_deuda, origen_del_dinero, monto, observacion, banco, archivo_origen, created_at)
-       VALUES (?, ?, ?, '', '', ?, ?, ?, ?, ?)`
+        (id, fecha, obligacion, de_quien_la_deuda, origen_del_dinero, monto, observacion, banco, archivo_origen, archivo_id, created_at)
+       VALUES (?, ?, ?, '', '', ?, ?, ?, ?, ?, ?)`
     ).bind(
       crypto.randomUUID(), fechaISO(fila.fecha), fila.categoria,
-      fila.monto, fila.observacion, nombreBanco, archivo.name, ahora
+      fila.monto, fila.observacion, nombreBanco, archivo.name, archivoId, ahora
     ));
     insertadas++;
   });
 
   // Registrar el archivo como procesado (aunque haya 0 filas nuevas, para
-  // que no se pueda volver a subir por error)
+  // que no se pueda volver a subir por error). Este mismo id es el que
+  // permite deshacer la carga completa después.
   stmts.push(env.RENDICIONES_DB.prepare(
     `INSERT INTO obligaciones_archivos (id, fingerprint, nombre_archivo, banco, filas_insertadas, created_at)
      VALUES (?, ?, ?, ?, ?, ?)`
-  ).bind(crypto.randomUUID(), fingerprintArchivo, archivo.name, nombreBanco, insertadas, ahora));
+  ).bind(archivoId, fingerprintArchivo, archivo.name, nombreBanco, insertadas, ahora));
 
   if (stmts.length > 0) {
     await env.RENDICIONES_DB.batch(stmts);

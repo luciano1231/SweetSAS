@@ -217,6 +217,24 @@
   // ============================================
   // SUBIR RESUMEN
   // ============================================
+
+  // El botón cambia de color y de texto según el banco elegido, para que
+  // sea visualmente obvio qué se va a procesar y minimizar el error de
+  // subir un resumen con el banco equivocado seleccionado.
+  const COLOR_GALICIA = { fondo: 'linear-gradient(135deg, #ff8a00, #e85d04)', sombra: '0 8px 24px rgba(232,93,4,0.35)' };
+  const COLOR_MP = { fondo: 'linear-gradient(135deg, #00c2ff, #0089c7)', sombra: '0 8px 24px rgba(0,137,199,0.35)' };
+
+  function actualizarBotonSegunBanco() {
+    const banco = document.getElementById('banco').value;
+    const btn = document.getElementById('btn-subir');
+    const label = document.getElementById('btn-subir-label');
+    const colores = banco === 'GALICIA' ? COLOR_GALICIA : COLOR_MP;
+
+    btn.style.background = colores.fondo;
+    btn.style.boxShadow = colores.sombra;
+    label.textContent = banco === 'GALICIA' ? 'Procesar Galicia' : 'Procesar Mercado Pago';
+  }
+
   async function handleUpload(e) {
     e.preventDefault();
     const banco = document.getElementById('banco').value;
@@ -230,9 +248,10 @@
     form.append('archivo', archivo);
 
     const btn = document.getElementById('btn-subir');
+    const label = document.getElementById('btn-subir-label');
+    const textoOriginal = label.textContent;
     btn.disabled = true;
-    const textoOriginal = btn.innerHTML;
-    btn.innerHTML = 'Procesando...';
+    label.textContent = 'Procesando...';
 
     try {
       const res = await fetch('/api/obligaciones-upload', { method: 'POST', body: form });
@@ -247,11 +266,79 @@
       archivoInput.value = '';
       await cargarObligacionesConocidas();
       await cargarMovimientos();
+      await cargarHistorialCargas();
     } catch (err) {
       Utils.toast(err.message, 'error', 7000);
     } finally {
       btn.disabled = false;
-      btn.innerHTML = textoOriginal;
+      label.textContent = textoOriginal;
+    }
+  }
+
+  // ============================================
+  // HISTORIAL DE CARGAS (deshacer)
+  // ============================================
+  const ICON_UNDO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>';
+
+  async function cargarHistorialCargas() {
+    try {
+      const res = await fetch('/api/obligaciones-archivos');
+      const data = await res.json();
+      if (!res.ok || !data.ok) return;
+      renderHistorialCargas(data.archivos);
+    } catch (e) { /* no crítico */ }
+  }
+
+  function renderHistorialCargas(archivos) {
+    const card = document.getElementById('historial-cargas-card');
+    const list = document.getElementById('historial-cargas-list');
+
+    if (archivos.length === 0) {
+      card.style.display = 'none';
+      return;
+    }
+    card.style.display = '';
+
+    list.innerHTML = archivos.map(a => {
+      const esGalicia = a.banco === 'Banco Galicia';
+      const fecha = new Date(a.created_at).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="carga-row" data-id="${a.id}">
+          <div class="carga-row__info">
+            <span class="carga-row__banco ${esGalicia ? 'carga-row__banco--galicia' : 'carga-row__banco--mp'}">${a.banco}</span>
+            <span class="carga-row__nombre">${a.nombre_archivo}</span>
+            <span class="carga-row__meta">${a.filas_insertadas} movimiento${a.filas_insertadas !== 1 ? 's' : ''} · ${fecha}</span>
+          </div>
+          <button type="button" class="btn-deshacer" data-id="${a.id}" data-nombre="${a.nombre_archivo.replace(/"/g, '&quot;')}" data-filas="${a.filas_insertadas}">
+            ${ICON_UNDO} Deshacer
+          </button>
+        </div>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.btn-deshacer').forEach(btn => {
+      btn.addEventListener('click', () => deshacerCarga(btn.dataset.id, btn.dataset.nombre, btn.dataset.filas));
+    });
+  }
+
+  async function deshacerCarga(id, nombre, filas) {
+    const confirmado = await Utils.confirm(
+      '¿Deshacer esta carga?',
+      `Se van a eliminar los ${filas} movimiento${filas !== '1' ? 's' : ''} que vinieron de "${nombre}", y vas a poder volver a subir ese archivo. Esta acción no se puede deshacer.`,
+      'Deshacer'
+    );
+    if (!confirmado) return;
+
+    try {
+      const res = await fetch(`/api/obligaciones-archivos?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo deshacer la carga.');
+      Utils.toast(`✓ Carga deshecha: se eliminaron ${data.filasEliminadas} movimiento${data.filasEliminadas !== 1 ? 's' : ''}`, 'success');
+      await cargarMovimientos();
+      await cargarHistorialCargas();
+      await cargarObligacionesConocidas();
+    } catch (err) {
+      Utils.toast('Error: ' + err.message, 'error');
     }
   }
 
@@ -261,14 +348,17 @@
   document.addEventListener('DOMContentLoaded', function () {
     window.sweetAuth.onReady(function () {
       document.getElementById('upload-form').addEventListener('submit', handleUpload);
+      document.getElementById('banco').addEventListener('change', actualizarBotonSegunBanco);
       ['filter-desde', 'filter-hasta', 'filter-banco'].forEach(id => {
         document.getElementById(id).addEventListener('change', cargarMovimientos);
       });
       document.getElementById('filter-sinclasificar').addEventListener('change', cargarMovimientos);
       document.getElementById('filter-texto').addEventListener('input', Utils.debounce(cargarMovimientos, 300));
 
+      actualizarBotonSegunBanco();
       cargarObligacionesConocidas();
       cargarMovimientos();
+      cargarHistorialCargas();
     });
   });
 })();

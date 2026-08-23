@@ -15,6 +15,7 @@ import { onRequest as cajaChicaItemsHandler } from './functions/api/caja-chica-i
 import { onRequest as obligacionesHandler } from './functions/api/obligaciones.js';
 import { onRequest as obligacionesUploadHandler } from './functions/api/obligaciones-upload.js';
 import { onRequest as obligacionesReferenciasHandler } from './functions/api/obligaciones-referencias.js';
+import { onRequest as obligacionesArchivosHandler } from './functions/api/obligaciones-archivos.js';
 import { onRequest as dataHandler } from './functions/data.js';
 
 export default {
@@ -29,6 +30,7 @@ export default {
     if (url.pathname === '/api/obligaciones') return obligacionesHandler({ request, env, ctx });
     if (url.pathname === '/api/obligaciones-upload') return obligacionesUploadHandler({ request, env, ctx });
     if (url.pathname === '/api/obligaciones-referencias') return obligacionesReferenciasHandler({ request, env, ctx });
+    if (url.pathname === '/api/obligaciones-archivos') return obligacionesArchivosHandler({ request, env, ctx });
     if (url.pathname === '/data') return dataHandler({ request, env, ctx });
 
     // Cualquier otra ruta: archivo estático (html, css, js, imágenes, etc.)

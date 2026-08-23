@@ -81,12 +81,14 @@ CREATE TABLE IF NOT EXISTS obligaciones_movimientos (
   observacion       TEXT,
   banco             TEXT NOT NULL,
   archivo_origen    TEXT,
+  archivo_id        TEXT,
   created_at        TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_obligaciones_fecha ON obligaciones_movimientos(fecha);
 CREATE INDEX IF NOT EXISTS idx_obligaciones_obligacion ON obligaciones_movimientos(obligacion);
 CREATE INDEX IF NOT EXISTS idx_obligaciones_banco ON obligaciones_movimientos(banco);
+CREATE INDEX IF NOT EXISTS idx_obligaciones_archivo_id ON obligaciones_movimientos(archivo_id);
 
 -- Reglas curadas a mano: "dato a buscar" (palabra clave) -> Obligación
 CREATE TABLE IF NOT EXISTS obligaciones_referencias_banco (
