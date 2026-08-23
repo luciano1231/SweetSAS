@@ -1,6 +1,7 @@
 {
   "name": "sweetsas",
   "compatibility_date": "2026-08-15",
+  "compatibility_flags": ["nodejs_compat"],
   "main": "worker.js",
   "assets": {
     "directory": "./",

@@ -16,6 +16,7 @@
 //   <script>window.__PAGE_PERMISSION = 'rendicionHistorial';</script> // planilla maestra: solo dueño/supervisor
 //   <script>window.__PAGE_PERMISSION = 'cajaChicaHistorial';</script> // planilla maestra: solo dueño/supervisor
 //   <script>window.__PAGE_PERMISSION = 'cajaChicaItems';</script>     // gestión de ítems: solo dueño/supervisor
+//   <script>window.__PAGE_PERMISSION = 'obligaciones';</script>       // resúmenes bancarios: solo dueño/supervisor
 // El acceso a un local (permissions.locales) ya alcanza para cargar tanto
 // Rendición como Caja Chica de ese local — no hace falta un permiso aparte
 // por sistema. Lo que sí queda reservado a dueño/supervisor son las
@@ -78,7 +79,7 @@
       return Array.isArray(permissions.locales) && permissions.locales.length > 0;
     }
     // Planillas maestras y gestión del catálogo de ítems: solo dueño y supervisor.
-    if (required === 'rendicionHistorial' || required === 'cajaChicaHistorial' || required === 'cajaChicaItems') {
+    if (required === 'rendicionHistorial' || required === 'cajaChicaHistorial' || required === 'cajaChicaItems' || required === 'obligaciones') {
       return role === 'owner' || role === 'supervisor';
     }
     return true;

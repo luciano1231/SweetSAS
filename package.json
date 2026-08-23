@@ -1,0 +1,9 @@
+{
+  "name": "sweetsas",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sweet SAS — sistema de gestión (Cloudflare Worker)",
+  "dependencies": {
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  }
+}

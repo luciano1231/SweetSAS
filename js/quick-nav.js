@@ -36,6 +36,7 @@
     const ICON_USERS = svg('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>');
     const ICON_CAJACHICA = svg('<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>');
     const ICON_LIST = svg('<line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>');
+    const ICON_BANK = svg('<line x1="3" y1="21" x2="21" y2="21"></line><line x1="5" y1="21" x2="5" y2="10"></line><line x1="19" y1="21" x2="19" y2="10"></line><polygon points="12 3 22 9 2 9"></polygon>');
 
     const links = [];
     if (role === 'owner') links.push({ href: '/index.html', label: ICON_DASHBOARD + ' Dashboard' });
@@ -46,6 +47,7 @@
     links.push({ href: '/rendicion/historial.html', label: ICON_HISTORY + ' Historial de Rendición' });
     links.push({ href: '/caja-chica/historial.html', label: ICON_HISTORY + ' Historial de Caja Chica' });
     links.push({ href: '/caja-chica/items.html', label: ICON_LIST + ' Ítems de Caja Chica' });
+    links.push({ href: '/obligaciones/index.html', label: ICON_BANK + ' Obligaciones' });
     links.push({ href: '/menu-editor.html', label: ICON_MENU + ' Editor de Menú' });
     if (role === 'owner') links.push({ href: '/usuarios.html', label: ICON_USERS + ' Gestión de Usuarios' });
 

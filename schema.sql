@@ -65,3 +65,57 @@ CREATE TABLE IF NOT EXISTS caja_chica_movimientos (
 CREATE INDEX IF NOT EXISTS idx_cajachica_local ON caja_chica_movimientos(local_id);
 CREATE INDEX IF NOT EXISTS idx_cajachica_estado ON caja_chica_movimientos(local_id, estado);
 CREATE INDEX IF NOT EXISTS idx_cajachica_fecha ON caja_chica_movimientos(fecha);
+
+-- ============================================
+-- OBLIGACIONES (resúmenes bancarios / dinero digital)
+-- Migrado del clasificador de Google Apps Script. Ver
+-- functions/api/obligaciones*.js.
+-- ============================================
+CREATE TABLE IF NOT EXISTS obligaciones_movimientos (
+  id                TEXT PRIMARY KEY,
+  fecha             TEXT NOT NULL,
+  obligacion        TEXT NOT NULL,
+  de_quien_la_deuda TEXT,
+  origen_del_dinero TEXT,
+  monto             REAL DEFAULT 0,
+  observacion       TEXT,
+  banco             TEXT NOT NULL,
+  archivo_origen    TEXT,
+  created_at        TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_obligaciones_fecha ON obligaciones_movimientos(fecha);
+CREATE INDEX IF NOT EXISTS idx_obligaciones_obligacion ON obligaciones_movimientos(obligacion);
+CREATE INDEX IF NOT EXISTS idx_obligaciones_banco ON obligaciones_movimientos(banco);
+
+-- Reglas curadas a mano: "dato a buscar" (palabra clave) -> Obligación
+CREATE TABLE IF NOT EXISTS obligaciones_referencias_banco (
+  id           TEXT PRIMARY KEY,
+  dato_buscar  TEXT NOT NULL UNIQUE,
+  obligacion   TEXT NOT NULL
+);
+
+-- Clasificación general para resúmenes visuales: Obligación -> Clasificación
+CREATE TABLE IF NOT EXISTS obligaciones_referencias_generales (
+  id            TEXT PRIMARY KEY,
+  obligacion    TEXT NOT NULL UNIQUE,
+  clasificacion TEXT
+);
+
+-- Memoria de aprendizaje: observación exacta -> Obligación asignada a mano
+CREATE TABLE IF NOT EXISTS obligaciones_aprendizaje (
+  id          TEXT PRIMARY KEY,
+  observacion TEXT NOT NULL UNIQUE,
+  obligacion  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+
+-- Log de archivos ya procesados (evita duplicados si se sube el mismo resumen dos veces)
+CREATE TABLE IF NOT EXISTS obligaciones_archivos (
+  id               TEXT PRIMARY KEY,
+  fingerprint      TEXT NOT NULL UNIQUE,
+  nombre_archivo   TEXT,
+  banco            TEXT,
+  filas_insertadas INTEGER DEFAULT 0,
+  created_at       TEXT NOT NULL
+);
