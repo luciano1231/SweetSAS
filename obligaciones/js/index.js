@@ -90,10 +90,10 @@
             <th>Fecha</th>
             <th>Banco</th>
             <th>Obligación</th>
-            <th>De Quien La Deuda</th>
-            <th>Origen Del Dinero</th>
             <th>Monto</th>
             <th>Observación</th>
+            <th class="col-secundaria">De Quien La Deuda</th>
+            <th class="col-secundaria">Origen Del Dinero</th>
             <th></th>
           </tr>
         </thead>
@@ -110,10 +110,10 @@
             <span class="cell-obligacion__view ${esSinClasificar ? 'obl-tag--sinclasificar' : ''}">${m.obligacion}</span>
             <button type="button" class="btn-row-delete btn-edit-obligacion" title="Reclasificar">${ICON_PENCIL}</button>
           </td>
-          <td><input type="text" class="obl-inline-input" data-campo="de_quien_la_deuda" value="${(m.de_quien_la_deuda || '').replace(/"/g, '&quot;')}" placeholder="—"></td>
-          <td><input type="text" class="obl-inline-input" data-campo="origen_del_dinero" value="${(m.origen_del_dinero || '').replace(/"/g, '&quot;')}" placeholder="—"></td>
           <td class="cell--currency">${Utils.formatCurrency(m.monto)}</td>
           <td title="${(m.observacion || '').replace(/"/g, '&quot;')}">${m.observacion || ''}</td>
+          <td class="col-secundaria"><input type="text" class="obl-inline-input" data-campo="de_quien_la_deuda" value="${(m.de_quien_la_deuda || '').replace(/"/g, '&quot;')}" placeholder="—"></td>
+          <td class="col-secundaria"><input type="text" class="obl-inline-input" data-campo="origen_del_dinero" value="${(m.origen_del_dinero || '').replace(/"/g, '&quot;')}" placeholder="—"></td>
           <td><button type="button" class="btn-row-delete btn-delete-mov" title="Eliminar">${ICON_TRASH}</button></td>
         </tr>
       `;
