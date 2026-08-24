@@ -133,6 +133,21 @@
     },
   };
 
+  // Las tarjetas con la clase .animate-in usan una animación de entrada
+  // (opacity + transform) que, mientras "animation-name" siga activo, crea
+  // un contexto de apilamiento propio en cada tarjeta. Eso atrapa cualquier
+  // desplegable (combobox, etc.) dentro de esa tarjeta: su z-index deja de
+  // competir con el de las tarjetas siguientes, y el desplegable queda tapado
+  // por la próxima tarjeta del formulario. La animación termina en menos de
+  // 1s y no vuelve a usarse, así que apenas termina se saca la clase — el
+  // elemento queda igual visualmente (ya estaba en su estado final) pero
+  // deja de aislar su contenido en un contexto de apilamiento aparte.
+  document.addEventListener('animationend', function (ev) {
+    if (ev.target.classList && ev.target.classList.contains('animate-in')) {
+      ev.target.classList.remove('animate-in');
+    }
+  });
+
   function markReady(session) {
     window.__SWEET_SESSION = session;
     readyCallbacks.splice(0).forEach(cb => cb(session));

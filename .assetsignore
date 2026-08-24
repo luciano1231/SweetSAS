@@ -9,8 +9,14 @@ functions
 functions/**
 worker.js
 wrangler.jsonc
+wrangler.toml
+wrangler.json
 schema.sql
 node_modules
 node_modules/**
 package.json
 package-lock.json
+*.xlsx
+*.xls
+*.sql
+*.md
