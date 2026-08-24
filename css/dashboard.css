@@ -211,9 +211,17 @@ body{font-family:var(--font);background:var(--bg-primary);color:var(--text-prima
   .date-range-filter{flex-wrap:wrap;}
 }
 @media(max-width:900px){
-  .sidebar{transform:translateX(-100%);}
+  .sidebar{transform:translateX(-100%);overflow-y:auto;}
   .sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg);}
   .sidebar-close{display:block;}.menu-toggle{display:flex;}
+  /* Con todos los ítems (Resumen, Locales, Precios, etc.) el menú no
+     entraba en pantallas chicas y no se podía hacer scroll para ver el
+     resto — acá se compacta un poco y el .sidebar de arriba ya scrollea
+     como un solo bloque (header + nav + footer) en vez de cortarse. */
+  .sidebar-header{padding:16px 20px;}
+  .sidebar-nav{padding:12px;gap:2px;}
+  .nav-item{padding:9px 14px;font-size:.85rem;}
+  .sidebar-footer{padding:12px 20px;}
   .main-content{margin-left:0;}
   .charts-grid{grid-template-columns:1fr;}
   .performers-grid{grid-template-columns:1fr;}
