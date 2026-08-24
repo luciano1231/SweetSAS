@@ -53,6 +53,13 @@
     }
     .carga-row__banco--galicia { background: rgba(232,93,4,0.14); color: #e85d04; }
     .carga-row__banco--mp { background: rgba(0,137,199,0.14); color: #0089c7; }
+
+    .banco-badge {
+      font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+      padding: 3px 10px; border-radius: var(--radius-full); white-space: nowrap; display: inline-block;
+    }
+    .banco-badge--galicia { background: rgba(232,93,4,0.14); color: #e85d04; }
+    .banco-badge--mp { background: rgba(0,137,199,0.14); color: #0089c7; }
     .carga-row__nombre { font-weight: 600; font-size: var(--font-size-sm); }
     .carga-row__meta { font-size: .78rem; color: var(--text-muted); }
     .btn-deshacer {
@@ -187,6 +194,13 @@
       <div class="form-group">
         <label class="form-label" for="filter-texto">Buscar</label>
         <input type="text" class="form-input" id="filter-texto" placeholder="Obligación, observación..." autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="filter-orden">Orden</label>
+        <select class="form-select" id="filter-orden">
+          <option value="fecha">Cronológico (por fecha)</option>
+          <option value="carga">Orden en que las cargué</option>
+        </select>
       </div>
       <div class="form-group" style="justify-content:flex-end;">
         <label class="form-label" for="filter-sinclasificar">&nbsp;</label>

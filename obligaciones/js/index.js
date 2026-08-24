@@ -34,12 +34,14 @@
     const banco = document.getElementById('filter-banco').value;
     const texto = document.getElementById('filter-texto').value.trim();
     const sinClasificar = document.getElementById('filter-sinclasificar').checked;
+    const orden = document.getElementById('filter-orden').value;
 
     if (desde) params.set('desde', desde);
     if (hasta) params.set('hasta', hasta);
     if (banco) params.set('banco', banco);
     if (texto) params.set('q', texto);
     if (sinClasificar) params.set('sinClasificar', '1');
+    if (orden) params.set('orden', orden);
 
     const wrapper = document.getElementById('table-wrapper');
     wrapper.innerHTML = '<div class="empty-state"><span class="empty-state__icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><p class="empty-state__text">Cargando...</p></div>';
@@ -61,6 +63,11 @@
   // ============================================
   // RENDER
   // ============================================
+  function bancoBadge(banco) {
+    const esGalicia = banco === 'Banco Galicia';
+    return `<span class="banco-badge ${esGalicia ? 'banco-badge--galicia' : 'banco-badge--mp'}">${banco}</span>`;
+  }
+
   function renderKPIs() {
     const total = movimientos.reduce((s, m) => s + (m.monto || 0), 0);
     const sinClasificar = movimientos.filter(m => m.obligacion === 'SIN CLASIFICAR').length;
@@ -105,7 +112,7 @@
       html += `
         <tr data-id="${m.id}">
           <td>${Utils.formatDate(m.fecha)}</td>
-          <td>${m.banco}</td>
+          <td>${bancoBadge(m.banco)}</td>
           <td class="cell-obligacion">
             <span class="cell-obligacion__view ${esSinClasificar ? 'obl-tag--sinclasificar' : ''}">${m.obligacion}</span>
             <button type="button" class="btn-row-delete btn-edit-obligacion" title="Reclasificar">${ICON_PENCIL}</button>
@@ -349,7 +356,7 @@
     window.sweetAuth.onReady(function () {
       document.getElementById('upload-form').addEventListener('submit', handleUpload);
       document.getElementById('banco').addEventListener('change', actualizarBotonSegunBanco);
-      ['filter-desde', 'filter-hasta', 'filter-banco'].forEach(id => {
+      ['filter-desde', 'filter-hasta', 'filter-banco', 'filter-orden'].forEach(id => {
         document.getElementById(id).addEventListener('change', cargarMovimientos);
       });
       document.getElementById('filter-sinclasificar').addEventListener('change', cargarMovimientos);

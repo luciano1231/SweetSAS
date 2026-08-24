@@ -54,7 +54,12 @@ export async function onRequest(context) {
     if (banco) { sql += ' AND banco = ?'; binds.push(banco); }
     if (obligacion) { sql += ' AND obligacion = ?'; binds.push(obligacion); }
     if (sinClasificar === '1') { sql += " AND obligacion = 'SIN CLASIFICAR'"; }
-    sql += ' ORDER BY fecha DESC, created_at DESC';
+
+    // 'carga' = orden en que se cargaron (rowid, el sqlite interno, refleja
+    // el orden real de inserción); 'fecha' (default) = cronológico por la
+    // fecha del movimiento.
+    const orden = url.searchParams.get('orden');
+    sql += (orden === 'carga') ? ' ORDER BY rowid DESC' : ' ORDER BY fecha DESC, created_at DESC, rowid DESC';
 
     const stmt = binds.length ? env.RENDICIONES_DB.prepare(sql).bind(...binds) : env.RENDICIONES_DB.prepare(sql);
     let { results } = await stmt.all();
