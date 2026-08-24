@@ -112,23 +112,27 @@ export async function onRequest(context) {
     ).bind(clienteId).all();
     const lineas = lineasRaw.map(conSubtotal);
 
-    // Catálogo habilitado para este cliente (productos de su lista asignada,
-    // con el precio actual de Mayoristas como referencia)
+    // Catálogo habilitado para este cliente: si tiene una lista propia
+    // asignada, solo esos productos. Si NO tiene ninguna asignada, en vez de
+    // dejarlo sin nada para elegir, toma el catálogo general de Mayoristas
+    // (todos los productos activos) — la lista propia es una restricción
+    // opcional, no un requisito para poder armar un remito.
     let catalogo = [];
+    const productos = await listarProductosConTotales(db);
+    const activos = productos.filter(p => p.activo !== 0);
+
+    let idsPermitidos = null;
     if (cliente.lista_id) {
       const { results: idsLista } = await db.prepare(
         'SELECT producto_id FROM mayoristas_listas_productos WHERE lista_id = ?'
       ).bind(cliente.lista_id).all();
-      const idsPermitidos = new Set(idsLista.map(r => r.producto_id));
-      if (idsPermitidos.size > 0) {
-        const productos = await listarProductosConTotales(db);
-        catalogo = await Promise.all(
-          productos
-            .filter(p => idsPermitidos.has(p.id) && p.activo !== 0)
-            .map(async p => ({ id: p.id, nombre: p.nombre, precio: await obtenerPrecioMayorista(db, p.id) }))
-        );
-      }
+      idsPermitidos = new Set(idsLista.map(r => r.producto_id));
     }
+
+    const productosDelCatalogo = idsPermitidos ? activos.filter(p => idsPermitidos.has(p.id)) : activos;
+    catalogo = await Promise.all(
+      productosDelCatalogo.map(async p => ({ id: p.id, nombre: p.nombre, precio: await obtenerPrecioMayorista(db, p.id) }))
+    );
 
     const ultimo = await db.prepare(
       'SELECT remito_numero, fecha FROM mayoristas_remitos_cerrados WHERE cliente_id = ? ORDER BY created_at DESC LIMIT 1'

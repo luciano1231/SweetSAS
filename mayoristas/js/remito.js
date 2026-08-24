@@ -208,7 +208,7 @@
       const items = filtered(query);
       activeIndex = -1;
       if (items.length === 0) {
-        list.innerHTML = `<div class="combobox__empty">${catalogo.length === 0 ? 'Este cliente no tiene ninguna lista de productos asignada' : 'Sin resultados'}</div>`;
+        list.innerHTML = `<div class="combobox__empty">${catalogo.length === 0 ? 'No hay productos disponibles (revisá la lista asignada en Clientes)' : 'Sin resultados'}</div>`;
         list.hidden = false;
         return;
       }

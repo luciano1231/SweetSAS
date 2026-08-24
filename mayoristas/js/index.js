@@ -97,7 +97,7 @@
             </button>
           </td>
           <td class="cell--title"><span class="cliente-pill"><span class="cliente-dot" style="background:${colorPara(c)};"></span>${c.nombre}</span></td>
-          <td data-label="Lista">${c.lista_nombre || '<span class="cell--muted">Sin asignar</span>'}</td>
+          <td data-label="Lista">${c.lista_nombre || '<span class="cell--muted">Catálogo general (Mayoristas)</span>'}</td>
           <td data-label="Próximo N°">${String(c.proximo_remito_numero).padStart(5, '0')}</td>
           <td><button type="button" class="btn-row-delete btn-delete-cli" title="Eliminar" data-id="${c.id}" data-nombre="${c.nombre.replace(/"/g, '&quot;')}">${ICON_TRASH}</button></td>
         </tr>
