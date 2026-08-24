@@ -372,6 +372,17 @@ img {
   .app-header__title {
     font-size: var(--font-size-lg);
   }
+  /* En desktop el botón de hamburguesa queda pegado al borde derecho del
+     header, así que el panel se abre "hacia la izquierda" (right: 0) y
+     entra justo. En mobile el header pasa a una columna y ese botón queda
+     cerca del borde IZQUIERDO de la pantalla — con el mismo right: 0 el
+     panel (230px) se abre para el otro lado y se va fuera de la pantalla.
+     Acá se invierte para que abra hacia la derecha, que es donde hay lugar. */
+  .header-menu__panel {
+    left: 0;
+    right: auto;
+    max-width: calc(100vw - 2 * var(--space-lg));
+  }
 }
 
 
