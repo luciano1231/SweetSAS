@@ -49,3 +49,25 @@ export function aplicarAjuste(precioBase, ajusteTipo, ajusteValor) {
   const final = ajusteTipo === 'porcentaje' ? base * (1 + valor / 100) : base + valor;
   return Math.round(final * 100) / 100;
 }
+
+// Precio por defecto para un producto al agregarlo a un remito de mayoristas:
+// el de la última publicación de la lista "mayoristas" si existe, si no el
+// precio_con_utilidad en vivo de la receta (por si todavía no se publicó).
+export async function obtenerPrecioMayorista(db, productoId) {
+  const publicado = await db.prepare(
+    'SELECT precio_final FROM listas_precios_publicadas WHERE lista = ? AND producto_id = ?'
+  ).bind('mayoristas', productoId).first();
+  if (publicado) return publicado.precio_final;
+
+  const producto = await db.prepare('SELECT * FROM recetas_productos WHERE id = ?').bind(productoId).first();
+  if (!producto) return 0;
+  const totalIng = await db.prepare(
+    `SELECT SUM(pi.cantidad * i.costo_fraccion) as total FROM recetas_producto_ingredientes pi
+     JOIN recetas_ingredientes i ON i.id = pi.ingrediente_id WHERE pi.producto_id = ?`
+  ).bind(productoId).first();
+  const totalCF = await db.prepare(
+    `SELECT SUM(pc.cantidad * c.costo_fraccion) as total FROM recetas_producto_costos_fijos pc
+     JOIN recetas_costos_fijos c ON c.id = pc.costo_fijo_id WHERE pc.producto_id = ?`
+  ).bind(productoId).first();
+  return calcularTotales(producto, totalIng?.total || 0, totalCF?.total || 0).precio_con_utilidad;
+}

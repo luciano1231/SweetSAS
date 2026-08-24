@@ -227,3 +227,83 @@ CREATE TABLE IF NOT EXISTS listas_precios_meta (
   lista        TEXT PRIMARY KEY CHECK (lista IN ('clientes','mayoristas')),
   published_at TEXT NOT NULL
 );
+
+-- ============================================
+-- REMITOS A MAYORISTAS
+-- ============================================
+-- Flujo (mismo que la planilla de Drive "Venta a Mayoristas"):
+-- 1) Se arman "listas de productos" con nombre propio a partir del catálogo
+--    de Mayoristas (mayoristas_listas + mayoristas_listas_productos) — se
+--    pueden reutilizar entre varios clientes.
+-- 2) Cada cliente mayorista (mayoristas_clientes) tiene asignada una de esas
+--    listas: solo va a poder elegir esos productos al armar su remito. Tiene
+--    también su propio contador de N° de remito (sigue la numeración que ya
+--    usaban en la planilla vieja).
+-- 3) El remito ABIERTO de un cliente son sus líneas sueltas en
+--    mayoristas_remito_lineas — se van agregando productos con cantidad y
+--    precio (por defecto el de la última publicación de Mayoristas, editable
+--    a mano) hasta que se decide "Cerrar remito".
+-- 4) Al cerrar: esas líneas se copian a mayoristas_remitos_cerrados (el
+--    libro mayor histórico, una fila por producto) con el N° de remito y la
+--    fecha, se vacía el remito abierto, y el contador del cliente avanza.
+--    Enviado/Recibido/Pagado se pueden seguir tildando ahí después, a medida
+--    que pasa en la realidad — no quedan congelados al cerrar.
+CREATE TABLE IF NOT EXISTS mayoristas_listas (
+  id         TEXT PRIMARY KEY,
+  nombre     TEXT NOT NULL UNIQUE,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS mayoristas_listas_productos (
+  id          TEXT PRIMARY KEY,
+  lista_id    TEXT NOT NULL,
+  producto_id TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mayolistaprod_unico ON mayoristas_listas_productos(lista_id, producto_id);
+
+CREATE TABLE IF NOT EXISTS mayoristas_clientes (
+  id                    TEXT PRIMARY KEY,
+  nombre                TEXT NOT NULL UNIQUE,
+  lista_id              TEXT,
+  color                 TEXT,
+  proximo_remito_numero INTEGER NOT NULL DEFAULT 1,
+  activo                INTEGER NOT NULL DEFAULT 1,
+  created_at            TEXT NOT NULL
+);
+
+-- Remito abierto: líneas sueltas, sin número asignado todavía, hasta "Cerrar remito"
+CREATE TABLE IF NOT EXISTS mayoristas_remito_lineas (
+  id               TEXT PRIMARY KEY,
+  cliente_id       TEXT NOT NULL,
+  producto_id      TEXT,
+  nombre_producto  TEXT NOT NULL,
+  precio_unitario  REAL NOT NULL DEFAULT 0,
+  cantidad         REAL NOT NULL DEFAULT 0,
+  enviado          INTEGER NOT NULL DEFAULT 0,
+  recibido         INTEGER NOT NULL DEFAULT 0,
+  pagado           INTEGER NOT NULL DEFAULT 0,
+  observaciones    TEXT,
+  created_at       TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mayolineas_cliente ON mayoristas_remito_lineas(cliente_id);
+
+-- Libro mayor: remitos ya cerrados, una fila por producto (igual forma que
+-- "Detalles de Remitos" en la planilla vieja)
+CREATE TABLE IF NOT EXISTS mayoristas_remitos_cerrados (
+  id               TEXT PRIMARY KEY,
+  cliente_id       TEXT,
+  cliente_nombre   TEXT NOT NULL,
+  remito_numero    INTEGER NOT NULL,
+  fecha            TEXT NOT NULL,
+  producto_id      TEXT,
+  nombre_producto  TEXT NOT NULL,
+  precio_unitario  REAL NOT NULL DEFAULT 0,
+  cantidad         REAL NOT NULL DEFAULT 0,
+  enviado          INTEGER NOT NULL DEFAULT 0,
+  recibido         INTEGER NOT NULL DEFAULT 0,
+  pagado           INTEGER NOT NULL DEFAULT 0,
+  observaciones    TEXT,
+  created_at       TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_mayocerrados_cliente ON mayoristas_remitos_cerrados(cliente_id);
+CREATE INDEX IF NOT EXISTS idx_mayocerrados_fecha ON mayoristas_remitos_cerrados(fecha);
