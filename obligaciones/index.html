@@ -26,6 +26,32 @@
     .upload-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--space-md); align-items: end; }
     @media (max-width: 700px) { .upload-grid { grid-template-columns: 1fr; } }
 
+    /* El botón nativo de <input type="file"> no hereda el tema — lo
+       restyleamos para que no desentone en modo oscuro */
+    input[type="file"].form-input {
+      padding: 6px 10px;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+    input[type="file"].form-input::file-selector-button,
+    input[type="file"].form-input::-webkit-file-upload-button {
+      background: var(--accent-primary);
+      color: #fff;
+      border: none;
+      padding: 9px 16px;
+      margin-right: 12px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-family);
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity var(--transition-fast);
+    }
+    input[type="file"].form-input:hover::file-selector-button,
+    input[type="file"].form-input:hover::-webkit-file-upload-button {
+      opacity: .88;
+    }
+
     .obl-inline-input {
       width: 100%; box-sizing: border-box; background: transparent; border: 1px solid transparent;
       border-radius: 6px; padding: 6px 8px; color: var(--text-primary); font-size: var(--font-size-sm); font-family: var(--font-family);
