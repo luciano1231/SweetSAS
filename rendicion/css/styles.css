@@ -1551,3 +1551,81 @@ img {
   color: #1d8a63;
   border: 1px solid rgba(29, 138, 99, 0.2);
 }
+
+/* ============================================
+   TOGGLE ACTIVO / DESHABILITADO (recetas, etc.)
+   ============================================ */
+.btn-row-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: inline-flex;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.btn-row-toggle.is-on {
+  color: var(--success);
+}
+.btn-row-toggle.is-on:hover {
+  background: var(--success-bg);
+}
+.btn-row-toggle.is-off {
+  color: var(--error);
+}
+.btn-row-toggle.is-off:hover {
+  background: var(--error-bg);
+}
+
+.data-table tr.fila-inactiva td {
+  opacity: 0.5;
+}
+
+/* Pill grande, para la página de detalle de la receta */
+.btn-toggle-activo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+.btn-toggle-activo.is-on {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.btn-toggle-activo.is-on:hover {
+  background: rgba(34, 197, 94, 0.2);
+}
+.btn-toggle-activo.is-off {
+  background: var(--error-bg);
+  color: var(--error);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.btn-toggle-activo.is-off:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Checkbox simple para filtros (ej: "mostrar deshabilitados") */
+.filter-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.filter-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-primary);
+  cursor: pointer;
+}

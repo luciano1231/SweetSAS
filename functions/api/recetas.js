@@ -7,7 +7,7 @@
  *          el catálogo — si cambia el costo de un ingrediente, se refleja
  *          solo, sin tener que re-guardar la receta)
  * POST   /api/recetas              → crear producto { nombre, unidades_por_tanda?, utilidad_deseada_pct?, observaciones?, receta_texto? }
- * PUT    /api/recetas?id=          → editar producto (mismos campos)
+ * PUT    /api/recetas?id=          → editar producto (mismos campos, + activo? para habilitar/deshabilitar)
  * DELETE /api/recetas?id=          → eliminar producto (y sus líneas)
  *
  * Requiere el binding D1: RENDICIONES_DB. Acceso: dueño/supervisor.
@@ -164,11 +164,12 @@ export async function onRequest(context) {
     const utilidad = body.utilidad_deseada_pct !== undefined ? Number(body.utilidad_deseada_pct) || 0 : existente.utilidad_deseada_pct;
     const observaciones = body.observaciones !== undefined ? String(body.observaciones).trim() : existente.observaciones;
     const recetaTexto = body.receta_texto !== undefined ? String(body.receta_texto) : existente.receta_texto;
+    const activo = body.activo !== undefined ? (body.activo ? 1 : 0) : existente.activo;
 
     try {
       await env.RENDICIONES_DB.prepare(
-        `UPDATE recetas_productos SET nombre=?, unidades_por_tanda=?, utilidad_deseada_pct=?, observaciones=?, receta_texto=?, updated_at=? WHERE id=?`
-      ).bind(nombre, unidades, utilidad, observaciones, recetaTexto, new Date().toISOString(), id).run();
+        `UPDATE recetas_productos SET nombre=?, unidades_por_tanda=?, utilidad_deseada_pct=?, observaciones=?, receta_texto=?, activo=?, updated_at=? WHERE id=?`
+      ).bind(nombre, unidades, utilidad, observaciones, recetaTexto, activo, new Date().toISOString(), id).run();
     } catch (e) {
       if (String(e.message).includes('UNIQUE')) return json({ error: 'Ya existe otro producto con ese nombre.' }, 400);
       throw e;

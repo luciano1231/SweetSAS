@@ -163,6 +163,7 @@ CREATE TABLE IF NOT EXISTS recetas_productos (
   utilidad_deseada_pct REAL DEFAULT 50,
   observaciones        TEXT,
   receta_texto         TEXT,
+  activo               INTEGER NOT NULL DEFAULT 1,
   created_at           TEXT NOT NULL,
   updated_at           TEXT NOT NULL
 );

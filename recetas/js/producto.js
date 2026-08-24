@@ -14,11 +14,14 @@
   }
 
   const ICON_TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+  const ICON_CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+  const ICON_X = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
 
   let catalogoIngredientes = [];
   let catalogoCostosFijos = [];
   let seleccionIng = null;
   let seleccionCf = null;
+  let productoActivo = true;
 
   // ============================================
   // CARGA Y RENDER
@@ -38,6 +41,13 @@
     const p = data.producto;
     document.getElementById('header-nombre').textContent = p.nombre;
     document.title = `${p.nombre} — Recetas`;
+
+    productoActivo = p.activo !== 0;
+    const btnActivo = document.getElementById('btn-toggle-activo');
+    btnActivo.classList.toggle('is-on', productoActivo);
+    btnActivo.classList.toggle('is-off', !productoActivo);
+    btnActivo.innerHTML = (productoActivo ? ICON_CHECK : ICON_X) + (productoActivo ? ' Activo' : ' Deshabilitado');
+
     document.getElementById('input-unidades').value = p.unidades_por_tanda;
     document.getElementById('input-utilidad').value = p.utilidad_deseada_pct;
     document.getElementById('input-observaciones').value = p.observaciones || '';
@@ -314,6 +324,7 @@
       document.getElementById('input-utilidad').addEventListener('change', (e) => guardarCampoProducto('utilidad_deseada_pct', e.target.value));
       document.getElementById('input-observaciones').addEventListener('change', (e) => guardarCampoProducto('observaciones', e.target.value));
       document.getElementById('input-receta').addEventListener('change', (e) => guardarCampoProducto('receta_texto', e.target.value));
+      document.getElementById('btn-toggle-activo').addEventListener('click', () => guardarCampoProducto('activo', !productoActivo));
 
       await recargarTodo();
     });
