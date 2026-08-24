@@ -78,7 +78,7 @@
         <tr data-linea-id="${l.id}">
           <td>${l.nombre}</td>
           <td class="cell--currency">${Utils.formatCurrency(l.costo_fraccion)}</td>
-          <td><input type="number" class="obl-inline-input linea-cantidad" style="max-width:100px;" min="0" step="0.01" value="${l.cantidad}"></td>
+          <td><input type="number" class="obl-inline-input obl-inline-input--sm linea-cantidad" min="0" step="0.01" value="${l.cantidad}"></td>
           <td class="cell--currency">${Utils.formatCurrency(l.subtotal)}</td>
           <td class="cell--porcentaje">${l.porcentaje}%</td>
           <td><button type="button" class="btn-row-delete btn-delete-linea" title="Quitar">${ICON_TRASH}</button></td>

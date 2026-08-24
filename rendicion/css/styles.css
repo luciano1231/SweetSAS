@@ -1275,8 +1275,53 @@ img {
 
 .data-table td {
   padding: var(--space-sm) var(--space-sm);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--glass-border);
   white-space: nowrap;
+}
+
+.data-table tr:last-of-type td {
+  border-bottom: none;
+}
+
+.data-table .fila-total td {
+  border-top: 1px solid var(--glass-border);
+  border-bottom: none;
+}
+
+/* Input numérico compacto dentro de una celda de tabla (cantidad, etc.) */
+.obl-inline-input {
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.obl-inline-input::-webkit-inner-spin-button,
+.obl-inline-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.obl-inline-input:hover {
+  border-color: var(--accent-primary);
+}
+
+.obl-inline-input:focus {
+  background: var(--bg-input-focus);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-glow);
+}
+
+.obl-inline-input--sm {
+  max-width: 100px;
 }
 
 .data-table tr:hover td {
