@@ -44,6 +44,7 @@
   const USERNAME_KEY = 'sweetSAS_userName';
   const PERM_KEY = 'sweetSAS_permissions';
   const TOKEN_KEY = 'sweetSAS_token';
+  const EXPIRED_FLAG_KEY = 'sweetSAS_sessionExpired';
 
   function getSession() {
     if (sessionStorage.getItem(AUTH_KEY) !== 'ok') return null;
@@ -129,7 +130,25 @@
       const session = getSession();
       const headers = new Headers(options.headers || {});
       if (session && session.token) headers.set('Authorization', 'Bearer ' + session.token);
-      return fetch(url, { ...options, headers });
+      return fetch(url, { ...options, headers }).then(function (res) {
+        // Un token vencido (la sesión dura 12hs) o inválido da el mismo 403
+        // genérico "No autorizado." que cualquier otro chequeo de rol — acá
+        // lo distinguimos: si HABÍA una sesión guardada y el servidor la
+        // rechazó con ese mensaje puntual, es casi seguro que venció. En vez
+        // de dejar que cada pantalla muestre ese texto crudo, se limpia la
+        // sesión vieja y se recarga para volver a mostrar el login con un
+        // aviso claro.
+        if (res.status === 403 && session) {
+          res.clone().json().then(function (data) {
+            if (data && data.error === 'No autorizado.') {
+              clearSession();
+              sessionStorage.setItem(EXPIRED_FLAG_KEY, '1');
+              location.reload();
+            }
+          }).catch(function () { /* body no era JSON, ignorar */ });
+        }
+        return res;
+      });
     },
   };
 
@@ -184,6 +203,10 @@
     if (existing) {
       // Estaba logueado pero sin ningún permiso asignado
       document.getElementById('authError').textContent = 'Tu usuario no tiene ningún acceso asignado. Consultá con el dueño.';
+      document.getElementById('authError').style.opacity = '1';
+    } else if (sessionStorage.getItem(EXPIRED_FLAG_KEY)) {
+      sessionStorage.removeItem(EXPIRED_FLAG_KEY);
+      document.getElementById('authError').textContent = 'Tu sesión venció (dura 12hs). Iniciá sesión de nuevo.';
       document.getElementById('authError').style.opacity = '1';
     }
 
