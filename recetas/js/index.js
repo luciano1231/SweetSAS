@@ -31,7 +31,10 @@
   function renderTabla() {
     const wrapper = document.getElementById('table-wrapper');
     const mostrarDeshabilitados = document.getElementById('filter-deshabilitados').checked;
-    const productos = mostrarDeshabilitados ? todosLosProductos : todosLosProductos.filter(p => p.activo !== 0);
+    const busqueda = document.getElementById('search-productos').value.trim().toLowerCase();
+
+    let productos = mostrarDeshabilitados ? todosLosProductos : todosLosProductos.filter(p => p.activo !== 0);
+    if (busqueda) productos = productos.filter(p => p.nombre.toLowerCase().includes(busqueda));
 
     if (todosLosProductos.length === 0) {
       wrapper.innerHTML = `
@@ -45,9 +48,12 @@
     }
 
     if (productos.length === 0) {
+      const mensaje = busqueda
+        ? `No hay ningún producto que coincida con "${busqueda}".`
+        : 'No hay productos habilitados. Tildá "Mostrar deshabilitados" arriba para verlos.';
       wrapper.innerHTML = `
         <div class="empty-state">
-          <p class="empty-state__text">No hay productos habilitados. Tildá "Mostrar deshabilitados" arriba para verlos.</p>
+          <p class="empty-state__text">${mensaje}</p>
         </div>
       `;
       return;
@@ -170,6 +176,7 @@
       document.getElementById('btn-add-prod').addEventListener('click', crearProducto);
       document.getElementById('new-prod-nombre').addEventListener('keydown', e => { if (e.key === 'Enter') crearProducto(); });
       document.getElementById('filter-deshabilitados').addEventListener('change', renderTabla);
+      document.getElementById('search-productos').addEventListener('input', renderTabla);
       cargarProductos();
     });
   });

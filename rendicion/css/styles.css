@@ -1454,6 +1454,33 @@ img {
   }
 }
 
+/* Buscador simple con lupa (filtra una lista ya cargada, en el cliente) */
+.search-box {
+  position: relative;
+  flex: 1 1 240px;
+  max-width: 320px;
+}
+
+.search-box svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-box input {
+  padding-left: 38px !important;
+}
+
+@media (max-width: 640px) {
+  .search-box {
+    max-width: none;
+    width: 100%;
+  }
+}
+
 /* Filters bar */
 .filters-bar {
   display: flex;
