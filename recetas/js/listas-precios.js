@@ -53,9 +53,9 @@
         <thead>
           <tr>
             <th>Producto</th>
-            <th>Precio Base (Recetas)</th>
+            <th class="cell--currency">Precio Base (Recetas)</th>
             <th>Ajuste</th>
-            <th>Precio Final</th>
+            <th class="cell--currency">Precio Final</th>
             <th></th>
           </tr>
         </thead>
