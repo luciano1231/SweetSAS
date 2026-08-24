@@ -27,6 +27,11 @@
       return;
     }
     userName = session.userName || '';
+    // Recién ahora hay un token de sesión válido — antes de esto, cualquier
+    // pedido a la API se rechaza (401), así que init() (que trae el
+    // catálogo y los pendientes) espera a este momento en vez de disparar
+    // en DOMContentLoaded a ciegas.
+    init();
   });
 
   document.getElementById('header-local').textContent = local.nombre;
@@ -394,6 +399,4 @@
       btn.disabled = false;
     }
   }
-
-  document.addEventListener('DOMContentLoaded', init);
 })();

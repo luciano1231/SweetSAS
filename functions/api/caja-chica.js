@@ -19,10 +19,12 @@
  * Requiere el binding D1: RENDICIONES_DB (mismo D1 que rendiciones, ver wrangler.jsonc)
  */
 
+import { obtenerSesion, tieneRol, tieneLocal } from '../lib/session.js';
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token, Authorization',
 };
 
 const EPSILON = 0.5; // tolerancia de redondeo para considerar el saldo "en cero"
@@ -71,6 +73,9 @@ export async function onRequest(context) {
     return json({ error: 'Binding D1 "RENDICIONES_DB" no encontrado. Ver wrangler.jsonc.' }, 500);
   }
 
+  const esBulkImport = method === 'POST' && url.searchParams.get('action') === 'bulk-import';
+  const session = esBulkImport ? null : await obtenerSesion(request, env);
+
   // ── LISTAR ───────────────────────────────────────────────────
   if (method === 'GET') {
     const local = url.searchParams.get('local');
@@ -80,8 +85,15 @@ export async function onRequest(context) {
     const clasificacion = url.searchParams.get('clasificacion');
     const q = (url.searchParams.get('q') || '').trim().toLowerCase();
 
-    // Planilla maestra de un local: el saldo se acumula sobre TODA su
-    // historia y recién después se filtra lo que se muestra.
+    // La planilla maestra (estado=enviado) es sensible: solo dueño/supervisor,
+    // igual que la página que la muestra (caja-chica/historial.html).
+    if (estado === 'enviado') {
+      if (!tieneRol(session, 'owner', 'supervisor')) return json({ error: 'No autorizado.' }, 403);
+    } else if (!local || !tieneLocal(session, local)) {
+      // Carga de trabajo (pendientes): hace falta tener ese local asignado.
+      return json({ error: 'No autenticado o sin acceso a ese local.' }, 401);
+    }
+
     if (estado === 'enviado' && local) {
       const { results: all } = await env.RENDICIONES_DB
         .prepare('SELECT * FROM caja_chica_movimientos WHERE local_id = ? AND estado = ? ORDER BY fecha ASC, created_at ASC')
@@ -132,6 +144,7 @@ export async function onRequest(context) {
 
     const localId = body.local_id;
     if (!localId) return json({ error: 'Falta el campo: local_id' }, 400);
+    if (!tieneLocal(session, localId)) return json({ error: 'No tenés acceso a ese local.' }, 403);
 
     const { results: pendientes } = await env.RENDICIONES_DB
       .prepare('SELECT * FROM caja_chica_movimientos WHERE local_id = ? AND estado = ?')
@@ -199,6 +212,7 @@ export async function onRequest(context) {
     for (const f of ['local_id', 'fecha', 'item', 'clasificacion']) {
       if (!body[f]) return json({ error: `Falta el campo: ${f}` }, 400);
     }
+    if (!tieneLocal(session, body.local_id)) return json({ error: 'No tenés acceso a ese local.' }, 403);
     if (!(Number(body.ingreso) > 0) && !(Number(body.egreso) > 0)) {
       return json({ error: 'El movimiento necesita un monto de ingreso o egreso.' }, 400);
     }
@@ -220,6 +234,7 @@ export async function onRequest(context) {
 
     const existing = await env.RENDICIONES_DB.prepare('SELECT * FROM caja_chica_movimientos WHERE id = ?').bind(id).first();
     if (!existing) return json({ error: 'Movimiento no encontrado.' }, 404);
+    if (!tieneLocal(session, existing.local_id)) return json({ error: 'No tenés acceso a ese local.' }, 403);
     if (existing.estado !== 'pendiente') {
       return json({ error: 'No se puede editar un movimiento ya enviado a la planilla maestra.' }, 400);
     }
@@ -256,6 +271,9 @@ export async function onRequest(context) {
 
     if (existing.estado !== 'pendiente' && !isAdmin(request, env)) {
       return json({ error: 'No se puede eliminar un movimiento ya enviado a la planilla maestra.' }, 400);
+    }
+    if (existing.estado === 'pendiente' && !tieneLocal(session, existing.local_id)) {
+      return json({ error: 'No tenés acceso a ese local.' }, 403);
     }
 
     await env.RENDICIONES_DB.prepare('DELETE FROM caja_chica_movimientos WHERE id = ?').bind(id).run();

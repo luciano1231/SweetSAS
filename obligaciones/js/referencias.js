@@ -18,7 +18,7 @@
   const datos = { banco: [], general: [] };
 
   async function cargar(tipo) {
-    const res = await fetch(`/api/obligaciones-referencias?tipo=${tipo}`);
+    const res = await window.sweetAuth.fetch(`/api/obligaciones-referencias?tipo=${tipo}`);
     const data = await res.json();
     if (!res.ok || !data.ok) {
       Utils.toast('No se pudo cargar: ' + (data.error || tipo), 'error');
@@ -87,7 +87,7 @@
 
   async function guardarEdicion(tipo, id, cambios) {
     try {
-      const res = await fetch(`/api/obligaciones-referencias?tipo=${tipo}&id=${encodeURIComponent(id)}`, {
+      const res = await window.sweetAuth.fetch(`/api/obligaciones-referencias?tipo=${tipo}&id=${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cambios),
@@ -105,7 +105,7 @@
     const confirmado = await Utils.confirm('¿Eliminar?', 'Esta acción no se puede deshacer.', 'Eliminar');
     if (!confirmado) return;
     try {
-      const res = await fetch(`/api/obligaciones-referencias?tipo=${tipo}&id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const res = await window.sweetAuth.fetch(`/api/obligaciones-referencias?tipo=${tipo}&id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo eliminar.');
       Utils.toast('Eliminado', 'success');
@@ -130,7 +130,7 @@
     if (!valor0) { Utils.toast(`Completá el primer campo`, 'error'); return; }
 
     try {
-      const res = await fetch(`/api/obligaciones-referencias?tipo=${tipo}`, {
+      const res = await window.sweetAuth.fetch(`/api/obligaciones-referencias?tipo=${tipo}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [campos[0]]: valor0, [campos[1]]: valor1 }),

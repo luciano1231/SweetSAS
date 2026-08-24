@@ -2,11 +2,21 @@
 // AUTH GATE COMPARTIDO — Sweet SAS
 // ============================================
 // Protege cualquier página que incluya este script + el markup de #authGate.
-// Reconoce dos tipos de credencial:
-//   1) La contraseña del dueño (chequeo local, como siempre) → acceso total.
-//   2) Los PINs de supervisor/local, verificados contra /api/users?action=login
-//      (Cloudflare KV) → acceso solo a lo que el dueño les haya asignado
-//      desde Gestión de Usuarios.
+//
+// El login (contraseña del dueño O PIN de supervisor/local) se verifica
+// SIEMPRE en el servidor, vía /api/users?action=login — este script ya no
+// compara ninguna contraseña en el navegador. La respuesta trae un token
+// firmado (HMAC, ver functions/lib/session.js) que:
+//   - se guarda en sessionStorage,
+//   - viaja como header "Authorization: Bearer <token>" en cada pedido a
+//     una API protegida (usar window.sweetAuth.fetch en vez de fetch a
+//     secas — ver más abajo),
+//   - se vuelve a verificar en el servidor en cada una de esas APIs.
+// Antes, el permiso de página se decidía solo en el navegador (bastaba
+// abrir la consola y escribir en sessionStorage para "ser" el dueño); esa
+// puerta seguía sirviendo para la UX (redirigir rápido sin esperar al
+// servidor), pero la seguridad real ahora vive en el token verificado del
+// lado del servidor en cada API.
 //
 // Cada página declara qué necesita ANTES de este <script>:
 //   <script>window.__PAGE_PERMISSION = 'dashboard';</script>          // solo dueño
@@ -17,34 +27,27 @@
 //   <script>window.__PAGE_PERMISSION = 'cajaChicaHistorial';</script> // planilla maestra: solo dueño/supervisor
 //   <script>window.__PAGE_PERMISSION = 'cajaChicaItems';</script>     // gestión de ítems: solo dueño/supervisor
 //   <script>window.__PAGE_PERMISSION = 'obligaciones';</script>       // resúmenes bancarios: solo dueño/supervisor
-// El acceso a un local (permissions.locales) ya alcanza para cargar tanto
-// Rendición como Caja Chica de ese local — no hace falta un permiso aparte
-// por sistema. Lo que sí queda reservado a dueño/supervisor son las
-// planillas maestras (historial) y la gestión del catálogo de ítems.
 // Si el usuario logueado no tiene ese permiso, se lo redirige automáticamente
 // al mejor destino posible para él (sin mostrar la página).
 //
-// API para el resto del código: window.sweetAuth.getSession() / .onReady(cb)
+// API para el resto del código:
+//   window.sweetAuth.getSession() / .onReady(cb)
+//   window.sweetAuth.fetch(url, options)  ← usar esto en vez de fetch() a
+//     secas para cualquier pedido a /api/* que necesite sesión.
 (function () {
   'use strict';
-
-  // Hash SHA-256 de la contraseña actual del dueño: "sweet2026"
-  // Para generar un nuevo hash: sweetAdmin.changePassword('nueva') en consola
-  const PASS_HASH = 'b330784a85b8b6f99303ea6929723bd9b8bb87e96b29fa1d2579124f2385adde';
 
   const AUTH_KEY = 'sweetSAS_auth';
   const ROLE_KEY = 'sweetSAS_role';
   const USERID_KEY = 'sweetSAS_userId';
   const USERNAME_KEY = 'sweetSAS_userName';
   const PERM_KEY = 'sweetSAS_permissions';
-
-  async function hashStr(s) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
+  const TOKEN_KEY = 'sweetSAS_token';
 
   function getSession() {
     if (sessionStorage.getItem(AUTH_KEY) !== 'ok') return null;
+    const token = sessionStorage.getItem(TOKEN_KEY);
+    if (!token) return null; // sesión de un formato viejo (antes de esta versión) → forzar re-login
     let permissions = {};
     try { permissions = JSON.parse(sessionStorage.getItem(PERM_KEY) || '{}'); } catch (e) { /* noop */ }
     return {
@@ -52,15 +55,17 @@
       userId: sessionStorage.getItem(USERID_KEY) || '',
       userName: sessionStorage.getItem(USERNAME_KEY) || '',
       permissions: permissions,
+      token: token,
     };
   }
 
-  function setSession(session) {
+  function setSession(session, token) {
     sessionStorage.setItem(AUTH_KEY, 'ok');
     sessionStorage.setItem(ROLE_KEY, session.role);
     sessionStorage.setItem(USERID_KEY, session.userId);
     sessionStorage.setItem(USERNAME_KEY, session.userName);
     sessionStorage.setItem(PERM_KEY, JSON.stringify(session.permissions || {}));
+    sessionStorage.setItem(TOKEN_KEY, token);
   }
 
   function clearSession() {
@@ -69,6 +74,7 @@
     sessionStorage.removeItem(USERID_KEY);
     sessionStorage.removeItem(USERNAME_KEY);
     sessionStorage.removeItem(PERM_KEY);
+    sessionStorage.removeItem(TOKEN_KEY);
   }
 
   function hasPagePermission(role, permissions, required) {
@@ -99,12 +105,6 @@
 
   // Exponer helpers globales
   window.sweetAdmin = {
-    changePassword: async function (nueva) {
-      const h = await hashStr(nueva);
-      localStorage.setItem('sweetSAS_passHash', h);
-      console.log('%c✓ Contraseña actualizada. Recargá la página.', 'color:#10b981;font-weight:bold');
-      console.log('Hash guardado:', h);
-    },
     logout: function () {
       clearSession();
       location.reload();
@@ -120,7 +120,16 @@
     onReady: function (cb) {
       if (window.__SWEET_SESSION) { cb(window.__SWEET_SESSION); return; }
       readyCallbacks.push(cb);
-    }
+    },
+    // Wrapper de fetch que agrega el token de sesión — usar esto (en vez de
+    // fetch a secas) para cualquier pedido a una API que requiera sesión.
+    fetch: function (url, options) {
+      options = options || {};
+      const session = getSession();
+      const headers = new Headers(options.headers || {});
+      if (session && session.token) headers.set('Authorization', 'Bearer ' + session.token);
+      return fetch(url, { ...options, headers });
+    },
   };
 
   function markReady(session) {
@@ -164,37 +173,29 @@
 
     async function tryLogin() {
       const val = document.getElementById('authPassword').value;
-      const hash = await hashStr(val);
-      const storedOwnerHash = localStorage.getItem('sweetSAS_passHash') || PASS_HASH;
+      if (!val) return;
 
       let session = null;
+      let token = null;
 
-      if (hash === storedOwnerHash) {
-        session = {
-          role: 'owner',
-          userId: 'owner',
-          userName: 'Dueño',
-          permissions: { dashboard: true, menuEditor: true, locales: ['rissione', 'hiper', 'changoMas'], userAdmin: true },
-        };
-      } else {
-        try {
-          const res = await fetch('/api/users?action=login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: val }),
-          });
-          const data = await res.json();
-          if (data && data.ok && data.user) {
-            session = {
-              role: data.user.role,
-              userId: data.user.id,
-              userName: data.user.nombre,
-              permissions: data.user.permissions || {},
-            };
-          }
-        } catch (e) {
-          // sin conexión al API → tratar como credencial inválida abajo
+      try {
+        const res = await fetch('/api/users?action=login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: val }),
+        });
+        const data = await res.json();
+        if (data && data.ok && data.user && data.token) {
+          session = {
+            role: data.user.role,
+            userId: data.user.userId,
+            userName: data.user.userName,
+            permissions: data.user.permissions || {},
+          };
+          token = data.token;
         }
+      } catch (e) {
+        // sin conexión al API → tratar como credencial inválida abajo
       }
 
       if (!session) {
@@ -211,7 +212,7 @@
         return;
       }
 
-      setSession(session);
+      setSession(session, token);
 
       if (!hasPagePermission(session.role, session.permissions, required)) {
         const dest = landingFor(session.permissions);

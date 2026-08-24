@@ -52,7 +52,7 @@ const CONFIG = {
 
 const Storage = {
   async save(rendicion) {
-    const res = await fetch('/api/rendiciones', {
+    const res = await window.sweetAuth.fetch('/api/rendiciones', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(rendicion),
@@ -71,7 +71,7 @@ const Storage = {
     if (fechaDesde) params.set('desde', fechaDesde);
     if (fechaHasta) params.set('hasta', fechaHasta);
 
-    const res = await fetch(`/api/rendiciones?${params.toString()}`);
+    const res = await window.sweetAuth.fetch(`/api/rendiciones?${params.toString()}`);
     const data = await res.json();
     if (!res.ok || !data.ok) {
       throw new Error(data.error || 'No se pudieron cargar las rendiciones.');
@@ -80,7 +80,7 @@ const Storage = {
   },
 
   async delete(id) {
-    const res = await fetch(`/api/rendiciones?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const res = await window.sweetAuth.fetch(`/api/rendiciones?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
     const data = await res.json();
     if (!res.ok || !data.ok) {
       throw new Error(data.error || 'No se pudo eliminar la rendición.');

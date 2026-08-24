@@ -17,10 +17,12 @@
  * (dueño/supervisor) en auth-gate.js, igual que el editor de menú.
  */
 
+import { obtenerSesion, tieneRol } from '../lib/session.js';
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
 const KV_KEY = 'catalog';
@@ -164,9 +166,21 @@ export async function onRequest(context) {
     return json({ error: 'Binding KV "CAJACHICA_DATA" no encontrado. Ver wrangler.jsonc.' }, 500);
   }
 
+  const session = await obtenerSesion(request, env);
+  const tieneAccesoLocales = session && Array.isArray(session.permissions?.locales) && session.permissions.locales.length > 0;
+
   if (method === 'GET') {
+    // Cualquiera con algún local asignado puede leer el catálogo (lo
+    // necesita para el buscador de ítems al cargar un movimiento).
+    if (!tieneAccesoLocales) return json({ error: 'No autenticado.' }, 401);
     const catalog = await loadCatalog(env);
     return json({ ok: true, ...catalog });
+  }
+
+  // Modificar el catálogo (alta/edición/borrado de ítems o clasificaciones)
+  // es exclusivo de dueño/supervisor, igual que la página que lo gestiona.
+  if (!tieneRol(session, 'owner', 'supervisor')) {
+    return json({ error: 'No autorizado.' }, 403);
   }
 
   // ── ÍTEMS ────────────────────────────────────────────────────

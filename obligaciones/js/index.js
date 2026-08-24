@@ -18,7 +18,7 @@
   // ============================================
   async function cargarObligacionesConocidas() {
     try {
-      const res = await fetch('/api/obligaciones-referencias?tipo=general');
+      const res = await window.sweetAuth.fetch('/api/obligaciones-referencias?tipo=general');
       const data = await res.json();
       if (!res.ok || !data.ok) return;
       obligacionesConocidas = data.referencias.map(r => r.obligacion);
@@ -47,7 +47,7 @@
     wrapper.innerHTML = '<div class="empty-state"><span class="empty-state__icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><p class="empty-state__text">Cargando...</p></div>';
 
     try {
-      const res = await fetch(`/api/obligaciones?${params.toString()}`);
+      const res = await window.sweetAuth.fetch(`/api/obligaciones?${params.toString()}`);
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudieron cargar los movimientos.');
       movimientos = data.movimientos;
@@ -169,7 +169,7 @@
     if (!nuevaObligacion) { Utils.toast('Escribí o elegí una clasificación', 'error'); return; }
     const id = tr.dataset.id;
     try {
-      const res = await fetch(`/api/obligaciones?id=${encodeURIComponent(id)}`, {
+      const res = await window.sweetAuth.fetch(`/api/obligaciones?id=${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ obligacion: nuevaObligacion }),
@@ -192,7 +192,7 @@
     const id = tr.dataset.id;
     const campo = input.dataset.campo;
     try {
-      const res = await fetch(`/api/obligaciones?id=${encodeURIComponent(id)}`, {
+      const res = await window.sweetAuth.fetch(`/api/obligaciones?id=${encodeURIComponent(id)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [campo]: input.value.trim() }),
@@ -211,7 +211,7 @@
     const confirmado = await Utils.confirm('¿Eliminar movimiento?', 'Esta acción no se puede deshacer.', 'Eliminar');
     if (!confirmado) return;
     try {
-      const res = await fetch(`/api/obligaciones?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const res = await window.sweetAuth.fetch(`/api/obligaciones?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo eliminar.');
       Utils.toast('Movimiento eliminado', 'success');
@@ -261,7 +261,7 @@
     label.textContent = 'Procesando...';
 
     try {
-      const res = await fetch('/api/obligaciones-upload', { method: 'POST', body: form });
+      const res = await window.sweetAuth.fetch('/api/obligaciones-upload', { method: 'POST', body: form });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo procesar el archivo.');
 
@@ -289,7 +289,7 @@
 
   async function cargarHistorialCargas() {
     try {
-      const res = await fetch('/api/obligaciones-archivos');
+      const res = await window.sweetAuth.fetch('/api/obligaciones-archivos');
       const data = await res.json();
       if (!res.ok || !data.ok) return;
       renderHistorialCargas(data.archivos);
@@ -337,7 +337,7 @@
     if (!confirmado) return;
 
     try {
-      const res = await fetch(`/api/obligaciones-archivos?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      const res = await window.sweetAuth.fetch(`/api/obligaciones-archivos?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo deshacer la carga.');
       Utils.toast(`✓ Carga deshecha: se eliminaron ${data.filasEliminadas} movimiento${data.filasEliminadas !== 1 ? 's' : ''}`, 'success');

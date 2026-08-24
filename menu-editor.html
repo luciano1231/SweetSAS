@@ -702,7 +702,7 @@ function setSyncStatus(state, msg) {
 // ── Leer menú desde Cloudflare KV ────────────
 async function fetchFromCloud(store) {
   try {
-    const res = await fetch(`${API_BASE}?store=${store}`);
+    const res = await window.sweetAuth.fetch(`${API_BASE}?store=${store}`);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
     return json;   // null si no hay datos guardados aún
@@ -715,7 +715,7 @@ async function fetchFromCloud(store) {
 // ── Guardar menú en Cloudflare KV ────────────
 async function saveToCloud(store, menuData) {
   try {
-    const res = await fetch(API_BASE, {
+    const res = await window.sweetAuth.fetch(API_BASE, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ store, data: menuData }),
@@ -1146,21 +1146,26 @@ async function initApp() {
   setTimeout(scalePreview, 50);
 }
 
-initApp();
-
 // Re-escalar cuando cambia el tamaño de la ventana
 window.addEventListener('resize', scalePreview);
 
-// Mostrar solo los locales a los que este usuario tiene acceso
+// initApp() pide el menú a la nube (fetchFromCloud), que ahora exige una
+// sesión válida — por eso espera a sweetAuth.onReady en vez de dispararse
+// solo al parsear el script (antes fallaba en silencio en cada carga,
+// mostrando datos viejos de caché/default sin avisar nada).
 window.sweetAuth.onReady(function (session) {
+  // Mostrar solo los locales a los que este usuario tiene acceso, y
+  // arrancar en uno permitido si el que había guardado ya no lo es.
   const permitidos = (session.permissions && session.permissions.locales) || [];
   Object.keys(STORES).forEach(function (k) {
     const btn = document.getElementById('store-' + k);
     if (btn && !permitidos.includes(k)) btn.style.display = 'none';
   });
   if (permitidos.length && !permitidos.includes(currentStore)) {
-    switchStore(permitidos[0]);
+    currentStore = permitidos[0];
   }
+
+  initApp();
 });
 </script>
 

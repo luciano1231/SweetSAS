@@ -12,11 +12,12 @@
  */
 
 import { agregarObligacionesSiFaltan } from './obligaciones-upload.js';
+import { obtenerSesion, tieneRol } from '../lib/session.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
 function json(data, status = 200) {
@@ -36,6 +37,13 @@ export async function onRequest(context) {
   }
   if (!env.RENDICIONES_DB) {
     return json({ error: 'Binding D1 "RENDICIONES_DB" no encontrado. Ver wrangler.jsonc.' }, 500);
+  }
+
+  // Obligaciones es información financiera del negocio entero — exclusivo
+  // de dueño y supervisor, igual que la página que la muestra.
+  const session = await obtenerSesion(request, env);
+  if (!tieneRol(session, 'owner', 'supervisor')) {
+    return json({ error: 'No autorizado.' }, 403);
   }
 
   // ── LISTAR ───────────────────────────────────────────────────

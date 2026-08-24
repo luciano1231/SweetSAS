@@ -9,10 +9,12 @@
  * Requiere el binding D1: RENDICIONES_DB (ver wrangler.jsonc y schema.sql)
  */
 
+import { obtenerSesion, tieneRol, tieneLocal } from '../lib/session.js';
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token, Authorization',
 };
 
 const DENOMINACIONES = [10, 20, 50, 100, 200, 500, 1000, 2000, 10000, 20000];
@@ -64,16 +66,35 @@ export async function onRequest(context) {
     return json({ error: 'Binding D1 "RENDICIONES_DB" no encontrado. Ver wrangler.jsonc.' }, 500);
   }
 
+  // Todo lo que sigue (salvo la importación masiva, que usa su propio
+  // X-Admin-Token) exige una sesión válida con al menos un local asignado.
+  const session = (url.searchParams.get('action') === 'bulk-import') ? null : await obtenerSesion(request, env);
+  const tieneAccesoLocales = session && Array.isArray(session.permissions?.locales) && session.permissions.locales.length > 0;
+
   // ── LISTAR (con filtros opcionales) ─────────────────────────
   if (method === 'GET') {
-    const local = url.searchParams.get('local');
+    if (!tieneAccesoLocales) return json({ error: 'No autenticado.' }, 401);
+
     const turno = url.searchParams.get('turno');
     const desde = url.searchParams.get('desde');
     const hasta = url.searchParams.get('hasta');
+    // El local pedido por el cliente se ignora si no es uno de los suyos —
+    // así un rol "local" nunca puede leer datos de otro local aunque arme
+    // el pedido a mano.
+    const localPedido = url.searchParams.get('local');
+    const esOwnerOSupervisor = tieneRol(session, 'owner', 'supervisor');
+    const local = (localPedido && (esOwnerOSupervisor || tieneLocal(session, localPedido))) ? localPedido : null;
 
     let sql = 'SELECT * FROM rendiciones WHERE 1=1';
     const binds = [];
-    if (local) { sql += ' AND local_id = ?'; binds.push(local); }
+    if (local) {
+      sql += ' AND local_id = ?'; binds.push(local);
+    } else if (!esOwnerOSupervisor) {
+      // Rol local sin filtro explícito: acotar a sus locales igual, nunca a todo.
+      const placeholders = session.permissions.locales.map(() => '?').join(', ');
+      sql += ` AND local_id IN (${placeholders})`;
+      binds.push(...session.permissions.locales);
+    }
     if (turno) { sql += ' AND turno = ?'; binds.push(turno); }
     if (desde) { sql += ' AND fecha >= ?'; binds.push(desde); }
     if (hasta) { sql += ' AND fecha <= ?'; binds.push(hasta); }
@@ -112,6 +133,8 @@ export async function onRequest(context) {
 
   // ── CREAR ────────────────────────────────────────────────────
   if (method === 'POST') {
+    if (!tieneAccesoLocales) return json({ error: 'No autenticado.' }, 401);
+
     let body;
     try {
       body = await request.json();
@@ -121,6 +144,9 @@ export async function onRequest(context) {
 
     for (const f of ['local_id', 'turno', 'fecha', 'empleado_id']) {
       if (!body[f]) return json({ error: `Falta el campo: ${f}` }, 400);
+    }
+    if (!tieneRol(session, 'owner', 'supervisor') && !tieneLocal(session, body.local_id)) {
+      return json({ error: 'No tenés acceso a ese local.' }, 403);
     }
 
     const row = buildRow(body);
@@ -133,8 +159,9 @@ export async function onRequest(context) {
     return json({ ok: true, id: row.id });
   }
 
-  // ── ELIMINAR ─────────────────────────────────────────────────
+  // ── ELIMINAR (solo dueño/supervisor) ─────────────────────────
   if (method === 'DELETE') {
+    if (!tieneRol(session, 'owner', 'supervisor')) return json({ error: 'No autorizado.' }, 403);
     const id = url.searchParams.get('id');
     if (!id) return json({ error: 'Falta el parámetro id.' }, 400);
     await env.RENDICIONES_DB.prepare('DELETE FROM rendiciones WHERE id = ?').bind(id).run();

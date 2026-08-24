@@ -71,7 +71,7 @@
 
     let data, error;
     try {
-      const res = await fetch(`/api/rendiciones?${params.toString()}`);
+      const res = await window.sweetAuth.fetch(`/api/rendiciones?${params.toString()}`);
       data = await res.json();
       if (!data.ok) throw new Error(data.error || 'Error al cargar');
     } catch (err) {

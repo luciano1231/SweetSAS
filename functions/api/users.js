@@ -1,15 +1,22 @@
 /**
  * Cloudflare Pages Function — /api/users
  *
- * Maneja el login de los usuarios de local/supervisor (PIN) y el panel de
- * administración de usuarios (solo el dueño, protegido con ADMIN_TOKEN).
+ * Login unificado (contraseña del dueño + PIN de supervisor/local) y panel
+ * de administración de usuarios (protegido con ADMIN_TOKEN).
+ *
+ * El login ya NO se valida en el navegador — antes la contraseña del dueño
+ * se comparaba en el cliente contra un hash visible en el JS, lo que
+ * permitía falsificar una sesión "dueño" abriendo la consola y escribiendo
+ * a mano en sessionStorage. Ahora todo login (dueño o PIN) se verifica acá
+ * y devuelve un token firmado (ver functions/lib/session.js) que el resto
+ * de las APIs exige y valida en cada pedido.
  *
  * Requiere:
  *  - Binding KV: USERS_DATA (Cloudflare Dashboard → Pages → Settings → Bindings)
- *  - Variable de entorno: ADMIN_TOKEN (Cloudflare Dashboard → Pages → Settings →
- *    Environment variables). Es la "clave de administración" que se pide una
- *    sola vez por sesión dentro de Gestión de Usuarios — separada de la
- *    contraseña del dueño para no depender de ella.
+ *  - Secreto: SESSION_SECRET — firma los tokens de sesión.
+ *  - Secreto: OWNER_PASSWORD_HASH — hash SHA-256 de la contraseña del dueño.
+ *  - Variable de entorno: ADMIN_TOKEN — clave de administración de Gestión
+ *    de Usuarios, separada de la contraseña del dueño.
  *
  * Endpoints:
  *  POST   /api/users?action=login   body: { password }              → público
@@ -21,6 +28,8 @@
  * Nunca se devuelve el hash de la contraseña al cliente.
  */
 
+import { firmarSesion } from '../lib/session.js';
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
@@ -31,6 +40,13 @@ const KV_KEY = 'users';
 
 // Locales válidos (mismos ids que functions/api/menu.js y rendicion/js/config.js)
 const VALID_LOCALES = ['rissione', 'hiper', 'changoMas'];
+
+// Permisos del dueño — fijos, no se editan desde Gestión de Usuarios.
+// Única fuente de verdad ahora (antes también estaban hardcodeados en el
+// cliente, en js/auth-gate.js). El acceso a Caja Chica/Obligaciones/
+// planillas maestras no usa un flag acá — se decide por rol
+// (owner/supervisor) en cada endpoint, ver functions/lib/session.js.
+const PERMISOS_DUENO = { dashboard: true, menuEditor: true, locales: VALID_LOCALES, userAdmin: true };
 
 // Semilla inicial — solo se usa una vez, la primera vez que se lee/escribe la
 // KV y todavía no tiene datos guardados. El PIN en texto plano vive acá
@@ -133,6 +149,10 @@ export async function onRequest(context) {
 
   // ── LOGIN (público) ──────────────────────────────────────────
   if (method === 'POST' && action === 'login') {
+    if (!env.SESSION_SECRET) {
+      return json({ error: 'Falta configurar el secreto SESSION_SECRET en Cloudflare.' }, 500);
+    }
+
     let body;
     try {
       body = await request.json();
@@ -143,12 +163,23 @@ export async function onRequest(context) {
     const password = (body.password || '').toString();
     if (!password) return json({ ok: false });
 
-    const users = await getUsers(env);
     const hash = await hashStr(password);
-    const match = users.find(u => u.passHash === hash);
 
+    // ¿Es la contraseña del dueño? (se verifica acá, ya no en el navegador)
+    if (env.OWNER_PASSWORD_HASH && hash === env.OWNER_PASSWORD_HASH) {
+      const datosSesion = { role: 'owner', userId: 'owner', userName: 'Dueño', permissions: PERMISOS_DUENO };
+      const token = await firmarSesion(datosSesion, env.SESSION_SECRET);
+      return json({ ok: true, token, user: datosSesion });
+    }
+
+    // ¿Es el PIN de un supervisor o local?
+    const users = await getUsers(env);
+    const match = users.find(u => u.passHash === hash);
     if (!match) return json({ ok: false });
-    return json({ ok: true, user: publicUser(match) });
+
+    const datosSesion = { role: match.role, userId: match.id, userName: match.nombre, permissions: match.permissions };
+    const token = await firmarSesion(datosSesion, env.SESSION_SECRET);
+    return json({ ok: true, token, user: datosSesion });
   }
 
   // ── A partir de acá, todo requiere el token de administración ──

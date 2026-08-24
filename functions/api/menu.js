@@ -7,10 +7,12 @@
  * Requiere el binding KV: MENU_DATA (configurar en Cloudflare Dashboard → Settings → Bindings)
  */
 
+import { obtenerSesion } from '../lib/session.js';
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
 export async function onRequest(context) {
@@ -27,6 +29,14 @@ export async function onRequest(context) {
     return new Response(
       JSON.stringify({ error: 'KV binding "MENU_DATA" no encontrado. Configurarlo en Cloudflare Dashboard → Settings → Bindings.' }),
       { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const session = await obtenerSesion(request, env);
+  if (!session || !session.permissions?.menuEditor) {
+    return new Response(
+      JSON.stringify({ error: 'No autorizado.' }),
+      { status: 403, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
     );
   }
 
