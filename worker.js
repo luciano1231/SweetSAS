@@ -19,6 +19,7 @@ import { onRequest as obligacionesArchivosHandler } from './functions/api/obliga
 import { onRequest as recetasHandler } from './functions/api/recetas.js';
 import { onRequest as recetasCatalogoHandler } from './functions/api/recetas-catalogo.js';
 import { onRequest as recetasItemsHandler } from './functions/api/recetas-items.js';
+import { onRequest as listasPreciosHandler } from './functions/api/listas-precios.js';
 import { onRequest as dataHandler } from './functions/data.js';
 
 export default {
@@ -37,6 +38,7 @@ export default {
     if (url.pathname === '/api/recetas') return recetasHandler({ request, env, ctx });
     if (url.pathname === '/api/recetas-catalogo') return recetasCatalogoHandler({ request, env, ctx });
     if (url.pathname === '/api/recetas-items') return recetasItemsHandler({ request, env, ctx });
+    if (url.pathname === '/api/listas-precios') return listasPreciosHandler({ request, env, ctx });
     if (url.pathname === '/data') return dataHandler({ request, env, ctx });
 
     // Cualquier otra ruta: archivo estático (html, css, js, imágenes, etc.)

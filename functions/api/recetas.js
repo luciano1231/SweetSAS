@@ -14,6 +14,7 @@
  */
 
 import { obtenerSesion, tieneRol } from '../lib/session.js';
+import { calcularTotales, listarProductosConTotales } from '../lib/recetas-calc.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -26,15 +27,6 @@ function json(data, status = 200) {
     status,
     headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
   });
-}
-
-function calcularTotales(producto, totalIngredientes, totalCostosFijos) {
-  const costoTotal = Math.round((totalIngredientes + totalCostosFijos) * 100) / 100;
-  const unidades = Number(producto.unidades_por_tanda) || 1;
-  const costoUnitario = Math.round((costoTotal / unidades) * 100) / 100;
-  const utilidadPct = Number(producto.utilidad_deseada_pct) || 0;
-  const precioConUtilidad = Math.round(costoUnitario * (1 + utilidadPct / 100) * 100) / 100;
-  return { costo_total: costoTotal, costo_unitario: costoUnitario, precio_con_utilidad: precioConUtilidad };
 }
 
 export async function onRequest(context) {
@@ -95,27 +87,7 @@ export async function onRequest(context) {
 
   // ── LISTAR productos (con totales calculados) ────────────────
   if (method === 'GET') {
-    const { results: productos } = await env.RENDICIONES_DB.prepare('SELECT * FROM recetas_productos ORDER BY nombre COLLATE NOCASE').all();
-
-    const { results: sumasIng } = await env.RENDICIONES_DB.prepare(
-      `SELECT pi.producto_id, SUM(pi.cantidad * i.costo_fraccion) as total
-       FROM recetas_producto_ingredientes pi JOIN recetas_ingredientes i ON i.id = pi.ingrediente_id
-       GROUP BY pi.producto_id`
-    ).all();
-    const { results: sumasCF } = await env.RENDICIONES_DB.prepare(
-      `SELECT pc.producto_id, SUM(pc.cantidad * c.costo_fraccion) as total
-       FROM recetas_producto_costos_fijos pc JOIN recetas_costos_fijos c ON c.id = pc.costo_fijo_id
-       GROUP BY pc.producto_id`
-    ).all();
-
-    const mapaIng = Object.fromEntries(sumasIng.map(r => [r.producto_id, r.total || 0]));
-    const mapaCF = Object.fromEntries(sumasCF.map(r => [r.producto_id, r.total || 0]));
-
-    const conTotales = productos.map(p => ({
-      ...p,
-      ...calcularTotales(p, mapaIng[p.id] || 0, mapaCF[p.id] || 0),
-    }));
-
+    const conTotales = await listarProductosConTotales(env.RENDICIONES_DB);
     return json({ ok: true, productos: conTotales });
   }
 

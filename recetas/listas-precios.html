@@ -6,8 +6,8 @@
   </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Recetas — Sweet & Pop Express</title>
-  <meta name="description" content="Costos y precios de productos">
+  <title>Listas de Precios — Sweet & Pop Express</title>
+  <meta name="description" content="Precios publicados para clientes y mayoristas">
   <link rel="stylesheet" href="../rendicion/css/styles.css">
   <link rel="icon" href="/assets/logo-64.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -15,11 +15,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     html:not(.authenticated) body > :not(#authGate) { display: none !important; }
-    .new-prod-grid { display: grid; grid-template-columns: 1fr auto; gap: var(--space-md); align-items: end; }
-    .data-table tr { cursor: pointer; }
-    .data-table .cell--precio { font-weight: 700; color: var(--accent-primary); }
+    .tabs { display: flex; gap: var(--space-sm); margin-bottom: var(--space-md); }
+    .lista-meta { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-md); }
+    .lista-meta__pub { font-size: var(--font-size-sm); color: var(--text-secondary); }
+    .lista-meta__acciones { display: flex; gap: var(--space-sm); }
+    .ajuste-cell { display: flex; gap: 6px; align-items: center; }
+    .ajuste-cell select { padding: 6px 8px; background: var(--bg-input); border: 1px solid var(--glass-border); border-radius: var(--radius-sm); color: var(--text-primary); font-family: var(--font-family); font-size: var(--font-size-sm); }
+    .data-table .cell--muted { color: var(--text-muted); }
+    .data-table tr.fila-rota td { opacity: 0.5; }
   </style>
-  <script>window.__PAGE_PERMISSION = 'recetas';</script>
+  <script>window.__PAGE_PERMISSION = 'listasPrecios';</script>
   <script src="/js/auth-gate.js"></script>
   <script src="/js/quick-nav.js"></script>
 </head>
@@ -67,49 +72,49 @@
       <div class="app-header__brand">
         <div class="app-header__logo"><img src="/assets/logo-128.png" alt="Sweet &amp; Pop Express"></div>
         <div>
-          <h1 class="app-header__title">Recetas</h1>
-          <p class="app-header__subtitle">Costos y precios de productos</p>
+          <h1 class="app-header__title">Listas de Precios</h1>
+          <p class="app-header__subtitle">Precios congelados para clientes y mayoristas</p>
         </div>
       </div>
       <nav class="app-header__nav">
         <button type="button" class="nav-link" id="theme-toggle">Claro</button>
         <a href="../index.html" class="nav-link">← Dashboard</a>
-        <a href="ingredientes.html" class="nav-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg> Ingredientes</a>
-        <a href="listas-precios.html" class="nav-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg> Listas de Precios</a>
+        <a href="index.html" class="nav-link">← Recetas</a>
       </nav>
     </header>
 
-    <div class="card animate-in animate-in--delay-1">
-      <div class="card__header">
-        <div class="card__icon card__icon--cash"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>
+    <div class="tabs animate-in animate-in--delay-1">
+      <button type="button" class="nav-link nav-link--active" id="tab-clientes" data-lista="clientes">Clientes</button>
+      <button type="button" class="nav-link" id="tab-mayoristas" data-lista="mayoristas">Mayoristas</button>
+    </div>
+
+    <div class="card animate-in animate-in--delay-2">
+      <div class="lista-meta">
         <div>
-          <h2 class="card__title">Nuevo Producto</h2>
-          <p class="card__description">Después entrás a armar la receta (ingredientes, costos fijos, precio)</p>
+          <div class="lista-meta__pub" id="lista-publicada-info">Cargando...</div>
+        </div>
+        <div class="lista-meta__acciones">
+          <a href="#" target="_blank" class="btn btn--ghost" id="btn-ver-publicada">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            Ver / Imprimir publicada
+          </a>
+          <button type="button" class="btn btn--ghost" id="btn-sincronizar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            Sincronizar desde Recetas
+          </button>
+          <button type="button" class="btn btn--submit" id="btn-publicar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg>
+            Publicar
+          </button>
         </div>
       </div>
-      <div class="new-prod-grid">
-        <input type="text" class="form-input" id="new-prod-nombre" placeholder="Ej: CHIPA congelado x kg" autocomplete="off">
-        <button type="button" class="btn btn--submit" id="btn-add-prod">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          Crear
-        </button>
-      </div>
-    </div>
 
-    <div class="animate-in animate-in--delay-2" style="display: flex; justify-content: flex-end; margin-bottom: var(--space-sm);">
-      <label class="filter-checkbox" for="filter-deshabilitados">
-        <input type="checkbox" id="filter-deshabilitados">
-        Mostrar deshabilitados
-      </label>
-    </div>
-
-    <div class="card animate-in animate-in--delay-3" style="padding: 0; overflow: hidden;">
       <div class="table-wrapper" id="table-wrapper"><!-- Generated by JS --></div>
     </div>
   </div>
 
   <script src="../rendicion/js/utils.js"></script>
   <script src="../rendicion/js/theme.js"></script>
-  <script src="js/index.js"></script>
+  <script src="js/listas-precios.js"></script>
 </body>
 </html>

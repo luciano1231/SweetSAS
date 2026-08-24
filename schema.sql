@@ -191,3 +191,39 @@ CREATE INDEX IF NOT EXISTS idx_recetas_proding_producto ON recetas_producto_ingr
 CREATE INDEX IF NOT EXISTS idx_recetas_proding_ingrediente ON recetas_producto_ingredientes(ingrediente_id);
 CREATE INDEX IF NOT EXISTS idx_recetas_prodcf_producto ON recetas_producto_costos_fijos(producto_id);
 CREATE INDEX IF NOT EXISTS idx_recetas_prodcf_costofijo ON recetas_producto_costos_fijos(costo_fijo_id);
+
+-- ============================================
+-- LISTAS DE PRECIOS (Clientes / Mayoristas)
+-- ============================================
+-- Flujo: 1) "Sincronizar" copia los productos activos de Recetas que todavía
+-- no están en el borrador de esta lista. 2) En el borrador se puede ajustar
+-- el precio de cada uno (monto fijo o %) y sacar productos que no
+-- correspondan en esta lista. El precio base se toma SIEMPRE en vivo de la
+-- receta mientras está en borrador (igual que el resto del módulo). 3) Al
+-- "Publicar" se congela el precio final de cada producto en
+-- listas_precios_publicadas — esa foto queda fija hasta la próxima
+-- publicación, sin importar que después cambien costos o el borrador.
+CREATE TABLE IF NOT EXISTS listas_precios_borrador (
+  id           TEXT PRIMARY KEY,
+  lista        TEXT NOT NULL CHECK (lista IN ('clientes','mayoristas')),
+  producto_id  TEXT NOT NULL,
+  nombre_cache TEXT NOT NULL,
+  ajuste_tipo  TEXT NOT NULL DEFAULT 'monto' CHECK (ajuste_tipo IN ('monto','porcentaje')),
+  ajuste_valor REAL NOT NULL DEFAULT 0,
+  created_at   TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_listaborrador_unico ON listas_precios_borrador(lista, producto_id);
+
+CREATE TABLE IF NOT EXISTS listas_precios_publicadas (
+  id           TEXT PRIMARY KEY,
+  lista        TEXT NOT NULL CHECK (lista IN ('clientes','mayoristas')),
+  producto_id  TEXT,
+  nombre       TEXT NOT NULL,
+  precio_final REAL NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_listapublicada_lista ON listas_precios_publicadas(lista);
+
+CREATE TABLE IF NOT EXISTS listas_precios_meta (
+  lista        TEXT PRIMARY KEY CHECK (lista IN ('clientes','mayoristas')),
+  published_at TEXT NOT NULL
+);
