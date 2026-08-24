@@ -176,8 +176,8 @@
 
   function cambiarTab(lista) {
     listaActual = lista;
-    document.getElementById('tab-clientes').classList.toggle('nav-link--active', lista === 'clientes');
-    document.getElementById('tab-mayoristas').classList.toggle('nav-link--active', lista === 'mayoristas');
+    document.getElementById('tab-clientes').classList.toggle('is-active', lista === 'clientes');
+    document.getElementById('tab-mayoristas').classList.toggle('is-active', lista === 'mayoristas');
     cargarBorrador();
   }
 

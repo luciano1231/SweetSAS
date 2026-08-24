@@ -91,14 +91,13 @@
       <a href="listas-precios.html" class="nav-link nav-link--active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg> Listas de Precios</a>
     </div>
 
-    <div class="tabs animate-in animate-in--delay-2">
-      <button type="button" class="nav-link nav-link--active" id="tab-clientes" data-lista="clientes">Clientes</button>
-      <button type="button" class="nav-link" id="tab-mayoristas" data-lista="mayoristas">Mayoristas</button>
-    </div>
-
-    <div class="card animate-in animate-in--delay-3">
+    <div class="card animate-in animate-in--delay-2">
       <div class="lista-meta">
         <div>
+          <div class="segmented" style="margin-bottom: 10px;">
+            <button type="button" class="is-active" id="tab-clientes" data-lista="clientes">Clientes</button>
+            <button type="button" id="tab-mayoristas" data-lista="mayoristas">Mayoristas</button>
+          </div>
           <div class="lista-meta__pub" id="lista-publicada-info">Cargando...</div>
         </div>
         <div class="lista-meta__acciones">

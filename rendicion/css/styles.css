@@ -1397,6 +1397,52 @@ img {
   }
 }
 
+/* ============================================
+   SEGMENTED CONTROL (subgrupo compacto, ej: Clientes/Mayoristas
+   dentro de Listas de Precios) — distinto a los .nav-link "tabs" de arriba
+   de página, para que se lea como un sub-nivel y no como más pestañas
+   principales apiladas.
+   ============================================ */
+.segmented {
+  display: inline-flex;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 2px;
+}
+
+.segmented button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 6px 18px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  transition: all var(--transition-fast);
+}
+
+.segmented button:hover {
+  color: var(--text-primary);
+}
+
+.segmented button.is-active {
+  background: var(--accent-gradient);
+  color: white;
+}
+
+@media (max-width: 640px) {
+  .segmented {
+    width: 100%;
+  }
+  .segmented button {
+    flex: 1 1 auto;
+  }
+}
+
 /* Filters bar */
 .filters-bar {
   display: flex;
