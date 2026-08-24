@@ -54,7 +54,7 @@
     }
 
     let html = `
-      <table class="data-table">
+      <table class="data-table data-table--stack">
         <thead>
           <tr>
             <th></th>
@@ -79,12 +79,12 @@
               ${activo ? ICON_CHECK : ICON_X}
             </button>
           </td>
-          <td>${p.nombre}</td>
-          <td>${Utils.formatNumber(p.unidades_por_tanda)}</td>
-          <td class="cell--currency">${Utils.formatCurrency(p.costo_total)}</td>
-          <td class="cell--currency">${Utils.formatCurrency(p.costo_unitario)}</td>
-          <td>${p.utilidad_deseada_pct}%</td>
-          <td class="cell--currency cell--precio">${Utils.formatCurrency(p.precio_con_utilidad)}</td>
+          <td class="cell--title">${p.nombre}</td>
+          <td data-label="Unid. x Tanda">${Utils.formatNumber(p.unidades_por_tanda)}</td>
+          <td class="cell--currency" data-label="Costo Total">${Utils.formatCurrency(p.costo_total)}</td>
+          <td class="cell--currency" data-label="Costo Unitario">${Utils.formatCurrency(p.costo_unitario)}</td>
+          <td data-label="% Utilidad">${p.utilidad_deseada_pct}%</td>
+          <td class="cell--currency cell--precio" data-label="Precio + Utilidad">${Utils.formatCurrency(p.precio_con_utilidad)}</td>
           <td><button type="button" class="btn-row-delete btn-delete-prod" title="Eliminar" data-id="${p.id}" data-nombre="${p.nombre.replace(/"/g, '&quot;')}">${ICON_TRASH}</button></td>
         </tr>
       `;

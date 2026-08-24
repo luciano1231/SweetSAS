@@ -70,7 +70,7 @@
     const totalSubtotal = lineas.reduce((s, l) => s + l.subtotal, 0);
 
     let html = `
-      <table class="data-table">
+      <table class="data-table data-table--stack">
         <thead>
           <tr>
             <th>${tipo === 'ingrediente' ? 'Ingrediente' : 'Costo Fijo'}</th>
@@ -86,19 +86,19 @@
     lineas.forEach(l => {
       html += `
         <tr data-linea-id="${l.id}">
-          <td>${l.nombre}</td>
-          <td class="cell--currency">${Utils.formatCurrency(l.costo_fraccion)}</td>
-          <td><input type="number" class="obl-inline-input obl-inline-input--sm linea-cantidad" min="0" step="0.01" value="${l.cantidad}"></td>
-          <td class="cell--currency">${Utils.formatCurrency(l.subtotal)}</td>
-          <td class="cell--porcentaje">${l.porcentaje}%</td>
+          <td class="cell--title">${l.nombre}</td>
+          <td class="cell--currency" data-label="Costo x Unidad">${Utils.formatCurrency(l.costo_fraccion)}</td>
+          <td data-label="Cantidad"><input type="number" class="obl-inline-input obl-inline-input--sm linea-cantidad" min="0" step="0.01" value="${l.cantidad}"></td>
+          <td class="cell--currency" data-label="Subtotal">${Utils.formatCurrency(l.subtotal)}</td>
+          <td class="cell--porcentaje" data-label="% Costo">${l.porcentaje}%</td>
           <td><button type="button" class="btn-row-delete btn-delete-linea" title="Quitar">${ICON_TRASH}</button></td>
         </tr>
       `;
     });
     html += `
         <tr class="fila-total">
-          <td colspan="3">TOTAL</td>
-          <td class="cell--currency">${Utils.formatCurrency(totalSubtotal)}</td>
+          <td class="cell--title" colspan="3">TOTAL</td>
+          <td class="cell--currency" data-label="Subtotal">${Utils.formatCurrency(totalSubtotal)}</td>
           <td colspan="2"></td>
         </tr>
       </tbody></table>

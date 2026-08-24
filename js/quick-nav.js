@@ -49,7 +49,7 @@
     links.push({ href: '/caja-chica/historial.html', label: ICON_HISTORY + ' Historial de Caja Chica' });
     links.push({ href: '/caja-chica/items.html', label: ICON_LIST + ' Ítems de Caja Chica' });
     links.push({ href: '/obligaciones/index.html', label: ICON_BANK + ' Obligaciones' });
-    links.push({ href: '/recetas/index.html', label: ICON_RECETAS + ' Recetas' });
+    links.push({ href: '/recetas/index.html', label: ICON_RECETAS + ' Precios' });
     links.push({ href: '/menu-editor.html', label: ICON_MENU + ' Editor de Menú' });
     if (role === 'owner') links.push({ href: '/usuarios.html', label: ICON_USERS + ' Gestión de Usuarios' });
 

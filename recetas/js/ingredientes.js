@@ -26,6 +26,9 @@
 
   function render(tipo) {
     const el = document.getElementById(CONTENEDOR[tipo]);
+    const L = tipo === 'ingrediente'
+      ? { nombre: 'Ingrediente', costo: 'Costo Bulto', cantidad: 'Cant. x Bulto' }
+      : { nombre: 'Costo Fijo', costo: 'Costo Total', cantidad: 'Unidades' };
 
     if (datos[tipo].length === 0) {
       el.innerHTML = '<p style="color:var(--text-muted);padding:16px 4px;">Todavía no hay registros.</p>';
@@ -34,11 +37,11 @@
 
     el.innerHTML = datos[tipo].map(i => `
       <div class="ing-row" data-id="${i.id}">
-        <span class="ing-row__valor">${i.nombre}</span>
-        <span class="ing-row__valor">${Utils.formatCurrency(i.costo_bulto)}</span>
-        <span class="ing-row__valor">${Utils.formatNumber(i.cantidad_bulto)}</span>
-        <span class="ing-row__fraccion">${Utils.formatCurrency(i.costo_fraccion)}</span>
-        <span class="ing-row__valor" style="color:var(--text-muted);font-size:.82rem;" title="${(i.observaciones || '').replace(/"/g, '&quot;')}">${i.observaciones || ''}</span>
+        <span class="ing-row__valor" data-label="${L.nombre}">${i.nombre}</span>
+        <span class="ing-row__valor" data-label="${L.costo}">${Utils.formatCurrency(i.costo_bulto)}</span>
+        <span class="ing-row__valor" data-label="${L.cantidad}">${Utils.formatNumber(i.cantidad_bulto)}</span>
+        <span class="ing-row__fraccion" data-label="Costo Fracción">${Utils.formatCurrency(i.costo_fraccion)}</span>
+        <span class="ing-row__valor" data-label="Observaciones" style="color:var(--text-muted);font-size:.82rem;" title="${(i.observaciones || '').replace(/"/g, '&quot;')}">${i.observaciones || ''}</span>
         <span class="ing-row__actions">
           <button type="button" class="btn-edit" title="Editar">${ICON_PENCIL}</button>
           <button type="button" class="btn-delete danger" title="Eliminar">${ICON_TRASH}</button>
@@ -57,13 +60,16 @@
   function iniciarEdicion(tipo, fila) {
     const id = fila.dataset.id;
     const item = datos[tipo].find(i => i.id === id);
+    const L = tipo === 'ingrediente'
+      ? { nombre: 'Ingrediente', costo: 'Costo Bulto', cantidad: 'Cant. x Bulto' }
+      : { nombre: 'Costo Fijo', costo: 'Costo Total', cantidad: 'Unidades' };
 
     fila.innerHTML = `
-      <input type="text" value="${item.nombre.replace(/"/g, '&quot;')}" data-campo="nombre">
-      <input type="number" value="${item.costo_bulto}" step="0.01" min="0" data-campo="costo_bulto">
-      <input type="number" value="${item.cantidad_bulto}" step="0.01" min="0" data-campo="cantidad_bulto">
-      <span class="ing-row__fraccion" id="fraccion-preview">${Utils.formatCurrency(item.costo_fraccion)}</span>
-      <input type="text" value="${(item.observaciones || '').replace(/"/g, '&quot;')}" data-campo="observaciones">
+      <input type="text" value="${item.nombre.replace(/"/g, '&quot;')}" data-campo="nombre" data-label="${L.nombre}">
+      <input type="number" value="${item.costo_bulto}" step="0.01" min="0" data-campo="costo_bulto" data-label="${L.costo}">
+      <input type="number" value="${item.cantidad_bulto}" step="0.01" min="0" data-campo="cantidad_bulto" data-label="${L.cantidad}">
+      <span class="ing-row__fraccion" id="fraccion-preview" data-label="Costo Fracción">${Utils.formatCurrency(item.costo_fraccion)}</span>
+      <input type="text" value="${(item.observaciones || '').replace(/"/g, '&quot;')}" data-campo="observaciones" data-label="Observaciones">
       <span class="ing-row__actions">
         <button type="button" class="btn-save" title="Guardar">${ICON_CHECK}</button>
         <button type="button" class="btn-cancel" title="Cancelar">${ICON_X}</button>

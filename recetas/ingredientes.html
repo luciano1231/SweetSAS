@@ -37,7 +37,41 @@
     .ing-row__actions button:hover { color: var(--text-primary); background: rgba(255,255,255,0.08); }
     .ing-row__actions button.danger:hover { color: var(--error); background: var(--error-bg); }
     .new-ing-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.4fr auto; gap: 10px; margin-bottom: var(--space-lg); padding-bottom: var(--space-lg); border-bottom: 1px solid var(--glass-border); }
-    @media (max-width: 900px) { .ing-row, .new-ing-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 900px) and (min-width: 641px) { .ing-row, .new-ing-grid { grid-template-columns: 1fr 1fr; } }
+
+    @media (max-width: 640px) {
+      .ing-row.ing-row--header { display: none; }
+      .ing-row {
+        display: block;
+        padding: 14px 4px;
+      }
+      .new-ing-grid {
+        display: flex; flex-direction: column;
+      }
+      .ing-row > * {
+        display: flex; justify-content: space-between; align-items: center; gap: var(--space-md);
+        padding: 5px 0; text-align: right;
+      }
+      .ing-row > *::before {
+        content: attr(data-label);
+        font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+        color: var(--text-muted); text-align: left; flex-shrink: 0;
+      }
+      .ing-row > [data-label="Ingrediente"],
+      .ing-row > [data-label="Costo Fijo"] {
+        display: block; text-align: left; font-weight: 700; font-size: 1rem; padding-bottom: 10px;
+      }
+      .ing-row > [data-label="Ingrediente"]::before,
+      .ing-row > [data-label="Costo Fijo"]::before {
+        content: none;
+      }
+      .ing-row__actions {
+        justify-content: flex-end !important;
+      }
+      .ing-row__actions::before {
+        content: none;
+      }
+    }
   </style>
   <script>window.__PAGE_PERMISSION = 'recetas';</script>
   <script src="/js/auth-gate.js"></script>
@@ -94,12 +128,16 @@
       <nav class="app-header__nav">
         <button type="button" class="nav-link" id="theme-toggle">Claro</button>
         <a href="../index.html" class="nav-link">← Dashboard</a>
-        <a href="index.html" class="nav-link">← Recetas</a>
       </nav>
     </header>
 
+    <div class="tabs animate-in animate-in--delay-1">
+      <a href="index.html" class="nav-link nav-link--active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M9 12h6"></path><path d="M9 16h6"></path></svg> Productos y Recetas</a>
+      <a href="listas-precios.html" class="nav-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg> Listas de Precios</a>
+    </div>
+
     <!-- Ingredientes -->
-    <div class="card animate-in animate-in--delay-1">
+    <div class="card animate-in animate-in--delay-2">
       <div class="card__header">
         <div class="card__icon card__icon--cash"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg></div>
         <div>
@@ -131,7 +169,7 @@
     </div>
 
     <!-- Costos Fijos -->
-    <div class="card animate-in animate-in--delay-2">
+    <div class="card animate-in animate-in--delay-3">
       <div class="card__header">
         <div class="card__icon card__icon--summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
         <div>

@@ -49,7 +49,7 @@
     }
 
     let html = `
-      <table class="data-table">
+      <table class="data-table data-table--stack">
         <thead>
           <tr>
             <th>Producto</th>
@@ -66,9 +66,9 @@
       const roto = !l.existe;
       html += `
         <tr data-id="${l.id}" class="${roto ? 'fila-rota' : ''}">
-          <td>${l.nombre}${roto ? ' <span class="cell--muted">(borrado en Recetas)</span>' : ''}${(!roto && !l.activo) ? ' <span class="cell--muted">(deshabilitado en Recetas)</span>' : ''}</td>
-          <td class="cell--currency">${roto ? '—' : Utils.formatCurrency(l.precio_base)}</td>
-          <td>
+          <td class="cell--title">${l.nombre}${roto ? ' <span class="cell--muted">(borrado en Recetas)</span>' : ''}${(!roto && !l.activo) ? ' <span class="cell--muted">(deshabilitado en Recetas)</span>' : ''}</td>
+          <td class="cell--currency" data-label="Precio Base">${roto ? '—' : Utils.formatCurrency(l.precio_base)}</td>
+          <td data-label="Ajuste">
             ${roto ? '—' : `
             <div class="ajuste-cell">
               <select class="ajuste-tipo">
@@ -79,7 +79,7 @@
             </div>
             `}
           </td>
-          <td class="cell--currency cell--precio">${roto ? '—' : Utils.formatCurrency(l.precio_final)}</td>
+          <td class="cell--currency cell--precio" data-label="Precio Final">${roto ? '—' : Utils.formatCurrency(l.precio_final)}</td>
           <td><button type="button" class="btn-row-delete btn-quitar" title="Quitar de esta lista" data-id="${l.id}" data-nombre="${l.nombre.replace(/"/g, '&quot;')}">${ICON_TRASH}</button></td>
         </tr>
       `;
