@@ -37,6 +37,7 @@
     const ICON_CAJACHICA = svg('<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>');
     const ICON_LIST = svg('<line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>');
     const ICON_BANK = svg('<line x1="3" y1="21" x2="21" y2="21"></line><line x1="5" y1="21" x2="5" y2="10"></line><line x1="19" y1="21" x2="19" y2="10"></line><polygon points="12 3 22 9 2 9"></polygon>');
+    const ICON_RECETAS = svg('<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M9 12h6"></path><path d="M9 16h6"></path>');
 
     const links = [];
     if (role === 'owner') links.push({ href: '/index.html', label: ICON_DASHBOARD + ' Dashboard' });
@@ -48,6 +49,7 @@
     links.push({ href: '/caja-chica/historial.html', label: ICON_HISTORY + ' Historial de Caja Chica' });
     links.push({ href: '/caja-chica/items.html', label: ICON_LIST + ' Ítems de Caja Chica' });
     links.push({ href: '/obligaciones/index.html', label: ICON_BANK + ' Obligaciones' });
+    links.push({ href: '/recetas/index.html', label: ICON_RECETAS + ' Recetas' });
     links.push({ href: '/menu-editor.html', label: ICON_MENU + ' Editor de Menú' });
     if (role === 'owner') links.push({ href: '/usuarios.html', label: ICON_USERS + ' Gestión de Usuarios' });
 

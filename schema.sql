@@ -121,3 +121,72 @@ CREATE TABLE IF NOT EXISTS obligaciones_archivos (
   filas_insertadas INTEGER DEFAULT 0,
   created_at       TEXT NOT NULL
 );
+
+-- ============================================
+-- RECETAS (costos de ingredientes, costos fijos y precios de productos)
+-- Migrado de la planilla "Costos Precios de Productos". Ver
+-- functions/api/recetas*.js.
+-- ============================================
+
+-- Catálogo de ingredientes: costo por bulto / cantidad por bulto ->
+-- costo por fracción (unidad real usada en las recetas: kg, litro, unidad...)
+CREATE TABLE IF NOT EXISTS recetas_ingredientes (
+  id                  TEXT PRIMARY KEY,
+  nombre              TEXT NOT NULL UNIQUE,
+  costo_bulto         REAL DEFAULT 0,
+  cantidad_bulto      REAL DEFAULT 1,
+  costo_fraccion      REAL DEFAULT 0,
+  fecha_actualizacion TEXT,
+  observaciones       TEXT
+);
+
+-- Catálogo de costos fijos (mano de obra, alquiler, energía, etc.) — misma
+-- forma que ingredientes, tabla separada porque son conceptualmente
+-- distintos (no son "insumos" que se compran).
+CREATE TABLE IF NOT EXISTS recetas_costos_fijos (
+  id                  TEXT PRIMARY KEY,
+  nombre              TEXT NOT NULL UNIQUE,
+  costo_bulto         REAL DEFAULT 0,
+  cantidad_bulto      REAL DEFAULT 1,
+  costo_fraccion      REAL DEFAULT 0,
+  fecha_actualizacion TEXT,
+  observaciones       TEXT
+);
+
+-- Un producto/receta. El costo total, costo unitario y precio sugerido se
+-- calculan a partir de sus líneas (ingredientes + costos fijos usados) —
+-- no se guardan acá para que nunca queden desincronizados.
+CREATE TABLE IF NOT EXISTS recetas_productos (
+  id                   TEXT PRIMARY KEY,
+  nombre               TEXT NOT NULL UNIQUE,
+  unidades_por_tanda   REAL DEFAULT 1,
+  utilidad_deseada_pct REAL DEFAULT 50,
+  observaciones        TEXT,
+  receta_texto         TEXT,
+  created_at           TEXT NOT NULL,
+  updated_at           TEXT NOT NULL
+);
+
+-- Ingredientes usados en cada receta, con la cantidad. El costo por unidad
+-- se toma siempre en vivo de recetas_ingredientes — si actualizás el costo
+-- de un ingrediente, todas las recetas que lo usan recalculan solas
+-- (mismo comportamiento que tenía la planilla).
+CREATE TABLE IF NOT EXISTS recetas_producto_ingredientes (
+  id             TEXT PRIMARY KEY,
+  producto_id    TEXT NOT NULL,
+  ingrediente_id TEXT NOT NULL,
+  cantidad       REAL DEFAULT 0
+);
+
+-- Costos fijos usados en cada receta (ej: horas de mano de obra), misma idea.
+CREATE TABLE IF NOT EXISTS recetas_producto_costos_fijos (
+  id            TEXT PRIMARY KEY,
+  producto_id   TEXT NOT NULL,
+  costo_fijo_id TEXT NOT NULL,
+  cantidad      REAL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_recetas_proding_producto ON recetas_producto_ingredientes(producto_id);
+CREATE INDEX IF NOT EXISTS idx_recetas_proding_ingrediente ON recetas_producto_ingredientes(ingrediente_id);
+CREATE INDEX IF NOT EXISTS idx_recetas_prodcf_producto ON recetas_producto_costos_fijos(producto_id);
+CREATE INDEX IF NOT EXISTS idx_recetas_prodcf_costofijo ON recetas_producto_costos_fijos(costo_fijo_id);

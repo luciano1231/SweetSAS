@@ -27,6 +27,7 @@
 //   <script>window.__PAGE_PERMISSION = 'cajaChicaHistorial';</script> // planilla maestra: solo dueño/supervisor
 //   <script>window.__PAGE_PERMISSION = 'cajaChicaItems';</script>     // gestión de ítems: solo dueño/supervisor
 //   <script>window.__PAGE_PERMISSION = 'obligaciones';</script>       // resúmenes bancarios: solo dueño/supervisor
+//   <script>window.__PAGE_PERMISSION = 'recetas';</script>            // costos y precios de productos: solo dueño/supervisor
 // Si el usuario logueado no tiene ese permiso, se lo redirige automáticamente
 // al mejor destino posible para él (sin mostrar la página).
 //
@@ -85,7 +86,7 @@
       return Array.isArray(permissions.locales) && permissions.locales.length > 0;
     }
     // Planillas maestras y gestión del catálogo de ítems: solo dueño y supervisor.
-    if (required === 'rendicionHistorial' || required === 'cajaChicaHistorial' || required === 'cajaChicaItems' || required === 'obligaciones') {
+    if (required === 'rendicionHistorial' || required === 'cajaChicaHistorial' || required === 'cajaChicaItems' || required === 'obligaciones' || required === 'recetas') {
       return role === 'owner' || role === 'supervisor';
     }
     return true;
