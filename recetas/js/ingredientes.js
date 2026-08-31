@@ -10,8 +10,14 @@
   const ICON_CHECK  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
   const ICON_X      = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
 
+  const ICON_CAJA = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>';
+  const ICON_RELOJ = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
+
   const datos = { ingrediente: [], costofijo: [] };
   const CONTENEDOR = { ingrediente: 'ingredientes-list', costofijo: 'costosfijos-list' };
+  const busqueda = { ingrediente: '', costofijo: '' };
+  const VISTA_KEY = 'recetas_ingredientes_vista';
+  let vistaActual = localStorage.getItem(VISTA_KEY) === 'costofijo' ? 'costofijo' : 'ingrediente';
 
   async function cargar(tipo) {
     const res = await window.sweetAuth.fetch(`/api/recetas-catalogo?tipo=${tipo}`);
@@ -35,7 +41,15 @@
       return;
     }
 
-    el.innerHTML = datos[tipo].map(i => `
+    const q = busqueda[tipo].trim().toLowerCase();
+    const items = q ? datos[tipo].filter(i => i.nombre.toLowerCase().includes(q)) : datos[tipo];
+
+    if (items.length === 0) {
+      el.innerHTML = `<p style="color:var(--text-muted);padding:16px 4px;">No hay ningún ${tipo === 'ingrediente' ? 'ingrediente' : 'costo fijo'} que coincida con "${busqueda[tipo]}".</p>`;
+      return;
+    }
+
+    el.innerHTML = items.map(i => `
       <div class="ing-row" data-id="${i.id}">
         <span class="ing-row__valor" data-label="${L.nombre}">${i.nombre}</span>
         <span class="ing-row__valor" data-label="${L.costo}">${Utils.formatCurrency(i.costo_bulto)}</span>
@@ -161,10 +175,40 @@
     }
   }
 
+  // ============================================
+  // TOGGLE Ingredientes / Costos Fijos + buscador
+  // ============================================
+  function mostrarVista(tipo) {
+    vistaActual = tipo;
+    localStorage.setItem(VISTA_KEY, tipo);
+
+    document.getElementById('seccion-ingrediente').hidden = tipo !== 'ingrediente';
+    document.getElementById('seccion-costofijo').hidden = tipo !== 'costofijo';
+
+    const btn = document.getElementById('btn-toggle-vista');
+    if (tipo === 'ingrediente') {
+      btn.innerHTML = ICON_RELOJ + ' Ver Costos Fijos';
+      btn.title = 'Ver Costos Fijos';
+    } else {
+      btn.innerHTML = ICON_CAJA + ' Ver Ingredientes';
+      btn.title = 'Ver Ingredientes';
+    }
+
+    const search = document.getElementById('ing-cf-search');
+    search.placeholder = tipo === 'ingrediente' ? 'Buscar ingrediente...' : 'Buscar costo fijo...';
+    search.value = busqueda[tipo];
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
     window.sweetAuth.onReady(function () {
       document.getElementById('btn-add-ing').addEventListener('click', () => crear('ingrediente'));
       document.getElementById('btn-add-cf').addEventListener('click', () => crear('costofijo'));
+      document.getElementById('btn-toggle-vista').addEventListener('click', () => mostrarVista(vistaActual === 'ingrediente' ? 'costofijo' : 'ingrediente'));
+      document.getElementById('ing-cf-search').addEventListener('input', (e) => {
+        busqueda[vistaActual] = e.target.value;
+        render(vistaActual);
+      });
+      mostrarVista(vistaActual);
       cargar('ingrediente');
       cargar('costofijo');
     });

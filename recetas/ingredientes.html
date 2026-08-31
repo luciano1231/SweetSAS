@@ -36,6 +36,9 @@
     }
     .ing-row__actions button:hover { color: var(--text-primary); background: rgba(255,255,255,0.08); }
     .ing-row__actions button.danger:hover { color: var(--error); background: var(--error-bg); }
+    .ing-controles { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap; margin-bottom: var(--space-md); }
+    @media (max-width: 640px) { .ing-controles { flex-direction: column; align-items: stretch; } }
+
     .new-ing-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.4fr auto; gap: 10px; margin-bottom: var(--space-lg); padding-bottom: var(--space-lg); border-bottom: 1px solid var(--glass-border); }
     @media (max-width: 900px) and (min-width: 641px) { .ing-row, .new-ing-grid { grid-template-columns: 1fr 1fr; } }
 
@@ -136,8 +139,19 @@
       <a href="listas-precios.html" class="nav-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path></svg> Listas de Precios</a>
     </div>
 
+    <div class="ing-controles animate-in animate-in--delay-2">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <input type="text" class="form-input" id="ing-cf-search" placeholder="Buscar ingrediente..." autocomplete="off">
+      </div>
+      <button type="button" class="nav-link" id="btn-toggle-vista" title="Ver Costos Fijos">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        Ver Costos Fijos
+      </button>
+    </div>
+
     <!-- Ingredientes -->
-    <div class="card animate-in animate-in--delay-2">
+    <div class="card animate-in animate-in--delay-3" id="seccion-ingrediente">
       <div class="card__header">
         <div class="card__icon card__icon--cash"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg></div>
         <div>
@@ -169,7 +183,7 @@
     </div>
 
     <!-- Costos Fijos -->
-    <div class="card animate-in animate-in--delay-3">
+    <div class="card animate-in animate-in--delay-3" id="seccion-costofijo" hidden>
       <div class="card__header">
         <div class="card__icon card__icon--summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
         <div>
