@@ -30,7 +30,7 @@
     if (l.precio_publicado_anterior === null || l.precio_publicado_anterior === undefined) {
       return '<span class="cell--muted">Sin publicar antes</span>';
     }
-    const anterior = `<span class="cell--muted cell--anterior">${Utils.formatCurrency(l.precio_publicado_anterior)}</span>`;
+    const anterior = `<span class="cell--muted cell--anterior">Antes: ${Utils.formatCurrency(l.precio_publicado_anterior)}</span>`;
     const dif = l.diferencia;
     if (dif === null) return anterior;
     const pct = l.precio_publicado_anterior > 0 ? (dif / l.precio_publicado_anterior) * 100 : 0;
