@@ -179,11 +179,15 @@ export async function onRequest(context) {
     const ajusteValor = Number(body.ajuste_valor);
     if (!isFinite(ajusteValor)) return json({ error: 'ajuste_valor tiene que ser un número.' }, 400);
 
+    // Con ~200 productos tildados, un solo UPDATE con "IN (?,?,?...)" pasa
+    // el límite de parámetros por consulta de D1 y tira error 500 — se
+    // manda un UPDATE por línea en un solo batch en vez de uno gigante.
     const ahora = new Date().toISOString();
-    const placeholders = body.ids.map(() => '?').join(',');
-    await db.prepare(
-      `UPDATE listas_precios_borrador SET ajuste_tipo = ?, ajuste_valor = ?, updated_at = ? WHERE lista = ? AND id IN (${placeholders})`
-    ).bind(ajusteTipo, ajusteValor, ahora, body.lista, ...body.ids).run();
+    const updates = body.ids.map(id =>
+      db.prepare('UPDATE listas_precios_borrador SET ajuste_tipo = ?, ajuste_valor = ?, updated_at = ? WHERE lista = ? AND id = ?')
+        .bind(ajusteTipo, ajusteValor, ahora, body.lista, id)
+    );
+    await db.batch(updates);
 
     return json({ ok: true, actualizados: body.ids.length });
   }
