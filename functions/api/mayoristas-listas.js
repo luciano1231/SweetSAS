@@ -33,11 +33,13 @@ function json(data, status = 200) {
 }
 
 async function conProductos(db, lista) {
+  // Un producto deshabilitado en Recetas no se muestra acá (aunque siga
+  // guardado como miembro de la lista, por si se vuelve a habilitar).
   const { results: items } = await db.prepare(
     `SELECT lp.producto_id, p.nombre
      FROM mayoristas_listas_productos lp
      JOIN recetas_productos p ON p.id = lp.producto_id
-     WHERE lp.lista_id = ? ORDER BY p.nombre COLLATE NOCASE`
+     WHERE lp.lista_id = ? AND p.activo != 0 ORDER BY p.nombre COLLATE NOCASE`
   ).bind(lista.id).all();
   return { ...lista, productos: items };
 }

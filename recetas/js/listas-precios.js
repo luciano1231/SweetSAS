@@ -66,7 +66,7 @@
       const roto = !l.existe;
       html += `
         <tr data-id="${l.id}" class="${roto ? 'fila-rota' : ''}">
-          <td class="cell--title">${l.nombre}${roto ? ' <span class="cell--muted">(borrado en Recetas)</span>' : ''}${(!roto && !l.activo) ? ' <span class="cell--muted">(deshabilitado en Recetas)</span>' : ''}</td>
+          <td class="cell--title">${l.nombre}${roto ? ' <span class="cell--muted">(borrado en Recetas)</span>' : ''}</td>
           <td class="cell--currency" data-label="Precio Base">${roto ? '—' : Utils.formatCurrency(l.precio_base)}</td>
           <td data-label="Ajuste">
             ${roto ? '—' : `

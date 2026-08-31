@@ -57,25 +57,31 @@ async function armarBorrador(db, lista) {
   const productos = await listarProductosConTotales(db);
   const mapaProductos = Object.fromEntries(productos.map(p => [p.id, p]));
 
-  return filas.map(f => {
-    const producto = mapaProductos[f.producto_id];
-    const existe = !!producto;
-    const activo = existe && producto.activo !== 0;
-    const nombre = existe ? producto.nombre : f.nombre_cache;
-    const precioBase = existe ? producto.precio_con_utilidad : null;
-    const precioFinal = existe ? aplicarAjuste(precioBase, f.ajuste_tipo, f.ajuste_valor) : null;
-    return {
-      id: f.id,
-      producto_id: f.producto_id,
-      nombre,
-      existe,
-      activo,
-      precio_base: precioBase,
-      ajuste_tipo: f.ajuste_tipo,
-      ajuste_valor: f.ajuste_valor,
-      precio_final: precioFinal,
-    };
-  });
+  return filas
+    // Un producto deshabilitado en Recetas no tiene que verse en ninguna
+    // otra planilla — se saca acá (la línea del borrador queda guardada
+    // igual por si se vuelve a habilitar, solo se oculta de la vista).
+    .filter(f => {
+      const producto = mapaProductos[f.producto_id];
+      return !producto || producto.activo !== 0;
+    })
+    .map(f => {
+      const producto = mapaProductos[f.producto_id];
+      const existe = !!producto;
+      const nombre = existe ? producto.nombre : f.nombre_cache;
+      const precioBase = existe ? producto.precio_con_utilidad : null;
+      const precioFinal = existe ? aplicarAjuste(precioBase, f.ajuste_tipo, f.ajuste_valor) : null;
+      return {
+        id: f.id,
+        producto_id: f.producto_id,
+        nombre,
+        existe,
+        precio_base: precioBase,
+        ajuste_tipo: f.ajuste_tipo,
+        ajuste_valor: f.ajuste_valor,
+        precio_final: precioFinal,
+      };
+    });
 }
 
 export async function onRequest(context) {
