@@ -1409,6 +1409,27 @@ img {
 }
 
 /* ============================================
+   TABS DE NAVEGACIÓN (arriba de página, ej: "Productos y Recetas" /
+   "Listas de Precios") — fila compacta de .nav-link agrupados, en vez de
+   una barra entera por cada uno.
+   ============================================ */
+.tabs {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .tabs {
+    flex-direction: column;
+  }
+  .tabs .nav-link {
+    width: 100%;
+  }
+}
+
+/* ============================================
    SEGMENTED CONTROL (subgrupo compacto, ej: Clientes/Mayoristas
    dentro de Listas de Precios) — distinto a los .nav-link "tabs" de arriba
    de página, para que se lea como un sub-nivel y no como más pestañas
