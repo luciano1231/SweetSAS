@@ -30,14 +30,15 @@
     if (l.precio_publicado_anterior === null || l.precio_publicado_anterior === undefined) {
       return '<span class="cell--muted">Sin publicar antes</span>';
     }
+    const anterior = `<span class="cell--muted cell--anterior">${Utils.formatCurrency(l.precio_publicado_anterior)}</span>`;
     const dif = l.diferencia;
-    if (dif === null) return '<span class="cell--muted">—</span>';
+    if (dif === null) return anterior;
     const pct = l.precio_publicado_anterior > 0 ? (dif / l.precio_publicado_anterior) * 100 : 0;
-    if (Math.abs(dif) < 0.01) return '<span class="cell--muted">Sin cambios</span>';
+    if (Math.abs(dif) < 0.01) return `${anterior} <span class="cell--muted">(sin cambios)</span>`;
     const clase = dif > 0 ? 'cell--pos' : 'cell--neg';
     const flecha = dif > 0 ? '▲' : '▼';
     const signo = dif > 0 ? '+' : '';
-    return `<span class="${clase}">${flecha} ${signo}${Utils.formatCurrency(dif)} (${signo}${pct.toFixed(1)}%)</span>`;
+    return `${anterior} <span class="${clase}">${flecha} ${signo}${Utils.formatCurrency(dif)} (${signo}${pct.toFixed(1)}%)</span>`;
   }
 
   async function cargarBorrador() {
