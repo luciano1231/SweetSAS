@@ -210,7 +210,8 @@ CREATE TABLE IF NOT EXISTS listas_precios_borrador (
   nombre_cache TEXT NOT NULL,
   ajuste_tipo  TEXT NOT NULL DEFAULT 'monto' CHECK (ajuste_tipo IN ('monto','porcentaje')),
   ajuste_valor REAL NOT NULL DEFAULT 0,
-  created_at   TEXT NOT NULL
+  created_at   TEXT NOT NULL,
+  updated_at   TEXT NOT NULL DEFAULT ''
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_listaborrador_unico ON listas_precios_borrador(lista, producto_id);
 

@@ -15,6 +15,9 @@
  * POST ?accion=sincronizar  body:{ lista }
  *      → agrega al borrador los productos activos de Recetas que todavía no
  *      estén en él (no toca los que ya estaban, ni sus ajustes).
+ * POST ?accion=ajuste-masivo  body:{ lista, ids:[...], ajuste_tipo?, ajuste_valor }
+ *      → aplica el mismo ajuste a varias líneas del borrador de una (ej:
+ *      "+10% a los seleccionados"). ajuste_tipo default 'porcentaje'.
  * PUT  ?id=<borrador_id>     body:{ ajuste_tipo?, ajuste_valor? }
  *      → edita el ajuste de una línea del borrador.
  * DELETE ?id=<borrador_id>
@@ -47,8 +50,9 @@ function json(data, status = 200) {
 }
 
 // Arma las líneas del borrador de una lista con su precio base en vivo
-// (o null si el producto ya no existe / no está más activo) y el precio
-// final ya calculado.
+// (o null si el producto ya no existe / no está más activo), el precio
+// final ya calculado, cuándo se tocó por última vez esa línea, y cómo
+// queda ese precio final comparado contra la última publicación.
 async function armarBorrador(db, lista) {
   const { results: filas } = await db.prepare(
     'SELECT * FROM listas_precios_borrador WHERE lista = ? ORDER BY nombre_cache COLLATE NOCASE'
@@ -56,6 +60,11 @@ async function armarBorrador(db, lista) {
 
   const productos = await listarProductosConTotales(db);
   const mapaProductos = Object.fromEntries(productos.map(p => [p.id, p]));
+
+  const { results: publicadas } = await db.prepare(
+    'SELECT producto_id, precio_final FROM listas_precios_publicadas WHERE lista = ?'
+  ).bind(lista).all();
+  const mapaPublicado = Object.fromEntries(publicadas.map(p => [p.producto_id, p.precio_final]));
 
   return filas
     // Un producto deshabilitado en Recetas no tiene que verse en ninguna
@@ -71,6 +80,10 @@ async function armarBorrador(db, lista) {
       const nombre = existe ? producto.nombre : f.nombre_cache;
       const precioBase = existe ? producto.precio_con_utilidad : null;
       const precioFinal = existe ? aplicarAjuste(precioBase, f.ajuste_tipo, f.ajuste_valor) : null;
+      const precioPublicadoAnterior = mapaPublicado[f.producto_id] ?? null;
+      const diferencia = (precioFinal !== null && precioPublicadoAnterior !== null)
+        ? Math.round((precioFinal - precioPublicadoAnterior) * 100) / 100
+        : null;
       return {
         id: f.id,
         producto_id: f.producto_id,
@@ -80,6 +93,9 @@ async function armarBorrador(db, lista) {
         ajuste_tipo: f.ajuste_tipo,
         ajuste_valor: f.ajuste_valor,
         precio_final: precioFinal,
+        updated_at: f.updated_at || f.created_at,
+        precio_publicado_anterior: precioPublicadoAnterior,
+        diferencia,
       };
     });
 }
@@ -144,12 +160,32 @@ export async function onRequest(context) {
     const ahora = new Date().toISOString();
     const inserts = nuevos.map(p =>
       db.prepare(
-        'INSERT INTO listas_precios_borrador (id, lista, producto_id, nombre_cache, ajuste_tipo, ajuste_valor, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-      ).bind(crypto.randomUUID(), body.lista, p.id, p.nombre, 'monto', 0, ahora)
+        'INSERT INTO listas_precios_borrador (id, lista, producto_id, nombre_cache, ajuste_tipo, ajuste_valor, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), body.lista, p.id, p.nombre, 'monto', 0, ahora, ahora)
     );
     await db.batch(inserts);
 
     return json({ ok: true, agregados: nuevos.length });
+  }
+
+  // ── POST: ajuste masivo (ej: "+10% a los seleccionados") ─────
+  if (method === 'POST' && accion === 'ajuste-masivo') {
+    let body;
+    try { body = await request.json(); } catch { return json({ error: 'Body inválido.' }, 400); }
+    if (!LISTAS_VALIDAS.includes(body.lista)) return json({ error: 'Falta o es inválido el campo lista.' }, 400);
+    if (!Array.isArray(body.ids) || body.ids.length === 0) return json({ error: 'Falta el campo ids (array de líneas a ajustar).' }, 400);
+
+    const ajusteTipo = ['monto', 'porcentaje'].includes(body.ajuste_tipo) ? body.ajuste_tipo : 'porcentaje';
+    const ajusteValor = Number(body.ajuste_valor);
+    if (!isFinite(ajusteValor)) return json({ error: 'ajuste_valor tiene que ser un número.' }, 400);
+
+    const ahora = new Date().toISOString();
+    const placeholders = body.ids.map(() => '?').join(',');
+    await db.prepare(
+      `UPDATE listas_precios_borrador SET ajuste_tipo = ?, ajuste_valor = ?, updated_at = ? WHERE lista = ? AND id IN (${placeholders})`
+    ).bind(ajusteTipo, ajusteValor, ahora, body.lista, ...body.ids).run();
+
+    return json({ ok: true, actualizados: body.ids.length });
   }
 
   if (method === 'POST' && accion === 'publicar') {
@@ -189,8 +225,8 @@ export async function onRequest(context) {
     if (!['monto', 'porcentaje'].includes(ajusteTipo)) return json({ error: 'ajuste_tipo debe ser "monto" o "porcentaje".' }, 400);
     const ajusteValor = body.ajuste_valor !== undefined ? Number(body.ajuste_valor) || 0 : existente.ajuste_valor;
 
-    await db.prepare('UPDATE listas_precios_borrador SET ajuste_tipo = ?, ajuste_valor = ? WHERE id = ?')
-      .bind(ajusteTipo, ajusteValor, id).run();
+    await db.prepare('UPDATE listas_precios_borrador SET ajuste_tipo = ?, ajuste_valor = ?, updated_at = ? WHERE id = ?')
+      .bind(ajusteTipo, ajusteValor, new Date().toISOString(), id).run();
     return json({ ok: true });
   }
 
