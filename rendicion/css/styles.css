@@ -207,6 +207,15 @@ img {
   max-width: 100%;
 }
 
+/* Punto medio entre el ancho fijo (960px) y el borde a borde (--wide):
+   para tablas con bastantes columnas (ej: Listas de Precios) que en
+   960px fuerzan scroll horizontal aunque sobre pantalla de sobra, pero
+   que tampoco necesitan estirarse a todo el ancho de un monitor ultra
+   wide. */
+.app-container--data {
+  max-width: 1400px;
+}
+
 @media (min-width: 960px) {
   .app-container--wide {
     padding-left: var(--space-lg);
