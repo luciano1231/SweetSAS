@@ -8,7 +8,9 @@
  *
  * GET    ?tipo=...                → listar
  * POST   ?tipo=...                → crear { nombre, costo_bulto, cantidad_bulto, observaciones }
- * PUT    ?tipo=...&id=            → actualizar costo ("ACTUALIZAR COSTO" de la planilla)
+ * PUT    ?tipo=...&id=            → actualizar costo ("ACTUALIZAR COSTO" de la planilla).
+ *        fecha_actualizacion es un campo más (no se pisa sola): si no se
+ *        manda, se conserva la que ya tenía.
  * DELETE ?tipo=...&id=            → eliminar (solo si ninguna receta lo usa)
  *
  * Requiere el binding D1: RENDICIONES_DB. Acceso: dueño/supervisor.
@@ -107,11 +109,15 @@ export async function onRequest(context) {
     const costoBulto = body.costo_bulto !== undefined ? Number(body.costo_bulto) || 0 : existente.costo_bulto;
     const cantidadBulto = body.cantidad_bulto !== undefined ? Number(body.cantidad_bulto) || 1 : existente.cantidad_bulto;
     const observaciones = body.observaciones !== undefined ? String(body.observaciones).trim() : existente.observaciones;
+    // La fecha ahora la controla quien edita (con un botón "Hoy" en la
+    // interfaz) en vez de pisarla sola en cada guardado — si no la mandan,
+    // se respeta la que ya tenía.
+    const fechaActualizacion = body.fecha_actualizacion !== undefined ? (body.fecha_actualizacion || null) : existente.fecha_actualizacion;
 
     try {
       await env.RENDICIONES_DB.prepare(
         `UPDATE ${tabla} SET nombre=?, costo_bulto=?, cantidad_bulto=?, costo_fraccion=?, fecha_actualizacion=?, observaciones=? WHERE id=?`
-      ).bind(nombre, costoBulto, cantidadBulto, costoFraccion(costoBulto, cantidadBulto), new Date().toISOString(), observaciones, id).run();
+      ).bind(nombre, costoBulto, cantidadBulto, costoFraccion(costoBulto, cantidadBulto), fechaActualizacion, observaciones, id).run();
     } catch (e) {
       if (String(e.message).includes('UNIQUE')) return json({ error: 'Ya existe otro con ese nombre.' }, 400);
       throw e;

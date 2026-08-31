@@ -13,6 +13,34 @@
   const ICON_CAJA = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>';
   const ICON_RELOJ = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>';
 
+  function formatearFecha(iso) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    // timeZone: 'UTC' — la fecha se guarda como día calendario puro
+    // (ej: "2026-08-24"), sin hora. Sin esto, toLocaleDateString la
+    // reinterpreta en el huso horario local y puede mostrar un día antes.
+    return d.toLocaleDateString('es-AR', { timeZone: 'UTC' });
+  }
+
+  function hoyLocal() {
+    // Fecha calendario de HOY según el reloj del navegador — new
+    // Date().toISOString() da la fecha en UTC, que cerca de medianoche
+    // puede ser un día distinto al de acá.
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function fechaComoInput(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().slice(0, 10);
+  }
+
   const datos = { ingrediente: [], costofijo: [] };
   const CONTENEDOR = { ingrediente: 'ingredientes-list', costofijo: 'costosfijos-list' };
   const busqueda = { ingrediente: '', costofijo: '' };
@@ -55,6 +83,7 @@
         <span class="ing-row__valor" data-label="${L.costo}">${Utils.formatCurrency(i.costo_bulto)}</span>
         <span class="ing-row__valor" data-label="${L.cantidad}">${Utils.formatNumber(i.cantidad_bulto)}</span>
         <span class="ing-row__fraccion" data-label="Costo Fracción">${Utils.formatCurrency(i.costo_fraccion)}</span>
+        <span class="ing-row__fecha" data-label="Actualizado">${formatearFecha(i.fecha_actualizacion)}</span>
         <span class="ing-row__valor" data-label="Observaciones" style="color:var(--text-muted);font-size:.82rem;" title="${(i.observaciones || '').replace(/"/g, '&quot;')}">${i.observaciones || ''}</span>
         <span class="ing-row__actions">
           <button type="button" class="btn-edit" title="Editar">${ICON_PENCIL}</button>
@@ -83,6 +112,10 @@
       <input type="number" value="${item.costo_bulto}" step="0.01" min="0" data-campo="costo_bulto" data-label="${L.costo}">
       <input type="number" value="${item.cantidad_bulto}" step="0.01" min="0" data-campo="cantidad_bulto" data-label="${L.cantidad}">
       <span class="ing-row__fraccion" id="fraccion-preview" data-label="Costo Fracción">${Utils.formatCurrency(item.costo_fraccion)}</span>
+      <span class="ing-fecha-edit" data-label="Actualizado">
+        <input type="date" value="${fechaComoInput(item.fecha_actualizacion)}" data-campo="fecha_actualizacion">
+        <button type="button" class="btn-hoy" title="Poner la fecha de hoy">Hoy</button>
+      </span>
       <input type="text" value="${(item.observaciones || '').replace(/"/g, '&quot;')}" data-campo="observaciones" data-label="Observaciones">
       <span class="ing-row__actions">
         <button type="button" class="btn-save" title="Guardar">${ICON_CHECK}</button>
@@ -101,12 +134,18 @@
     inputCosto.addEventListener('input', actualizarPreview);
     inputCantidad.addEventListener('input', actualizarPreview);
 
+    const inputFecha = fila.querySelector('[data-campo="fecha_actualizacion"]');
+    fila.querySelector('.btn-hoy').addEventListener('click', () => {
+      inputFecha.value = hoyLocal();
+    });
+
     fila.querySelector('[data-campo="nombre"]').focus();
 
     const guardar = () => guardarEdicion(tipo, id, {
       nombre: fila.querySelector('[data-campo="nombre"]').value.trim(),
       costo_bulto: fila.querySelector('[data-campo="costo_bulto"]').value,
       cantidad_bulto: fila.querySelector('[data-campo="cantidad_bulto"]').value,
+      fecha_actualizacion: inputFecha.value || null,
       observaciones: fila.querySelector('[data-campo="observaciones"]').value.trim(),
     });
 
