@@ -207,7 +207,10 @@
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo sincronizar.');
-      Utils.toast(data.agregados > 0 ? `Se agregaron ${data.agregados} producto(s) nuevo(s)` : 'Ya estaba todo sincronizado', 'success');
+      const partes = [];
+      if (data.agregados > 0) partes.push(`se agregaron ${data.agregados} producto(s) nuevo(s)`);
+      if (data.quitados > 0) partes.push(`se sacaron ${data.quitados} que ya no existen en Recetas`);
+      Utils.toast(partes.length > 0 ? partes.join(' — ') : 'Ya estaba todo sincronizado', 'success');
       await cargarBorrador();
     } catch (err) {
       Utils.toast(err.message, 'error');

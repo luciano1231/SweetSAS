@@ -14,7 +14,9 @@
  *
  * POST ?accion=sincronizar  body:{ lista }
  *      → agrega al borrador los productos activos de Recetas que todavía no
- *      estén en él (no toca los que ya estaban, ni sus ajustes).
+ *      estén en él (no toca los que ya estaban, ni sus ajustes), y saca las
+ *      líneas cuyo producto ya no existe en Recetas (borrado, no
+ *      deshabilitado — eso último se oculta solo, no se saca acá).
  * POST ?accion=ajuste-masivo  body:{ lista, ids:[...], ajuste_tipo?, ajuste_valor }
  *      → aplica el mismo ajuste a varias líneas del borrador de una (ej:
  *      "+10% a los seleccionados"). ajuste_tipo default 'porcentaje'.
@@ -147,25 +149,30 @@ export async function onRequest(context) {
     if (!LISTAS_VALIDAS.includes(body.lista)) return json({ error: 'Falta o es inválido el campo lista.' }, 400);
 
     const productos = await listarProductosConTotales(db);
+    const idsValidos = new Set(productos.map(p => p.id)); // todos, activos o no — para detectar solo los BORRADOS de verdad
     const activos = productos.filter(p => p.activo !== 0);
 
     const { results: yaEnBorrador } = await db.prepare(
-      'SELECT producto_id FROM listas_precios_borrador WHERE lista = ?'
+      'SELECT id, producto_id FROM listas_precios_borrador WHERE lista = ?'
     ).bind(body.lista).all();
     const idsExistentes = new Set(yaEnBorrador.map(r => r.producto_id));
 
     const nuevos = activos.filter(p => !idsExistentes.has(p.id));
-    if (nuevos.length === 0) return json({ ok: true, agregados: 0 });
+    // Deshabilitado ≠ borrado: uno es reversible (se oculta, no se toca acá)
+    // y el otro no puede volver a existir nunca — a esos sí los saca solo.
+    const rotos = yaEnBorrador.filter(r => !idsValidos.has(r.producto_id));
 
-    const ahora = new Date().toISOString();
-    const inserts = nuevos.map(p =>
-      db.prepare(
-        'INSERT INTO listas_precios_borrador (id, lista, producto_id, nombre_cache, ajuste_tipo, ajuste_valor, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-      ).bind(crypto.randomUUID(), body.lista, p.id, p.nombre, 'monto', 0, ahora, ahora)
-    );
-    await db.batch(inserts);
+    const ops = [
+      ...nuevos.map(p =>
+        db.prepare(
+          'INSERT INTO listas_precios_borrador (id, lista, producto_id, nombre_cache, ajuste_tipo, ajuste_valor, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(crypto.randomUUID(), body.lista, p.id, p.nombre, 'monto', 0, new Date().toISOString(), new Date().toISOString())
+      ),
+      ...rotos.map(r => db.prepare('DELETE FROM listas_precios_borrador WHERE id = ?').bind(r.id)),
+    ];
+    if (ops.length > 0) await db.batch(ops);
 
-    return json({ ok: true, agregados: nuevos.length });
+    return json({ ok: true, agregados: nuevos.length, quitados: rotos.length });
   }
 
   // ── POST: ajuste masivo (ej: "+10% a los seleccionados") ─────
