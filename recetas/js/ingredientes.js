@@ -8,6 +8,7 @@
   const ICON_PENCIL = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path></svg>';
   const ICON_TRASH  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
   const ICON_CHECK  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+  const ICON_LIST   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M9 12h6"></path><path d="M9 16h6"></path></svg>';
   const ICON_X      = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>';
 
   const ICON_CAJA = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>';
@@ -86,12 +87,18 @@
         <span class="ing-row__fecha" data-label="Actualizado">${formatearFecha(i.fecha_actualizacion)}</span>
         <span class="ing-row__valor" data-label="Observaciones" style="color:var(--text-muted);font-size:.82rem;" title="${(i.observaciones || '').replace(/"/g, '&quot;')}">${i.observaciones || ''}</span>
         <span class="ing-row__actions">
+          <button type="button" class="btn-uso" title="Ver en qué recetas se usa">${ICON_LIST}</button>
           <button type="button" class="btn-edit" title="Editar">${ICON_PENCIL}</button>
           <button type="button" class="btn-delete danger" title="Eliminar">${ICON_TRASH}</button>
         </span>
       </div>
     `).join('');
 
+    el.querySelectorAll('.btn-uso').forEach(btn => {
+      const row = btn.closest('.ing-row');
+      const item = items.find(i => i.id === row.dataset.id);
+      btn.addEventListener('click', () => verRecetasQueUsan(tipo, row.dataset.id, item ? item.nombre : ''));
+    });
     el.querySelectorAll('.btn-edit').forEach(btn => {
       btn.addEventListener('click', () => iniciarEdicion(tipo, btn.closest('.ing-row')));
     });
@@ -162,8 +169,31 @@
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar.');
-      Utils.toast('✓ Costo actualizado', 'success');
+      Utils.toast('Costo actualizado', 'success');
       await cargar(tipo);
+    } catch (err) {
+      Utils.toast(err.message, 'error');
+    }
+  }
+
+  async function verRecetasQueUsan(tipo, id, nombre) {
+    try {
+      const res = await window.sweetAuth.fetch(`/api/recetas-catalogo?tipo=${tipo}&accion=uso&id=${encodeURIComponent(id)}`);
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo consultar.');
+
+      if (data.recetas.length === 0) {
+        await Utils.confirm(nombre, 'No lo usa ninguna receta todavía.', 'Cerrar');
+        return;
+      }
+      const listaHtml = data.recetas.map(r =>
+        `<li><a href="producto.html?id=${encodeURIComponent(r.id)}" target="_blank" style="color: var(--accent-primary);">${r.nombre}</a></li>`
+      ).join('');
+      await Utils.confirm(
+        nombre,
+        `Lo usan ${data.recetas.length} receta${data.recetas.length !== 1 ? 's' : ''}:<ul style="margin-top:10px;padding-left:20px;line-height:1.8;">${listaHtml}</ul>`,
+        'Cerrar'
+      );
     } catch (err) {
       Utils.toast(err.message, 'error');
     }
@@ -175,7 +205,20 @@
     try {
       const res = await window.sweetAuth.fetch(`/api/recetas-catalogo?tipo=${tipo}&id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo eliminar.');
+      if (!res.ok || !data.ok) {
+        if (Array.isArray(data.recetas) && data.recetas.length > 0) {
+          const listaHtml = data.recetas.map(r =>
+            `<li><a href="producto.html?id=${encodeURIComponent(r.id)}" target="_blank" style="color: var(--accent-primary);">${r.nombre}</a></li>`
+          ).join('');
+          await Utils.confirm(
+            'No se puede eliminar',
+            `${data.error || 'Está usado en otras recetas.'}<ul style="margin-top:10px;padding-left:20px;line-height:1.8;">${listaHtml}</ul>`,
+            'Entendido'
+          );
+          return;
+        }
+        throw new Error(data.error || 'No se pudo eliminar.');
+      }
       Utils.toast('Eliminado', 'success');
       await cargar(tipo);
     } catch (err) {

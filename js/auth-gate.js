@@ -89,8 +89,14 @@
       return Array.isArray(permissions.locales) && permissions.locales.length > 0;
     }
     // Planillas maestras y gestión del catálogo de ítems: solo dueño y supervisor.
-    if (required === 'rendicionHistorial' || required === 'cajaChicaHistorial' || required === 'cajaChicaItems' || required === 'obligaciones' || required === 'recetas' || required === 'listasPrecios' || required === 'mayoristas') {
+    if (required === 'rendicionHistorial' || required === 'cajaChicaHistorial' || required === 'cajaChicaItems' || required === 'obligaciones') {
       return role === 'owner' || role === 'supervisor';
+    }
+    // Recetas, Listas de Precios y Mayoristas: dueño y supervisor entran
+    // siempre (como antes); a un usuario "local" hay que asignárselo a mano
+    // desde Gestión de Usuarios (permissions.recetas / listasPrecios / mayoristas).
+    if (required === 'recetas' || required === 'listasPrecios' || required === 'mayoristas') {
+      return role === 'owner' || role === 'supervisor' || !!permissions[required];
     }
     return true;
   }
@@ -104,6 +110,9 @@
       return '/rendicion/index.html';
     }
     if (permissions.menuEditor) return '/menu-editor.html';
+    if (permissions.recetas) return '/recetas/index.html';
+    if (permissions.listasPrecios) return '/recetas/listas-precios.html';
+    if (permissions.mayoristas) return '/mayoristas/index.html';
     return null;
   }
 

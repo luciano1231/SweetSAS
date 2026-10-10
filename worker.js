@@ -30,6 +30,18 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    if (url.hostname === 'www.sweetandpop.com') {
+      url.hostname = 'sweetandpop.com';
+      return Response.redirect(url.toString(), 301);
+    }
+
+    // La raíz del sitio muestra el Home (selector de módulos) en vez del
+    // dashboard financiero directo — ver home.html. El día que se arme una
+    // landing pública, esta línea es la que cambia.
+    if (url.pathname === '/') {
+      return env.ASSETS.fetch(new Request(new URL('/home.html', request.url), request));
+    }
+
     if (url.pathname === '/api/menu') return menuHandler({ request, env, ctx });
     if (url.pathname === '/api/users') return usersHandler({ request, env, ctx });
     if (url.pathname === '/api/rendiciones') return rendicionesHandler({ request, env, ctx });

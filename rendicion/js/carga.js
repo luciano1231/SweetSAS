@@ -8,6 +8,7 @@
   // --- Get local ID from URL ---
   const params = new URLSearchParams(window.location.search);
   const localId = params.get('local');
+  const editId = params.get('id'); // si viene, estamos editando una rendición existente (desde Historial)
 
   if (!localId) {
     window.location.href = 'index.html';
@@ -43,12 +44,59 @@
   // INITIALIZATION
   // ============================================
 
-  function init() {
+  async function init() {
     populateTurnos();
-    setFechaHoy();
     generateBillFields();
     generatePaymentFields();
     bindEvents();
+
+    if (editId) {
+      await cargarParaEditar(editId);
+    } else {
+      setFechaHoy();
+      setTurnoDefault();
+    }
+  }
+
+  // --- Cargar una rendición existente para editarla (viene de Historial) ---
+  async function cargarParaEditar(id) {
+    document.querySelector('.app-header__title').textContent = 'Editar Rendición';
+    document.getElementById('btn-enviar').innerHTML = 'Guardar cambios';
+    document.title = `Editar Rendición — ${local.nombre}`;
+
+    try {
+      const r = await Storage.getById(id);
+      document.getElementById('fecha').value = r.fecha;
+      updateFechaDisplay();
+      document.getElementById('turno').value = r.turno;
+      document.getElementById('empleado').value = r.empleado_nombre || '';
+      document.getElementById('registrado-sistema').value = r.registrado_sistema || '';
+      document.getElementById('observaciones').value = r.observaciones || '';
+
+      CONFIG.denominaciones.forEach(denom => {
+        const cantidad = r[`billetes_${denom}`] || 0;
+        billValues[denom] = cantidad;
+        const input = document.getElementById(`bill-${denom}`);
+        if (input) input.value = cantidad || '';
+        const subtotalEl = document.getElementById(`subtotal-${denom}`);
+        if (subtotalEl) {
+          const subtotal = Number(denom) * cantidad;
+          subtotalEl.textContent = Utils.formatCurrency(subtotal);
+          subtotalEl.classList.toggle('bill-field__subtotal--active', cantidad > 0);
+        }
+      });
+
+      CONFIG.mediosPago.forEach(medio => {
+        const monto = r[medio.id] || 0;
+        paymentValues[medio.id] = monto;
+        const input = document.getElementById(`payment-${medio.id}`);
+        if (input) input.value = monto || '';
+      });
+
+      updateTotals();
+    } catch (err) {
+      Utils.toast('No se pudo cargar la rendición a editar: ' + err.message, 'error');
+    }
   }
 
   // --- Populate turnos dropdown ---
@@ -60,6 +108,24 @@
       opt.textContent = turno;
       select.appendChild(opt);
     });
+  }
+
+  // --- Precargar el turno más probable según la hora actual ---
+  // Se completa solo como punto de partida (para no tener que elegirlo
+  // siempre a mano) — el empleado lo puede cambiar libremente. Fuera de
+  // estas dos franjas horarias se deja vacío a propósito, para no
+  // adivinar mal en horarios ambiguos.
+  function setTurnoDefault() {
+    const hora = new Date().getHours();
+    let turnoSugerido = null;
+    if (hora >= 12 && hora < 16) {
+      turnoSugerido = 'Mañana';
+    } else if (hora >= 21 || hora < 5) {
+      turnoSugerido = 'Tarde';
+    }
+    if (turnoSugerido) {
+      document.getElementById('turno').value = turnoSugerido;
+    }
   }
 
   // --- Set fecha to today ---
@@ -283,6 +349,29 @@
       return;
     }
 
+    // Avisar si ya hay una rendición cargada para esta misma fecha y turno
+    // en este local — antes se podía cargar dos veces sin darse cuenta.
+    // (Si estamos editando, no cuenta la propia fila que estamos guardando.)
+    try {
+      const existentes = (await Storage.getFiltered({ localId, fechaDesde: fecha, fechaHasta: fecha, turno }))
+        .filter(r => r.id !== editId);
+      if (existentes && existentes.length > 0) {
+        const previa = existentes[0];
+        const seguir = await Utils.confirm(
+          '⚠️ Ya existe una rendición para esta fecha y turno',
+          `${local.nombre} — ${Utils.formatDate(fecha)} — ${turno} ya tiene una rendición cargada
+           (Total Real: ${Utils.formatCurrency(previa.total_real)}, cargada por ${previa.empleado_nombre || 'sin especificar'}).
+           <br><br>Si seguís, vas a cargar una <strong>segunda</strong> rendición para el mismo turno.
+           ¿Seguro que querés continuar?`,
+          'Cargar de todos modos'
+        );
+        if (!seguir) return;
+      }
+    } catch (err) {
+      // Si falla la verificación (ej. sin conexión) no bloqueamos la carga,
+      // solo no se pudo chequear duplicados.
+    }
+
     const totalReal = calculateTotalReal();
     const registrado = Number(document.getElementById('registrado-sistema').value) || 0;
     const diferencia = calculateDiferencia();
@@ -357,9 +446,9 @@
     `;
 
     const confirmed = await Utils.confirm(
-      '¿Enviar rendición?',
-      `Revisá el resumen antes de enviar:${confirmMsg}`,
-      'Enviar'
+      editId ? '¿Guardar los cambios?' : '¿Enviar rendición?',
+      `Revisá el resumen antes de ${editId ? 'guardar' : 'enviar'}:${confirmMsg}`,
+      editId ? 'Guardar' : 'Enviar'
     );
 
     if (!confirmed) return;
@@ -368,8 +457,14 @@
     const btnEnviar = document.getElementById('btn-enviar');
     btnEnviar.disabled = true;
     try {
+      if (editId) {
+        await Storage.update(editId, rendicion);
+        Utils.toast('Rendición actualizada correctamente', 'success');
+        setTimeout(() => { window.location.href = 'historial.html'; }, 700);
+        return;
+      }
       await Storage.save(rendicion);
-      Utils.toast('✓ Rendición enviada correctamente', 'success');
+      Utils.toast('Rendición enviada correctamente', 'success');
 
       // Reset form after short delay
       setTimeout(() => {

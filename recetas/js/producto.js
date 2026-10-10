@@ -125,6 +125,50 @@
   // EDICIÓN DE CAMPOS DEL RESUMEN
   // ============================================
 
+  function editarNombre() {
+    const h1 = document.getElementById('header-nombre');
+    const nombreActual = h1.textContent;
+    if (document.getElementById('input-nombre-edit')) return; // ya está en edición
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'input-nombre-edit';
+    input.value = nombreActual;
+    input.className = 'form-input';
+    input.style.font = 'inherit';
+    input.style.fontWeight = 'inherit';
+    input.style.width = 'clamp(200px, 40vw, 420px)';
+
+    h1.replaceWith(input);
+    document.getElementById('btn-edit-nombre').style.display = 'none';
+    input.focus();
+    input.select();
+
+    let resuelto = false;
+    function restaurarInput() {
+      if (!input.isConnected) return;
+      input.replaceWith(h1);
+      document.getElementById('btn-edit-nombre').style.display = '';
+    }
+    async function confirmar() {
+      if (resuelto) return;
+      resuelto = true;
+      const nuevoNombre = input.value.trim();
+      restaurarInput(); // el h1 vuelve a estar en el DOM antes de recargar los datos
+      if (!nuevoNombre || nuevoNombre === nombreActual) return;
+      await guardarCampoProducto('nombre', nuevoNombre);
+    }
+    function cancelar() {
+      restaurarInput();
+    }
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); confirmar(); }
+      else if (e.key === 'Escape') { e.preventDefault(); resuelto = true; cancelar(); }
+    });
+    input.addEventListener('blur', confirmar);
+  }
+
   async function guardarCampoProducto(campo, valor) {
     try {
       const res = await window.sweetAuth.fetch(`/api/recetas?id=${encodeURIComponent(productoId)}`, {
@@ -172,7 +216,7 @@
         document.getElementById('cf-value').value = '';
         seleccionCf = null;
       }
-      Utils.toast('✓ Agregado', 'success');
+      Utils.toast('Agregado', 'success');
       await recargarTodo();
     } catch (err) {
       Utils.toast(err.message, 'error');
@@ -325,6 +369,7 @@
       document.getElementById('input-observaciones').addEventListener('change', (e) => guardarCampoProducto('observaciones', e.target.value));
       document.getElementById('input-receta').addEventListener('change', (e) => guardarCampoProducto('receta_texto', e.target.value));
       document.getElementById('btn-toggle-activo').addEventListener('click', () => guardarCampoProducto('activo', !productoActivo));
+      document.getElementById('btn-edit-nombre').addEventListener('click', editarNombre);
 
       await recargarTodo();
     });

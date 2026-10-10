@@ -16,7 +16,7 @@
  * Requiere el binding D1: RENDICIONES_DB. Acceso: dueño/supervisor.
  */
 
-import { obtenerSesion, tieneRol } from '../lib/session.js';
+import { obtenerSesion, tieneModulo } from '../lib/session.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -51,7 +51,7 @@ export async function onRequest(context) {
   }
 
   const session = await obtenerSesion(request, env);
-  if (!tieneRol(session, 'owner', 'supervisor')) {
+  if (!tieneModulo(session, 'recetas')) {
     return json({ error: 'No autorizado.' }, 403);
   }
 
@@ -62,6 +62,15 @@ export async function onRequest(context) {
   const tabla = tipo === 'ingrediente' ? 'recetas_ingredientes' : 'recetas_costos_fijos';
   const usoTabla = tipo === 'ingrediente' ? 'recetas_producto_ingredientes' : 'recetas_producto_costos_fijos';
   const usoColumna = tipo === 'ingrediente' ? 'ingrediente_id' : 'costo_fijo_id';
+
+  if (method === 'GET' && url.searchParams.get('accion') === 'uso') {
+    const id = url.searchParams.get('id');
+    if (!id) return json({ error: 'Falta el parámetro id.' }, 400);
+    const { results } = await env.RENDICIONES_DB.prepare(
+      `SELECT DISTINCT p.id, p.nombre FROM ${usoTabla} u JOIN recetas_productos p ON p.id = u.producto_id WHERE u.${usoColumna} = ? ORDER BY p.nombre COLLATE NOCASE`
+    ).bind(id).all();
+    return json({ ok: true, recetas: results });
+  }
 
   if (method === 'GET') {
     const { results } = await env.RENDICIONES_DB.prepare(`SELECT * FROM ${tabla} ORDER BY nombre COLLATE NOCASE`).all();
@@ -130,9 +139,15 @@ export async function onRequest(context) {
     const id = url.searchParams.get('id');
     if (!id) return json({ error: 'Falta el parámetro id.' }, 400);
 
-    const enUso = await env.RENDICIONES_DB.prepare(`SELECT COUNT(*) as n FROM ${usoTabla} WHERE ${usoColumna} = ?`).bind(id).first();
-    if (enUso && enUso.n > 0) {
-      return json({ error: `No se puede eliminar: lo usan ${enUso.n} receta${enUso.n !== 1 ? 's' : ''}. Sacalo de esas recetas primero.` }, 400);
+    const { results: recetasQueLoUsan } = await env.RENDICIONES_DB.prepare(
+      `SELECT DISTINCT p.id, p.nombre FROM ${usoTabla} u JOIN recetas_productos p ON p.id = u.producto_id WHERE u.${usoColumna} = ? ORDER BY p.nombre COLLATE NOCASE`
+    ).bind(id).all();
+    if (recetasQueLoUsan && recetasQueLoUsan.length > 0) {
+      const n = recetasQueLoUsan.length;
+      return json({
+        error: `No se puede eliminar: lo usan ${n} receta${n !== 1 ? 's' : ''}. Sacalo de esas recetas primero.`,
+        recetas: recetasQueLoUsan,
+      }, 400);
     }
 
     await env.RENDICIONES_DB.prepare(`DELETE FROM ${tabla} WHERE id = ?`).bind(id).run();

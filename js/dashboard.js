@@ -90,16 +90,63 @@ async function fetchData() {
   });
 }
 
+// Ingresos de los locales: salen de la caja diaria (rendiciones en D1), no
+// de la planilla. local_id de la rendición -> columna del tablero.
+const RENDICION_LOCAL_COL = { rissione: 'panaderia', hiper: 'sweetHiper', changoMas: 'chango' };
+
+// "YYYY-MM" a partir de las distintas formas de fecha que trae la planilla
+function monthKey(f) {
+  if (!f) return '';
+  const p = String(f).replace(/\//g, '-').split('-');
+  let y, m;
+  if (p[0].length === 4) { y = +p[0]; m = +p[1]; }
+  else if (p.length === 3) { y = +p[2]; m = +p[1]; }
+  else if (p.length === 2) { y = +p[1]; m = +p[0]; }
+  if (!y || !m) return '';
+  return y + '-' + String(m).padStart(2, '0');
+}
+
+async function fetchRendicionesMensual() {
+  try {
+    const res = await window.sweetAuth.fetch('/api/rendiciones?action=mensual');
+    const data = await res.json();
+    return data.ok ? data.mensual : null;
+  } catch { return null; }
+}
+
+// Pisa los ingresos por local de cada mes con el total de la caja diaria.
+// Los meses sin rendiciones de un local conservan el valor de la planilla
+// (histórico previo al sistema); los meses que solo existen en la caja
+// diaria se agregan como filas nuevas.
+function mergeRendiciones(rows, mensual) {
+  const byMonth = new Map();
+  rows.forEach(r => { const k = monthKey(r.fecha); if (k) byMonth.set(k, r); });
+  mensual.forEach(m => {
+    const col = RENDICION_LOCAL_COL[m.local_id];
+    if (!col || !m.mes) return;
+    let row = byMonth.get(m.mes);
+    if (!row) {
+      row = { fecha: m.mes };
+      [...INCOME_COLS, ...EXPENSE_COLS, ...PERSONAL_COLS].forEach(c => { row[c.key] = 0; });
+      byMonth.set(m.mes, row);
+    }
+    row[col] = Number(m.total) || 0;
+  });
+  return [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(e => e[1]);
+}
+
 async function loadData() {
-  const d = await fetchData();
-  if (d && d.length > 0) { dashboardData = d; setConn(true); }
-  else { dashboardData = []; setConn(false); }
+  const [d, mensual] = await Promise.all([fetchData(), fetchRendicionesMensual()]);
+  dashboardData = mergeRendiciones(d || [], mensual || []);
+  setConn(!!(d && d.length), !!mensual);
   populateDateFilters(); applyDateFilter();
 }
 
-function setConn(on) {
+function setConn(sheetOn, cajaOn) {
   const dot = document.querySelector('.status-dot'), txt = document.querySelector('.status-text');
-  if (on) { dot.className = 'status-dot online'; txt.textContent = 'Google Sheets conectado'; }
+  if (sheetOn && cajaOn) { dot.className = 'status-dot online'; txt.textContent = 'Caja diaria + Google Sheets'; }
+  else if (cajaOn) { dot.className = 'status-dot online'; txt.textContent = 'Caja diaria (sin Google Sheets)'; }
+  else if (sheetOn) { dot.className = 'status-dot online'; txt.textContent = 'Google Sheets (sin caja diaria)'; }
   else { dot.className = 'status-dot offline'; txt.textContent = 'Sin conexión'; }
 }
 

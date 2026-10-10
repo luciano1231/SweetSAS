@@ -45,7 +45,12 @@ body{font-family:var(--font);background:var(--bg-primary);color:var(--text-prima
 .brand-text h1{font-size:1.1rem;font-weight:700;background:linear-gradient(135deg,var(--text-primary),var(--brand-primary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .brand-text span{font-size:.7rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:500;}
 .sidebar-close{display:none;background:none;border:none;color:var(--text-secondary);font-size:1.2rem;cursor:pointer;padding:4px;}
-.sidebar-nav{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:4px;}
+/* El header (logo) queda fijo y todo lo demás (nav + footer) scrollea
+   dentro de .sidebar-scroll, en cualquier resolución: con todos los
+   módulos el menú no entra en pantallas de poca altura. */
+.sidebar-header{flex-shrink:0;}
+.sidebar-scroll{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;}
+.sidebar-nav{flex:none;padding:16px 12px;display:flex;flex-direction:column;gap:4px;}
 .nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--radius-sm);text-decoration:none;color:var(--text-secondary);font-size:.88rem;font-weight:500;transition:all var(--transition-fast);position:relative;}
 .nav-item:hover{background:rgba(255,255,255,0.04);color:var(--text-primary);}
 .nav-item.active{background:linear-gradient(135deg,rgba(29,138,99,0.15),rgba(182,186,224,0.08));color:var(--brand-primary);font-weight:600;}
@@ -211,13 +216,17 @@ body{font-family:var(--font);background:var(--bg-primary);color:var(--text-prima
   .date-range-filter{flex-wrap:wrap;}
 }
 @media(max-width:900px){
-  .sidebar{transform:translateX(-100%);overflow-y:auto;}
+  .sidebar{transform:translateX(-100%);overflow:hidden;}
   .sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg);}
   .sidebar-close{display:block;}.menu-toggle{display:flex;}
-  /* Con todos los ítems (Resumen, Locales, Precios, etc.) el menú no
-     entraba en pantallas chicas y no se podía hacer scroll para ver el
-     resto — acá se compacta un poco y el .sidebar de arriba ya scrollea
-     como un solo bloque (header + nav + footer) en vez de cortarse. */
+  /* Con todos los ítems (Resumen, Locales, Precios, Mayoristas, Gestión
+     de Usuarios, etc. — el ".sidebar-footer" en realidad no es un pie
+     chico, tiene la mitad de los módulos) el menú no entraba en
+     pantallas chicas y no había forma de llegar a los últimos ítems.
+     El .sidebar-header (logo + botón cerrar) queda fijo arriba, y todo
+     lo demás (nav + footer) scrollea junto dentro de .sidebar-scroll,
+     con las propiedades táctiles que evitan que el gesto de arrastrar
+     se "trabe" en pantallas táctiles. */
   .sidebar-header{padding:16px 20px;}
   .sidebar-nav{padding:12px;gap:2px;}
   .nav-item{padding:9px 14px;font-size:.85rem;}

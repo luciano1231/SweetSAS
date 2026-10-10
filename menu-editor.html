@@ -460,8 +460,8 @@
     <div>
       <div class="panel-title" style="margin-bottom:8px">Carilla a editar</div>
       <div class="page-tabs">
-        <button class="page-tab active" id="tab1" onclick="switchTab(1)">🌿 Carilla 1 (Frente)</button>
-        <button class="page-tab" id="tab2" onclick="switchTab(2)">✦ Carilla 2 (Reverso)</button>
+        <button class="page-tab active" id="tab1" onclick="switchTab(1)">Carilla 1 (Frente)</button>
+        <button class="page-tab" id="tab2" onclick="switchTab(2)">Carilla 2 (Reverso)</button>
       </div>
     </div>
 
@@ -683,7 +683,7 @@ const STORES = {
 };
 const STORE_KEY_PREFIX  = 'sweetpop_menu_v3_';
 const ACTIVE_STORE_KEY  = 'sweetpop_active_store';
-const API_BASE          = 'https://bold-glade-8636.lucianojn8.workers.dev';   // Cloudflare KV Worker
+const API_BASE          = '/api/menu';   // Mismo Worker (sweetsas) — KV binding MENU_DATA
 
 let currentStore = localStorage.getItem(ACTIVE_STORE_KEY) || 'rissione';
 
@@ -918,7 +918,7 @@ function prodRowHTML(ci, pi, p) {
       oninput="updateProd(${ci},${pi},'name',this.value)">
     <input class="prod-price" type="text" value="${esc(p.price)}" placeholder="$0"
       oninput="updateProd(${ci},${pi},'price',this.value)">
-    <button class="btn-del-prod" onclick="deleteProd(${ci},${pi})" title="Eliminar">✕</button>
+    <button class="btn-del-prod" onclick="deleteProd(${ci},${pi})" title="Eliminar"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
   </div>`;
 }
 
@@ -1194,7 +1194,7 @@ window.sweetAuth.onReady(function (session) {
 
   // QR estático para locales con imagen propia
   const QR_STATIC_IMGS = {
-    hiper:     'Menu/Recursos/QR Changomas.png', // provisorio
+    hiper:     'Menu/Recursos/QR Sweet Hiper.png',
     changoMas: 'Menu/Recursos/QR Changomas.png'
   };
 

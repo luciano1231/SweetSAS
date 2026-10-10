@@ -1,11 +1,13 @@
 // ============================================
 // MENÚ FLOTANTE DE ACCESOS RÁPIDOS — Sweet SAS
 // ============================================
-// Se agrega solo, sin tocar el HTML de cada página. Aparece nada más para
-// dueño y supervisor (los roles que usan más de una herramienta), en las
-// páginas "secundarias" (Carga, Historial, Editor de Menú) para no tener
-// que volver al Dashboard cada vez. "Gestión de Usuarios" solo se muestra
-// si el rol es dueño, porque es el único con ese permiso.
+// Se agrega solo, sin tocar el HTML de cada página. Aparece para dueño y
+// supervisor (los roles que usan más de una herramienta) y también para un
+// usuario "local" al que se le haya asignado puntualmente algún módulo
+// extra (Recetas / Listas de Precios / Mayoristas / Editor de Menú) desde
+// Gestión de Usuarios — si no tiene ninguno de esos, no se muestra (su
+// único acceso es el local que ya ve en el header). "Gestión de Usuarios"
+// solo se muestra si el rol es dueño, porque es el único con ese permiso.
 //
 // Requiere que /js/auth-gate.js ya esté cargado antes (expone window.sweetAuth).
 (function () {
@@ -25,7 +27,13 @@
 
   function buildLinks(session) {
     const role = session.role;
-    if (role !== 'owner' && role !== 'supervisor') return null;
+    const perms = session.permissions || {};
+    const esOwnerOSupervisor = role === 'owner' || role === 'supervisor';
+    const tieneLocales = Array.isArray(perms.locales) && perms.locales.length > 0;
+    const tieneAlgunModulo = esOwnerOSupervisor || perms.recetas || perms.listasPrecios || perms.mayoristas || perms.menuEditor;
+    // Un usuario "local" sin ningún módulo extra asignado no necesita este
+    // menú — su único acceso ya está a la vista en el header de su página.
+    if (!tieneAlgunModulo) return null;
 
     const here = normalizePath(location.pathname);
     const svg = (inner) => `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:-3px;margin-right:9px;">${inner}</svg>`;
@@ -38,21 +46,31 @@
     const ICON_LIST = svg('<line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line>');
     const ICON_BANK = svg('<line x1="3" y1="21" x2="21" y2="21"></line><line x1="5" y1="21" x2="5" y2="10"></line><line x1="19" y1="21" x2="19" y2="10"></line><polygon points="12 3 22 9 2 9"></polygon>');
     const ICON_RECETAS = svg('<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M9 12h6"></path><path d="M9 16h6"></path>');
+    const ICON_PRECIOS = svg('<path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path>');
     const ICON_MAYORISTAS = svg('<circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>');
 
     const links = [];
     if (role === 'owner') links.push({ href: '/index.html', label: ICON_DASHBOARD + ' Dashboard' });
     // "Locales": el mismo local da acceso a cargar tanto Ingresos (Rendición)
     // como Egresos (Caja Chica) — se agrupan acá bajo un mismo encabezado.
-    links.push({ group: 'Locales', href: '/rendicion/index.html', label: ICON_CASH + ' Ingresos (Rendición)' });
-    links.push({ group: 'Locales', href: '/caja-chica/index.html', label: ICON_CAJACHICA + ' Egresos (Caja Chica)' });
-    links.push({ href: '/rendicion/historial.html', label: ICON_HISTORY + ' Historial de Rendición' });
-    links.push({ href: '/caja-chica/historial.html', label: ICON_HISTORY + ' Historial de Caja Chica' });
-    links.push({ href: '/caja-chica/items.html', label: ICON_LIST + ' Ítems de Caja Chica' });
-    links.push({ href: '/obligaciones/index.html', label: ICON_BANK + ' Obligaciones' });
-    links.push({ href: '/recetas/index.html', label: ICON_RECETAS + ' Precios' });
-    links.push({ href: '/mayoristas/index.html', label: ICON_MAYORISTAS + ' Mayoristas' });
-    links.push({ href: '/menu-editor.html', label: ICON_MENU + ' Editor de Menú' });
+    // Dueño y supervisor siempre tienen todos los locales asignados, así
+    // que esta condición ya los cubre sin necesidad de chequear el rol.
+    if (tieneLocales) {
+      links.push({ group: 'Locales', href: '/rendicion/index.html', label: ICON_CASH + ' Ingresos (Rendición)' });
+      links.push({ group: 'Locales', href: '/caja-chica/index.html', label: ICON_CAJACHICA + ' Egresos (Caja Chica)' });
+    }
+    if (esOwnerOSupervisor) {
+      links.push({ href: '/rendicion/historial.html', label: ICON_HISTORY + ' Historial de Rendición' });
+      links.push({ href: '/caja-chica/historial.html', label: ICON_HISTORY + ' Historial de Caja Chica' });
+      links.push({ href: '/caja-chica/items.html', label: ICON_LIST + ' Ítems de Caja Chica' });
+      links.push({ href: '/obligaciones/index.html', label: ICON_BANK + ' Obligaciones' });
+    }
+    // Estos 4 también pueden estar asignados puntualmente a un usuario
+    // "local" desde Gestión de Usuarios, no solo a dueño/supervisor.
+    if (esOwnerOSupervisor || perms.recetas) links.push({ href: '/recetas/index.html', label: ICON_RECETAS + ' Precios (Recetas)' });
+    if (esOwnerOSupervisor || perms.listasPrecios) links.push({ href: '/recetas/listas-precios.html', label: ICON_PRECIOS + ' Listas de Precios' });
+    if (esOwnerOSupervisor || perms.mayoristas) links.push({ href: '/mayoristas/index.html', label: ICON_MAYORISTAS + ' Mayoristas' });
+    if (esOwnerOSupervisor || perms.menuEditor) links.push({ href: '/menu-editor.html', label: ICON_MENU + ' Editor de Menú' });
     if (role === 'owner') links.push({ href: '/usuarios.html', label: ICON_USERS + ' Gestión de Usuarios' });
 
     // No listar la página en la que ya estamos
@@ -138,7 +156,33 @@
     nav.dataset.hamburgerReady = '1';
 
     const themeBtn = document.getElementById('theme-toggle');
-    const resto = Array.from(nav.children).filter(function (el) { return el !== themeBtn; });
+
+    // Botón fijo de Inicio (Home) — siempre visible, nunca se esconde
+    // adentro del menú hamburguesa, igual que el toggle de tema. Reservado
+    // al dueño (mismo criterio que el link "← Dashboard"), porque el Home
+    // es su panel de módulos — a un usuario local/supervisor lo rebotaría
+    // sin explicación.
+    const homeBtn = document.createElement('a');
+    homeBtn.href = '/';
+    homeBtn.className = 'nav-link nav-link--icon nav-link--home';
+    homeBtn.title = 'Ir al Inicio';
+    homeBtn.setAttribute('aria-label', 'Ir al Inicio');
+    homeBtn.setAttribute('data-role-gate', 'owner');
+    homeBtn.style.display = 'none';
+    homeBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>';
+    if (themeBtn) nav.insertBefore(homeBtn, themeBtn);
+    else nav.insertBefore(homeBtn, nav.firstChild);
+
+    // El logo/marca del header también lleva a Inicio (si no está ya
+    // envuelto en un link, como pasa en el propio Home).
+    const brand = document.querySelector('.app-header__brand');
+    if (brand && !brand.closest('a')) {
+      brand.style.cursor = 'pointer';
+      brand.title = 'Ir al Inicio';
+      brand.addEventListener('click', function () { window.location.href = '/'; });
+    }
+
+    const resto = Array.from(nav.children).filter(function (el) { return el !== themeBtn && el !== homeBtn; });
     if (resto.length === 0) return;
 
     if (themeBtn) themeBtn.classList.add('nav-link--icon');

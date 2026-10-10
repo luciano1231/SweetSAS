@@ -297,6 +297,16 @@ img {
   flex-shrink: 0;
 }
 
+.nav-link.nav-link--home {
+  color: var(--accent-primary);
+  background: rgba(29,138,99,0.1);
+  border-color: rgba(29,138,99,0.3);
+}
+.nav-link.nav-link--home:hover {
+  background: rgba(29,138,99,0.18);
+  border-color: rgba(29,138,99,0.5);
+}
+
 /* --- Menú "hamburguesa" del header: agrupa los nav-link secundarios --- */
 .header-menu {
   position: relative;
@@ -1302,6 +1312,17 @@ img {
 .data-table tr:last-of-type td {
   border-bottom: none;
 }
+
+.cell--actions { display: flex; gap: 4px; white-space: nowrap; }
+.btn-row-icon {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-muted); padding: 5px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  text-decoration: none;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.btn-row-icon:hover { color: var(--accent-primary); background: var(--glass-bg); }
+.btn-row-icon--danger:hover { color: var(--error); background: var(--error-bg); }
 
 .data-table .fila-total td {
   border-top: 1px solid var(--glass-border);

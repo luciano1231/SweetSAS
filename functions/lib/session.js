@@ -99,3 +99,15 @@ export function tieneLocal(session, localId) {
   const locales = (session.permissions && session.permissions.locales) || [];
   return locales.includes(localId);
 }
+
+/**
+ * true si la sesión puede usar el módulo (Recetas / Listas de Precios /
+ * Mayoristas): dueño y supervisor siempre pueden, y un usuario "local"
+ * puede si el dueño se lo asignó puntualmente desde Gestión de Usuarios
+ * (session.permissions.recetas / listasPrecios / mayoristas).
+ */
+export function tieneModulo(session, modulo) {
+  if (!session) return false;
+  if (tieneRol(session, 'owner', 'supervisor')) return true;
+  return !!(session.permissions && session.permissions[modulo]);
+}

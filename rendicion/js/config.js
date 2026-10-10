@@ -79,6 +79,27 @@ const Storage = {
     return data.rendiciones;
   },
 
+  async getById(id) {
+    const res = await window.sweetAuth.fetch(`/api/rendiciones?id=${encodeURIComponent(id)}`);
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'No se pudo cargar la rendición.');
+    }
+    return data.rendiciones[0];
+  },
+
+  async update(id, rendicion) {
+    const res = await window.sweetAuth.fetch(`/api/rendiciones?id=${encodeURIComponent(id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rendicion),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || 'No se pudo actualizar la rendición.');
+    }
+  },
+
   async delete(id) {
     const res = await window.sweetAuth.fetch(`/api/rendiciones?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
     const data = await res.json();

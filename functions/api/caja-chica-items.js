@@ -172,7 +172,7 @@ export async function onRequest(context) {
   if (method === 'GET') {
     // Cualquiera con algún local asignado puede leer el catálogo (lo
     // necesita para el buscador de ítems al cargar un movimiento).
-    if (!tieneAccesoLocales) return json({ error: 'No autenticado.' }, 401);
+    if (!tieneAccesoLocales) return json({ error: 'No autorizado.' }, 403);
     const catalog = await loadCatalog(env);
     return json({ ok: true, ...catalog });
   }

@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/dashboard.css?v=2">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 
   <style>
@@ -146,15 +146,16 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="brand">
+            <a class="brand" href="/" title="Volver al Inicio" style="text-decoration:none;color:inherit;">
                 <div class="brand-icon"><img src="assets/logo-128.png" alt="Sweet &amp; Pop Express"></div>
                 <div class="brand-text">
                     <h1>Sweet SAS</h1>
                     <span>Balance de Locales</span>
                 </div>
-            </div>
-            <button class="sidebar-close" id="sidebarClose" aria-label="Cerrar menú">✕</button>
+            </a>
+            <button class="sidebar-close" id="sidebarClose" aria-label="Cerrar menú"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
         </div>
+        <div class="sidebar-scroll">
         <nav class="sidebar-nav">
             <a href="#" class="nav-item active" data-view="overview">
                 <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg></span>
@@ -222,6 +223,7 @@
                 <span class="status-text">Datos de ejemplo</span>
             </div>
         </div>
+        </div>
     </aside>
 
     <!-- Main Content -->
@@ -242,7 +244,7 @@
                     <select id="filterFrom" class="filter-select"></select>
                     <label class="filter-label">Hasta</label>
                     <select id="filterTo" class="filter-select"></select>
-                    <button class="btn-filter-reset" id="btnResetDates" title="Resetear rango">✕</button>
+                    <button class="btn-filter-reset" id="btnResetDates" title="Resetear rango"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                 </div>
                 <button class="btn-refresh" id="btnRefresh" title="Actualizar datos">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -524,7 +526,7 @@
                 <input type="date" class="filter-select" id="rendDesde">
                 <span class="filter-label">Hasta</span>
                 <input type="date" class="filter-select" id="rendHasta">
-                <button class="btn-filter-reset" id="rendResetFilters" title="Resetear filtros">✕</button>
+                <button class="btn-filter-reset" id="rendResetFilters" title="Resetear filtros"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
 
             <!-- KPIs -->

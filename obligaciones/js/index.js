@@ -176,7 +176,7 @@
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar.');
-      Utils.toast('✓ Clasificación guardada — el sistema lo va a recordar', 'success');
+      Utils.toast('Clasificación guardada — el sistema lo va a recordar', 'success');
       await cargarObligacionesConocidas();
       await cargarMovimientos();
     } catch (err) {
@@ -265,7 +265,7 @@
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo procesar el archivo.');
 
-      let msg = `✓ ${data.archivo}: ${data.insertadas} movimiento${data.insertadas !== 1 ? 's' : ''} nuevo${data.insertadas !== 1 ? 's' : ''}`;
+      let msg = `${data.archivo}: ${data.insertadas} movimiento${data.insertadas !== 1 ? 's' : ''} nuevo${data.insertadas !== 1 ? 's' : ''}`;
       if (data.duplicadasOmitidas > 0) msg += `, ${data.duplicadasOmitidas} duplicado${data.duplicadasOmitidas !== 1 ? 's' : ''} omitido${data.duplicadasOmitidas !== 1 ? 's' : ''}`;
       if (data.sinClasificar > 0) msg += `, ${data.sinClasificar} sin clasificar`;
       Utils.toast(msg, data.sinClasificar > 0 ? 'warning' : 'success', 6000);
@@ -340,7 +340,7 @@
       const res = await window.sweetAuth.fetch(`/api/obligaciones-archivos?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo deshacer la carga.');
-      Utils.toast(`✓ Carga deshecha: se eliminaron ${data.filasEliminadas} movimiento${data.filasEliminadas !== 1 ? 's' : ''}`, 'success');
+      Utils.toast(`Carga deshecha: se eliminaron ${data.filasEliminadas} movimiento${data.filasEliminadas !== 1 ? 's' : ''}`, 'success');
       await cargarMovimientos();
       await cargarHistorialCargas();
       await cargarObligacionesConocidas();

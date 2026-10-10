@@ -255,7 +255,7 @@
       html += `
         <tr>
           <td>${Utils.formatDate(m.fecha)}</td>
-          <td>${m.item}</td>
+          <td title="${m.item}">${m.item}</td>
           <td><span class="clasificacion-tag">${m.clasificacion}</span></td>
           <td title="${m.detalle || ''}">${m.detalle || ''}</td>
           <td class="cell--currency cell--ingreso">${m.ingreso ? Utils.formatCurrency(m.ingreso) : ''}</td>
@@ -337,7 +337,7 @@
     btn.disabled = true;
     try {
       await Storage.crear(mov);
-      Utils.toast('✓ Movimiento agregado', 'success');
+      Utils.toast('Movimiento agregado', 'success');
       resetForm();
       await loadPendientes();
     } catch (err) {
@@ -392,7 +392,7 @@
     btn.disabled = true;
     try {
       const res = await Storage.cerrarCaja(localId, local.nombre);
-      Utils.toast(`✓ Caja enviada: ${res.enviados} movimiento${res.enviados !== 1 ? 's' : ''}`, 'success');
+      Utils.toast(`Caja enviada: ${res.enviados} movimiento${res.enviados !== 1 ? 's' : ''}`, 'success');
       await loadPendientes();
     } catch (err) {
       Utils.toast(err.message, 'error');

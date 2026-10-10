@@ -85,7 +85,7 @@
               ${activo ? ICON_CHECK : ICON_X}
             </button>
           </td>
-          <td class="cell--title">${p.nombre}</td>
+          <td class="cell--title" title="${p.nombre.replace(/"/g, '&quot;')}">${p.nombre}</td>
           <td data-label="Unid. x Tanda">${Utils.formatNumber(p.unidades_por_tanda)}</td>
           <td class="cell--currency" data-label="Costo Total">${Utils.formatCurrency(p.costo_total)}</td>
           <td class="cell--currency" data-label="Costo Unitario">${Utils.formatCurrency(p.costo_unitario)}</td>

@@ -13,7 +13,7 @@
  * Requiere el binding D1: RENDICIONES_DB. Acceso: dueño/supervisor.
  */
 
-import { obtenerSesion, tieneRol } from '../lib/session.js';
+import { obtenerSesion, tieneModulo } from '../lib/session.js';
 import { calcularTotales, listarProductosConTotales } from '../lib/recetas-calc.js';
 
 const CORS_HEADERS = {
@@ -43,7 +43,7 @@ export async function onRequest(context) {
   }
 
   const session = await obtenerSesion(request, env);
-  if (!tieneRol(session, 'owner', 'supervisor')) {
+  if (!tieneModulo(session, 'recetas')) {
     return json({ error: 'No autorizado.' }, 403);
   }
 

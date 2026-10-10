@@ -161,8 +161,9 @@
       document.getElementById('linea-cantidad').value = '';
       document.getElementById('linea-precio').value = '';
       seleccion = null;
-      Utils.toast('✓ Agregado', 'success');
+      Utils.toast('Agregado', 'success');
       await recargarTodo();
+      document.getElementById('prod-search').focus();
     } catch (err) {
       Utils.toast(err.message, 'error');
     }
@@ -179,7 +180,7 @@
       const res = await window.sweetAuth.fetch(`/api/mayoristas-remito?cliente_id=${encodeURIComponent(clienteId)}&accion=cerrar`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo cerrar el remito.');
-      Utils.toast(`✓ Remito N° ${String(data.remito_numero).padStart(5, '0')} cerrado`, 'success');
+      Utils.toast(`Remito N° ${String(data.remito_numero).padStart(5, '0')} cerrado`, 'success');
       await recargarTodo();
     } catch (err) {
       Utils.toast(err.message, 'error');
@@ -263,6 +264,13 @@
       setupCombobox();
       document.getElementById('btn-add-linea').addEventListener('click', agregarLinea);
       document.getElementById('btn-cerrar-remito').addEventListener('click', cerrarRemito);
+      // Enter en Cantidad o Precio unitario agrega la línea directo, sin
+      // tener que ir al mouse (carga rápida de muchos productos seguidos).
+      ['linea-cantidad', 'linea-precio'].forEach(function (id) {
+        document.getElementById(id).addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); agregarLinea(); }
+        });
+      });
       await recargarTodo();
     });
   });

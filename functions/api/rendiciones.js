@@ -73,17 +73,42 @@ export async function onRequest(context) {
 
   // ── LISTAR (con filtros opcionales) ─────────────────────────
   if (method === 'GET') {
-    if (!tieneAccesoLocales) return json({ error: 'No autenticado.' }, 401);
+    if (!tieneAccesoLocales) return json({ error: 'No autorizado.' }, 403);
 
     const turno = url.searchParams.get('turno');
     const desde = url.searchParams.get('desde');
     const hasta = url.searchParams.get('hasta');
+    const idPedido = url.searchParams.get('id');
     // El local pedido por el cliente se ignora si no es uno de los suyos —
     // así un rol "local" nunca puede leer datos de otro local aunque arme
     // el pedido a mano.
     const localPedido = url.searchParams.get('local');
     const esOwnerOSupervisor = tieneRol(session, 'owner', 'supervisor');
     const local = (localPedido && (esOwnerOSupervisor || tieneLocal(session, localPedido))) ? localPedido : null;
+
+    // Resumen mensual por local (lo usa el tablero financiero para los
+    // ingresos de cada local): suma de total_real agrupada por YYYY-MM.
+    if (url.searchParams.get('action') === 'mensual') {
+      let sqlMes = `SELECT substr(fecha, 1, 7) AS mes, local_id, SUM(total_real) AS total, COUNT(*) AS turnos
+                    FROM rendiciones WHERE 1=1`;
+      const bindsMes = [];
+      if (!esOwnerOSupervisor) {
+        const placeholders = session.permissions.locales.map(() => '?').join(', ');
+        sqlMes += ` AND local_id IN (${placeholders})`;
+        bindsMes.push(...session.permissions.locales);
+      }
+      sqlMes += ' GROUP BY mes, local_id ORDER BY mes';
+      const stmtMes = bindsMes.length ? env.RENDICIONES_DB.prepare(sqlMes).bind(...bindsMes) : env.RENDICIONES_DB.prepare(sqlMes);
+      const { results } = await stmtMes.all();
+      return json({ ok: true, mensual: results });
+    }
+
+    if (idPedido) {
+      const fila = await env.RENDICIONES_DB.prepare('SELECT * FROM rendiciones WHERE id = ?').bind(idPedido).first();
+      if (!fila) return json({ error: 'No encontrada.' }, 404);
+      if (!esOwnerOSupervisor && !tieneLocal(session, fila.local_id)) return json({ error: 'No autorizado.' }, 403);
+      return json({ ok: true, rendiciones: [fila] });
+    }
 
     let sql = 'SELECT * FROM rendiciones WHERE 1=1';
     const binds = [];
@@ -133,7 +158,7 @@ export async function onRequest(context) {
 
   // ── CREAR ────────────────────────────────────────────────────
   if (method === 'POST') {
-    if (!tieneAccesoLocales) return json({ error: 'No autenticado.' }, 401);
+    if (!tieneAccesoLocales) return json({ error: 'No autorizado.' }, 403);
 
     let body;
     try {
@@ -157,6 +182,37 @@ export async function onRequest(context) {
     await env.RENDICIONES_DB.prepare(sql).bind(...columns.map(c => row[c])).run();
 
     return json({ ok: true, id: row.id });
+  }
+
+  // ── EDITAR (solo dueño/supervisor) ───────────────────────────
+  if (method === 'PUT') {
+    if (!tieneRol(session, 'owner', 'supervisor')) return json({ error: 'No autorizado.' }, 403);
+    const id = url.searchParams.get('id');
+    if (!id) return json({ error: 'Falta el parámetro id.' }, 400);
+
+    const existente = await env.RENDICIONES_DB.prepare('SELECT id FROM rendiciones WHERE id = ?').bind(id).first();
+    if (!existente) return json({ error: 'No encontrada.' }, 404);
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      return json({ error: 'Body inválido.' }, 400);
+    }
+
+    for (const f of ['local_id', 'turno', 'fecha', 'empleado_id']) {
+      if (!body[f]) return json({ error: `Falta el campo: ${f}` }, 400);
+    }
+
+    const row = buildRow({ ...body, created_at: undefined });
+    const { id: _ignorar, created_at: _ignorarTambien, ...campos } = row;
+    const columns = Object.keys(campos);
+    const sets = columns.map(c => `${c} = ?`).join(', ');
+
+    await env.RENDICIONES_DB.prepare(`UPDATE rendiciones SET ${sets} WHERE id = ?`)
+      .bind(...columns.map(c => campos[c]), id).run();
+
+    return json({ ok: true });
   }
 
   // ── ELIMINAR (solo dueño/supervisor) ─────────────────────────

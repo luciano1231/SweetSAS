@@ -16,6 +16,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     html:not(.authenticated) body > :not(#authGate) { display: none !important; }
+    /* Evitar que "Ítem" y "Detalle" (texto libre, a veces largo) fuercen
+       scroll horizontal en la tabla de pendientes — se truncan con "..."
+       y el título completo queda disponible al pasar el mouse. */
+    #table-wrapper .data-table td:nth-child(2),
+    #table-wrapper .data-table td:nth-child(4) {
+      max-width: 220px; overflow: hidden; text-overflow: ellipsis;
+    }
   </style>
   <script>window.__PAGE_PERMISSION = 'cajaChica';</script>
   <script src="/js/auth-gate.js"></script>
@@ -60,7 +67,7 @@
     </div>
   </div>
 
-  <div class="app-container">
+  <div class="app-container app-container--data">
     <header class="app-header animate-in">
       <div class="app-header__brand">
         <div class="app-header__logo"><img src="/assets/logo-128.png" alt="Sweet &amp; Pop Express"></div>
@@ -71,7 +78,6 @@
       </div>
       <nav class="app-header__nav">
         <button type="button" class="nav-link" id="theme-toggle">Claro</button>
-        <a href="../index.html" class="nav-link">← Dashboard</a>
         <a href="../usuarios.html" class="nav-link" id="navUsersBtn" style="display:none;" data-role-gate="owner"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> Usuarios</a>
         <a href="index.html" class="nav-link">← Locales</a>
         <a href="#" class="nav-link" id="navRendicionBtn" title="Ir a Rendición de este local"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg> Rendición</a>

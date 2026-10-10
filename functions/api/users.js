@@ -2,7 +2,7 @@
  * Cloudflare Pages Function — /api/users
  *
  * Login unificado (contraseña del dueño + PIN de supervisor/local) y panel
- * de administración de usuarios (protegido con ADMIN_TOKEN).
+ * de administración de usuarios (reservado a la sesión del dueño).
  *
  * El login ya NO se valida en el navegador — antes la contraseña del dueño
  * se comparaba en el cliente contra un hash visible en el JS, lo que
@@ -15,25 +15,28 @@
  *  - Binding KV: USERS_DATA (Cloudflare Dashboard → Pages → Settings → Bindings)
  *  - Secreto: SESSION_SECRET — firma los tokens de sesión.
  *  - Secreto: OWNER_PASSWORD_HASH — hash SHA-256 de la contraseña del dueño.
- *  - Variable de entorno: ADMIN_TOKEN — clave de administración de Gestión
- *    de Usuarios, separada de la contraseña del dueño.
+ *
+ * La administración de usuarios (crear/editar/borrar) ya no usa una clave
+ * separada: alcanza con estar logueado como dueño (misma contraseña del
+ * dashboard), verificado con el token de sesión firmado — ver
+ * functions/lib/session.js.
  *
  * Endpoints:
- *  POST   /api/users?action=login   body: { password }              → público
- *  GET    /api/users                header: X-Admin-Token           → admin
- *  POST   /api/users?action=create  header: X-Admin-Token, body: {...} → admin
- *  PUT    /api/users?id=<id>        header: X-Admin-Token, body: {...} → admin
- *  DELETE /api/users?id=<id>        header: X-Admin-Token           → admin
+ *  POST   /api/users?action=login   body: { password }                    → público
+ *  GET    /api/users                header: Authorization: Bearer <token> → dueño
+ *  POST   /api/users?action=create  header: Authorization: Bearer <token> → dueño
+ *  PUT    /api/users?id=<id>        header: Authorization: Bearer <token> → dueño
+ *  DELETE /api/users?id=<id>        header: Authorization: Bearer <token> → dueño
  *
  * Nunca se devuelve el hash de la contraseña al cliente.
  */
 
-import { firmarSesion } from '../lib/session.js';
+import { firmarSesion, obtenerSesion, tieneRol } from '../lib/session.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Admin-Token',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
 
 const KV_KEY = 'users';
@@ -120,16 +123,17 @@ async function saveUsers(env, users) {
   await env.USERS_DATA.put(KV_KEY, JSON.stringify(users));
 }
 
-function isAdmin(request, env) {
-  const token = request.headers.get('X-Admin-Token') || '';
-  return !!env.ADMIN_TOKEN && token === env.ADMIN_TOKEN;
-}
-
 function sanitizePermissions(input) {
   const locales = Array.isArray(input?.locales)
     ? input.locales.filter(l => VALID_LOCALES.includes(l))
     : [];
-  return { menuEditor: !!input?.menuEditor, locales };
+  return {
+    menuEditor: !!input?.menuEditor,
+    locales,
+    recetas: !!input?.recetas,
+    listasPrecios: !!input?.listasPrecios,
+    mayoristas: !!input?.mayoristas,
+  };
 }
 
 export async function onRequest(context) {
@@ -167,7 +171,7 @@ export async function onRequest(context) {
 
     // ¿Es la contraseña del dueño? (se verifica acá, ya no en el navegador)
     if (env.OWNER_PASSWORD_HASH && hash === env.OWNER_PASSWORD_HASH) {
-      const datosSesion = { role: 'owner', userId: 'owner', userName: 'Dueño', permissions: PERMISOS_DUENO };
+      const datosSesion = { role: 'owner', userId: 'owner', userName: 'Pablo', permissions: PERMISOS_DUENO };
       const token = await firmarSesion(datosSesion, env.SESSION_SECRET);
       return json({ ok: true, token, user: datosSesion });
     }
@@ -182,9 +186,13 @@ export async function onRequest(context) {
     return json({ ok: true, token, user: datosSesion });
   }
 
-  // ── A partir de acá, todo requiere el token de administración ──
-  if (!isAdmin(request, env)) {
-    return json({ error: 'No autorizado.' }, 401);
+  // ── A partir de acá, todo requiere sesión de dueño ──────────────
+  if (!env.SESSION_SECRET) {
+    return json({ error: 'Falta configurar el secreto SESSION_SECRET en Cloudflare.' }, 500);
+  }
+  const session = await obtenerSesion(request, env);
+  if (!tieneRol(session, 'owner')) {
+    return json({ error: 'No autorizado.' }, 403);
   }
 
   // ── LISTAR ────────────────────────────────────────────────────

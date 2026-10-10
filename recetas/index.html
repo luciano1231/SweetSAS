@@ -18,6 +18,11 @@
     .new-prod-grid { display: grid; grid-template-columns: 1fr auto; gap: var(--space-md); align-items: end; }
     .data-table tr { cursor: pointer; }
     .data-table .cell--precio { font-weight: 700; color: var(--accent-primary); }
+    /* Nombres de producto largos truncados con "..." para que la tabla
+       nunca necesite scroll horizontal en desktop. */
+    #table-wrapper .data-table td:nth-child(2) {
+      max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
   </style>
   <script>window.__PAGE_PERMISSION = 'recetas';</script>
   <script src="/js/auth-gate.js"></script>
@@ -62,7 +67,7 @@
     </div>
   </div>
 
-  <div class="app-container">
+  <div class="app-container app-container--data">
     <header class="app-header animate-in">
       <div class="app-header__brand">
         <div class="app-header__logo"><img src="/assets/logo-128.png" alt="Sweet &amp; Pop Express"></div>
@@ -73,7 +78,6 @@
       </div>
       <nav class="app-header__nav">
         <button type="button" class="nav-link" id="theme-toggle">Claro</button>
-        <a href="../index.html" class="nav-link">← Dashboard</a>
         <a href="ingredientes.html" class="nav-link"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg> Ingredientes</a>
       </nav>
     </header>

@@ -237,7 +237,7 @@
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo aplicar el ajuste.');
-      Utils.toast(`✓ Aplicado a ${data.actualizados} producto(s)`, 'success');
+      Utils.toast(`Aplicado a ${data.actualizados} producto(s)`, 'success');
       document.getElementById('masivo-valor').value = '';
       await cargarBorrador();
     } catch (err) {
@@ -261,7 +261,7 @@
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo publicar.');
-      Utils.toast(`✓ Lista de ${nombreLista} publicada (${data.publicados} productos)`, 'success');
+      Utils.toast(`Lista de ${nombreLista} publicada (${data.publicados} productos)`, 'success');
       await cargarBorrador();
     } catch (err) {
       Utils.toast(err.message, 'error');

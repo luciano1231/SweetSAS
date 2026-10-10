@@ -91,7 +91,7 @@ export async function onRequest(context) {
       if (!tieneRol(session, 'owner', 'supervisor')) return json({ error: 'No autorizado.' }, 403);
     } else if (!local || !tieneLocal(session, local)) {
       // Carga de trabajo (pendientes): hace falta tener ese local asignado.
-      return json({ error: 'No autenticado o sin acceso a ese local.' }, 401);
+      return json({ error: 'No autorizado.' }, 403);
     }
 
     if (estado === 'enviado' && local) {
