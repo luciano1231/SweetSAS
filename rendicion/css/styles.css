@@ -670,6 +670,7 @@ img {
   font-size: var(--font-size-base);
   font-variant-numeric: tabular-nums;
   outline: none;
+  width: 0; /* no ensanchar la fila por el ancho intrínseco del input */
   min-width: 44px;
   text-align: center;
   -moz-appearance: textfield;
@@ -696,6 +697,195 @@ img {
 
 .bill-field__subtotal--active {
   color: var(--success);
+}
+
+/* Collapsible bills panel (se agrupa al escribir el total a mano) */
+.bills-panel__toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--space-sm);
+  background: var(--bg-input);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.bills-panel__toggle:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.bills-panel__toggle-title {
+  font-weight: 600;
+}
+
+.bills-panel__toggle-summary {
+  flex: 1;
+  text-align: right;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.bills-panel__toggle:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: -2px;
+}
+
+.bills-panel__toggle-chevron {
+  display: inline-block;
+  transition: transform 0.35s ease;
+}
+
+/* Animación de altura sin JS: la fila del grid pasa de 0fr a 1fr */
+.bills-panel__head,
+.bills-panel__body {
+  display: grid;
+  transition:
+    grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s ease,
+    visibility 0s linear 0.4s;
+}
+
+.bills-panel__clip {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Margen negativo + padding interno = lugar para el anillo de foco sin que lo recorte el overflow */
+.bills-panel__body > .bills-panel__clip {
+  margin: -4px;
+  transition: margin 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bills-panel__body .form-grid--bills {
+  padding: 4px;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Desplegado (estado normal) */
+.bills-panel__head {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.bills-panel__body {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s, 0.1s, 0s;
+}
+
+/* Agrupado */
+.bills-panel--collapsed .bills-panel__head {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s, 0.1s, 0s;
+}
+
+.bills-panel--collapsed .bills-panel__body {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition-delay: 0s, 0s, 0.4s;
+}
+
+.bills-panel--collapsed .bills-panel__body > .bills-panel__clip {
+  margin: 0 -4px;
+}
+
+.bills-panel--collapsed .bills-panel__body .form-grid--bills {
+  transform: translateY(-8px);
+}
+
+.bills-panel--collapsed .bills-panel__toggle-chevron {
+  transform: rotate(-90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bills-panel__head,
+  .bills-panel__body,
+  .bills-panel__body > .bills-panel__clip,
+  .bills-panel__body .form-grid--bills,
+  .bills-panel__toggle-chevron {
+    transition: none;
+  }
+}
+
+/* Editable Total Efectivo */
+.summary-row--editable {
+  gap: var(--space-md);
+}
+
+.summary-row--editable .summary-row__label {
+  white-space: nowrap;
+}
+
+.summary-row__input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: 240px;
+}
+
+.summary-row__prefix {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.summary-row__input {
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  padding-left: 32px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  text-align: right;
+  outline: none;
+  cursor: text;
+  transition: all var(--transition-fast);
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.summary-row__input::-webkit-inner-spin-button,
+.summary-row__input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+.summary-row__input::placeholder {
+  color: var(--text-primary);
+}
+
+.summary-row--editable:hover .summary-row__input {
+  border-color: var(--glass-border);
+  background: var(--bg-input);
+}
+
+.summary-row__input:focus {
+  background: var(--bg-input-focus);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-primary-glow);
 }
 
 
@@ -1632,6 +1822,15 @@ img {
   
   .summary-row__value {
     font-size: var(--font-size-lg);
+  }
+
+  .summary-row__input {
+    font-size: var(--font-size-lg);
+    padding-left: 28px;
+  }
+
+  .summary-row__prefix {
+    font-size: var(--font-size-base);
   }
 
   .summary-input-row {

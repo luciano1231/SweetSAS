@@ -38,6 +38,7 @@
 
   // --- State ---
   let billValues = {};   // { '10': 0, '20': 0, ... }
+  let efectivoManual = null; // número si el total se escribió a mano; null = se calcula por billetes
   let paymentValues = {}; // { 'debito': 0, 'credito': 0, ... }
 
   // ============================================
@@ -85,6 +86,14 @@
           subtotalEl.classList.toggle('bill-field__subtotal--active', cantidad > 0);
         }
       });
+
+      // Si el total guardado no coincide con los billetes, fue ingresado a mano
+      const totalGuardado = Number(r.total_efectivo) || 0;
+      if (totalGuardado !== calculateTotalBilletes()) {
+        efectivoManual = totalGuardado;
+        document.getElementById('total-efectivo').value = totalGuardado ? Utils.formatNumber(totalGuardado) : '';
+        setBillsCollapsed(true);
+      }
 
       CONFIG.mediosPago.forEach(medio => {
         const monto = r[medio.id] || 0;
@@ -206,6 +215,11 @@
   // ============================================
 
   function calculateTotalEfectivo() {
+    if (efectivoManual !== null) return efectivoManual;
+    return calculateTotalBilletes();
+  }
+
+  function calculateTotalBilletes() {
     let total = 0;
     for (const [denom, qty] of Object.entries(billValues)) {
       total += Number(denom) * qty;
@@ -237,8 +251,11 @@
     const totalReal = calculateTotalReal();
     const diferencia = calculateDiferencia();
 
-    // Total Efectivo
-    document.getElementById('total-efectivo').textContent = Utils.formatCurrency(totalEfectivo);
+    // Total Efectivo (no se pisa mientras lo escriben a mano)
+    if (efectivoManual === null) {
+      document.getElementById('total-efectivo').value = totalEfectivo > 0 ? Utils.formatNumber(totalEfectivo) : '';
+    }
+    updateBillsSummary();
 
     // Total Real
     document.getElementById('total-real').textContent = Utils.formatCurrency(totalReal);
@@ -267,6 +284,38 @@
     diffEl.classList.add('diff-pulse');
   }
 
+  function clearBills() {
+    CONFIG.denominaciones.forEach(denom => {
+      billValues[denom] = 0;
+      const input = document.getElementById(`bill-${denom}`);
+      if (input) input.value = '';
+      const subtotal = document.getElementById(`subtotal-${denom}`);
+      if (subtotal) {
+        subtotal.textContent = '$0';
+        subtotal.classList.remove('bill-field__subtotal--active');
+      }
+    });
+  }
+
+  // --- Panel de billetes (se agrupa al ingresar el total a mano) ---
+  function setBillsCollapsed(collapsed) {
+    document.getElementById('bills-panel').classList.toggle('bills-panel--collapsed', collapsed);
+    document.getElementById('bills-toggle').setAttribute('aria-expanded', String(!collapsed));
+    updateBillsSummary();
+  }
+
+  function updateBillsSummary() {
+    const count = Object.values(billValues).reduce((a, b) => a + b, 0);
+    const el = document.getElementById('bills-summary');
+    if (efectivoManual !== null) {
+      el.textContent = 'Total ingresado a mano · tocá para desglosar';
+    } else if (count > 0) {
+      el.textContent = `${Utils.formatNumber(count)} billetes · ${Utils.formatCurrency(calculateTotalBilletes())}`;
+    } else {
+      el.textContent = 'Tocá para cargar billetes';
+    }
+  }
+
   // ============================================
   // EVENT BINDINGS
   // ============================================
@@ -278,6 +327,7 @@
         const denom = e.target.dataset.denom;
         const qty = Math.max(0, parseInt(e.target.value) || 0);
         billValues[denom] = qty;
+        efectivoManual = null; // vuelven a contar billetes -> el total se calcula
 
         // Update subtotal for this denomination
         const subtotal = Number(denom) * qty;
@@ -290,6 +340,32 @@
 
       // Select all text on focus for easier editing
       input.addEventListener('focus', (e) => e.target.select());
+    });
+
+    // --- Total Efectivo a mano ---
+    const efectivoInput = document.getElementById('total-efectivo');
+    efectivoInput.addEventListener('focus', (e) => {
+      e.target.value = e.target.value.replace(/\D/g, ''); // sin separadores mientras se edita
+      e.target.select();
+      setBillsCollapsed(true);
+    });
+    efectivoInput.addEventListener('input', (e) => {
+      const digits = e.target.value.replace(/\D/g, '');
+      e.target.value = digits;
+      efectivoManual = digits === '' ? null : Number(digits);
+      if (efectivoManual !== null) clearBills(); // el total a mano reemplaza el conteo
+      updateTotals();
+    });
+    efectivoInput.addEventListener('blur', (e) => {
+      const n = calculateTotalEfectivo();
+      e.target.value = n > 0 ? Utils.formatNumber(n) : '';
+    });
+
+    document.getElementById('bills-toggle').addEventListener('click', () => {
+      setBillsCollapsed(false);
+      // Esperar a que el panel deje de estar oculto (visibility) antes de enfocar
+      const first = document.querySelector('.bill-field__input');
+      if (first) setTimeout(() => first.focus({ preventScroll: true }), 60);
     });
 
     // --- Payment inputs ---
@@ -492,16 +568,9 @@
 
   function resetForm() {
     // Reset bill values
-    CONFIG.denominaciones.forEach(denom => {
-      billValues[denom] = 0;
-      const input = document.getElementById(`bill-${denom}`);
-      if (input) input.value = '';
-      const subtotal = document.getElementById(`subtotal-${denom}`);
-      if (subtotal) {
-        subtotal.textContent = '$0';
-        subtotal.classList.remove('bill-field__subtotal--active');
-      }
-    });
+    clearBills();
+    efectivoManual = null;
+    setBillsCollapsed(false);
 
     // Reset payment values
     CONFIG.mediosPago.forEach(medio => {
