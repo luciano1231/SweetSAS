@@ -53,6 +53,20 @@ function buildRow(body) {
   return row;
 }
 
+// Una sola rendición por local + fecha + turno. Devuelve la existente (o null).
+// excluirId: al editar, la propia fila no cuenta como duplicada.
+async function buscarDuplicada(env, localId, fecha, turno, excluirId = null) {
+  let sql = 'SELECT id, empleado_nombre, total_real, created_at FROM rendiciones WHERE local_id = ? AND fecha = ? AND turno = ?';
+  const binds = [String(localId), String(fecha), String(turno)];
+  if (excluirId) { sql += ' AND id != ?'; binds.push(excluirId); }
+  return env.RENDICIONES_DB.prepare(sql + ' LIMIT 1').bind(...binds).first();
+}
+
+function mensajeDuplicada(dup) {
+  const quien = dup.empleado_nombre ? ` por ${dup.empleado_nombre}` : '';
+  return `Ya existe una rendición para ese local, fecha y turno (cargada${quien}). No se puede cargar dos veces el mismo turno.`;
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   const method = request.method.toUpperCase();
@@ -174,6 +188,9 @@ export async function onRequest(context) {
       return json({ error: 'No tenés acceso a ese local.' }, 403);
     }
 
+    const dup = await buscarDuplicada(env, body.local_id, body.fecha, body.turno);
+    if (dup) return json({ error: mensajeDuplicada(dup), duplicada: true }, 409);
+
     const row = buildRow(body);
     const columns = Object.keys(row);
     const placeholders = columns.map(() => '?').join(', ');
@@ -203,6 +220,9 @@ export async function onRequest(context) {
     for (const f of ['local_id', 'turno', 'fecha', 'empleado_id']) {
       if (!body[f]) return json({ error: `Falta el campo: ${f}` }, 400);
     }
+
+    const dup = await buscarDuplicada(env, body.local_id, body.fecha, body.turno, id);
+    if (dup) return json({ error: mensajeDuplicada(dup), duplicada: true }, 409);
 
     const row = buildRow({ ...body, created_at: undefined });
     const { id: _ignorar, created_at: _ignorarTambien, ...campos } = row;

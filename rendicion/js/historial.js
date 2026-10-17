@@ -124,8 +124,32 @@
       return;
     }
 
+    // Detectar rendiciones dobles: mismo local + fecha + turno más de una vez.
+    const grupos = {};
+    data.forEach(r => {
+      const k = `${r.local_id}|${r.fecha}|${r.turno}`;
+      (grupos[k] = grupos[k] || []).push(r);
+    });
+    const esDuplicada = r => grupos[`${r.local_id}|${r.fecha}|${r.turno}`].length > 1;
+    const gruposDobles = Object.values(grupos).filter(g => g.length > 1);
+
+    let html = '';
+    if (gruposDobles.length > 0) {
+      const items = gruposDobles.map(g => {
+        const r = g[0];
+        return `<li><strong>${r.local_nombre || Utils.getLocalName(r.local_id)}</strong> — ${Utils.formatDate(r.fecha)} — ${r.turno} (${g.length} cargas)</li>`;
+      }).join('');
+      html += `
+        <div class="dup-banner" style="background:#fef3c7;border:1px solid #f59e0b;color:#78350f;border-radius:8px;padding:12px 16px;margin-bottom:12px;">
+          <strong>⚠️ ${gruposDobles.length} turno${gruposDobles.length !== 1 ? 's' : ''} con rendición duplicada.</strong>
+          Esto suma ingresos de más en el balance. Eliminá la que sobra con el ícono del tacho:
+          <ul style="margin:8px 0 0 18px;">${items}</ul>
+        </div>
+      `;
+    }
+
     // Build table
-    let html = `
+    html += `
       <table class="data-table">
         <thead>
           <tr>
@@ -154,9 +178,10 @@
       const diffClass = r.diferencia > 0 ? 'cell--positive' : r.diferencia < 0 ? 'cell--negative' : '';
       const turnoClass = r.turno === 'Mañana' ? 'badge--morning' : r.turno === 'Tarde' ? 'badge--afternoon' : 'badge--night';
 
+      const dup = esDuplicada(r);
       html += `
-        <tr>
-          <td>${Utils.formatDate(r.fecha)}</td>
+        <tr${dup ? ' style="background:rgba(245,158,11,.15);"' : ''}>
+          <td>${Utils.formatDate(r.fecha)}${dup ? ' <span class="badge" style="background:#f59e0b;color:#fff;" title="Hay más de una rendición para este local, fecha y turno">Duplicada</span>' : ''}</td>
           <td>${r.local_nombre || Utils.getLocalName(r.local_id)}</td>
           <td><span class="badge ${turnoClass}">${r.turno}</span></td>
           <td>${r.empleado_nombre || Utils.getEmpleadoName(r.empleado_id)}</td>

@@ -152,6 +152,64 @@ const Utils = {
   },
 
   /**
+   * Muestra un modal informativo con un solo botón (sin opción de seguir)
+   * @param {string} title
+   * @param {string} message
+   * @param {string} okText
+   * @returns {Promise<void>}
+   */
+  alert(title, message, okText = 'Entendido') {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal">
+          <div class="modal__header">
+            <h3 class="modal__title">${title}</h3>
+          </div>
+          <div class="modal__body">
+            <p>${message}</p>
+          </div>
+          <div class="modal__footer">
+            <button class="btn btn--primary" id="modal-ok">${okText}</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => overlay.classList.add('modal-overlay--visible'));
+
+      const cleanup = () => {
+        overlay.classList.remove('modal-overlay--visible');
+        setTimeout(() => overlay.remove(), 300);
+        resolve();
+      };
+
+      overlay.querySelector('#modal-ok').addEventListener('click', cleanup);
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) cleanup();
+      });
+    });
+  },
+
+  /**
+   * Texto "hace X min/h/días" a partir de un ISO timestamp
+   * @param {string} iso
+   * @returns {string}
+   */
+  tiempoDesde(iso) {
+    const t = new Date(iso).getTime();
+    if (!t) return '';
+    const min = Math.max(0, Math.round((Date.now() - t) / 60000));
+    if (min < 1) return 'hace instantes';
+    if (min < 60) return `hace ${min} min`;
+    const h = Math.round(min / 60);
+    if (h < 24) return `hace ${h} h`;
+    const d = Math.round(h / 24);
+    return `hace ${d} día${d !== 1 ? 's' : ''}`;
+  },
+
+  /**
    * Obtiene el nombre de un local por ID
    * @param {string} localId
    * @returns {string}

@@ -157,6 +157,12 @@
       .home-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
       .home-card { padding: 20px 16px; }
       .home-card__art { width: 88px; height: 68px; }
+      /* Tarjetas cuadradas: solo ilustración + título */
+      .home-grid .home-card { aspect-ratio: 1 / 1; padding: 14px; gap: 6px; }
+      .home-grid .home-card .home-card__desc { display: none; }
+      .home-grid .home-card .home-card__art { width: 84px; height: 64px; }
+      .home-grid .home-card .home-card__title { font-size: .95rem; line-height: 1.2; margin-top: auto; }
+      .home-grid .home-card .home-card__arrow { margin-top: 0; font-size: .9rem; line-height: 1; }
     }
   </style>
 </head>
@@ -459,5 +465,6 @@
       });
     })();
   </script>
+  <script src="/js/brand.js"></script>
 </body>
 </html>

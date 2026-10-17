@@ -425,27 +425,28 @@
       return;
     }
 
-    // Avisar si ya hay una rendición cargada para esta misma fecha y turno
-    // en este local — antes se podía cargar dos veces sin darse cuenta.
-    // (Si estamos editando, no cuenta la propia fila que estamos guardando.)
+    // Bloquear si ya hay una rendición para esta misma fecha, turno y local.
+    // Solo puede haber una por turno: si hay un error de carga, la corrige
+    // el dueño/supervisor desde el historial. (Si estamos editando, no cuenta
+    // la propia fila.) El servidor vuelve a validar esto igual.
     try {
       const existentes = (await Storage.getFiltered({ localId, fechaDesde: fecha, fechaHasta: fecha, turno }))
         .filter(r => r.id !== editId);
       if (existentes && existentes.length > 0) {
         const previa = existentes[0];
-        const seguir = await Utils.confirm(
-          '⚠️ Ya existe una rendición para esta fecha y turno',
-          `${local.nombre} — ${Utils.formatDate(fecha)} — ${turno} ya tiene una rendición cargada
-           (Total Real: ${Utils.formatCurrency(previa.total_real)}, cargada por ${previa.empleado_nombre || 'sin especificar'}).
-           <br><br>Si seguís, vas a cargar una <strong>segunda</strong> rendición para el mismo turno.
-           ¿Seguro que querés continuar?`,
-          'Cargar de todos modos'
+        const cuando = Utils.tiempoDesde(previa.created_at);
+        await Utils.alert(
+          'Esta rendición ya fue cargada',
+          `<strong>${local.nombre}</strong> — ${Utils.formatDate(fecha)} — turno ${turno} ya tiene una rendición
+           (Total Real: ${Utils.formatCurrency(previa.total_real)}, cargada por ${previa.empleado_nombre || 'sin especificar'}${cuando ? ', ' + cuando : ''}).
+           <br><br>No se puede cargar dos veces el mismo turno. Si hay un error en la que ya está cargada,
+           avisale al administrador para que la corrija.`
         );
-        if (!seguir) return;
+        return;
       }
     } catch (err) {
-      // Si falla la verificación (ej. sin conexión) no bloqueamos la carga,
-      // solo no se pudo chequear duplicados.
+      // Si falla la verificación (ej. sin conexión) seguimos: el servidor
+      // rechaza igual el duplicado al guardar.
     }
 
     const totalReal = calculateTotalReal();
