@@ -41,9 +41,13 @@
     return `${anterior} <span class="${clase}">${flecha} ${signo}${Utils.formatCurrency(dif)} (${signo}${pct.toFixed(1)}%)</span>`;
   }
 
-  async function cargarBorrador() {
+  // silencioso = refresco después de guardar un cambio: no tapa la tabla con
+  // "Cargando...", mantiene los tildados y deja la pantalla en el mismo
+  // lugar (si no, al editar un producto del medio de la lista había que
+  // volver a scrollear hasta encontrarlo).
+  async function cargarBorrador(silencioso) {
     const wrapper = document.getElementById('table-wrapper');
-    wrapper.innerHTML = '<div class="empty-state"><p class="empty-state__text">Cargando...</p></div>';
+    if (!silencioso) wrapper.innerHTML = '<div class="empty-state"><p class="empty-state__text">Cargando...</p></div>';
     document.getElementById('btn-ver-publicada').href = `lista-publicada.html?lista=${listaActual}`;
 
     let data;
@@ -58,9 +62,18 @@
 
     document.getElementById('lista-publicada-info').textContent = fechaLegible(data.published_at);
     lineasActuales = data.borrador;
-    // Por defecto arrancan todos tildados (solo los que sí existen todavía).
-    seleccionados = new Set(lineasActuales.filter(l => l.existe).map(l => l.id));
-    renderTabla();
+    const existentes = lineasActuales.filter(l => l.existe).map(l => l.id);
+    if (silencioso) {
+      // Se conserva lo que estaba tildado (menos lo que ya no existe).
+      seleccionados = new Set(existentes.filter(id => seleccionados.has(id)));
+      const scrollY = window.scrollY;
+      renderTabla();
+      window.scrollTo(0, scrollY);
+    } else {
+      // Por defecto arrancan todos tildados (solo los que sí existen todavía).
+      seleccionados = new Set(existentes);
+      renderTabla();
+    }
   }
 
   function actualizarContador() {
@@ -207,7 +220,7 @@
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar.');
-      await cargarBorrador();
+      await cargarBorrador(true);
     } catch (err) {
       Utils.toast(err.message, 'error');
     }
@@ -220,7 +233,7 @@
       const res = await window.sweetAuth.fetch(`/api/listas-precios?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo quitar.');
-      await cargarBorrador();
+      await cargarBorrador(true);
     } catch (err) {
       Utils.toast(err.message, 'error');
     }
@@ -267,7 +280,7 @@
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo aplicar el ajuste.');
       Utils.toast(`Aplicado a ${data.actualizados} producto(s)`, 'success');
       document.getElementById('masivo-valor').value = '';
-      await cargarBorrador();
+      await cargarBorrador(true);
     } catch (err) {
       Utils.toast(err.message, 'error');
     }
@@ -290,7 +303,7 @@
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo publicar.');
       Utils.toast(`Lista de ${nombreLista} publicada (${data.publicados} productos)`, 'success');
-      await cargarBorrador();
+      await cargarBorrador(true);
     } catch (err) {
       Utils.toast(err.message, 'error');
     }
