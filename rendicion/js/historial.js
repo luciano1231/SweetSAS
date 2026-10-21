@@ -109,6 +109,7 @@
         </div>
       `;
       document.getElementById('totals-card').style.display = 'none';
+      document.getElementById('efectivo-local-card').style.display = 'none';
       return;
     }
 
@@ -121,6 +122,7 @@
         </div>
       `;
       document.getElementById('totals-card').style.display = 'none';
+      document.getElementById('efectivo-local-card').style.display = 'none';
       return;
     }
 
@@ -213,6 +215,52 @@
 
     // Update totals
     updateTotals(data);
+    updateEfectivoPorLocal(data);
+  }
+
+  // ============================================
+  // EFECTIVO POR LOCAL (en el rango filtrado)
+  // ============================================
+
+  function updateEfectivoPorLocal(data) {
+    const card = document.getElementById('efectivo-local-card');
+    card.style.display = 'block';
+
+    const porLocal = {};
+    data.forEach(r => {
+      const k = r.local_id;
+      if (!porLocal[k]) porLocal[k] = { nombre: r.local_nombre || Utils.getLocalName(r.local_id), efectivo: 0, cantidad: 0 };
+      porLocal[k].efectivo += r.total_efectivo || 0;
+      porLocal[k].cantidad += 1;
+    });
+    const filas = Object.values(porLocal).sort((a, b) => b.efectivo - a.efectivo);
+    const total = filas.reduce((s, f) => s + f.efectivo, 0);
+
+    const desde = document.getElementById('filter-desde').value;
+    const hasta = document.getElementById('filter-hasta').value;
+    const turno = document.getElementById('filter-turno').value;
+    let rango = desde && hasta ? `Del ${Utils.formatDate(desde)} al ${Utils.formatDate(hasta)}`
+      : desde ? `Desde el ${Utils.formatDate(desde)}`
+      : hasta ? `Hasta el ${Utils.formatDate(hasta)}`
+      : 'Todas las fechas';
+    if (turno) rango += ` — turno ${turno}`;
+    document.getElementById('efectivo-local-rango').textContent = rango;
+
+    let html = filas.map(f => `
+      <div class="summary-row summary-row--subtotal">
+        <span class="summary-row__label">${f.nombre} <span style="color: var(--text-muted); font-weight: 400;">(${f.cantidad} rendicion${f.cantidad !== 1 ? 'es' : ''})</span></span>
+        <span class="summary-row__value">${Utils.formatCurrency(f.efectivo)}</span>
+      </div>
+    `).join('');
+    if (filas.length > 1) {
+      html += `
+        <div class="summary-row summary-row--total">
+          <span class="summary-row__label">Total Efectivo</span>
+          <span class="summary-row__value">${Utils.formatCurrency(total)}</span>
+        </div>
+      `;
+    }
+    document.getElementById('efectivo-local-list').innerHTML = html;
   }
 
   // ============================================

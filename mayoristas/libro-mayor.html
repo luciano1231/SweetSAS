@@ -19,6 +19,12 @@
     .check-cell input { width: 18px; height: 18px; accent-color: var(--accent-primary); cursor: pointer; }
     .cliente-pill { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
     .cliente-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .vista-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-sm); margin-bottom: var(--space-md); }
+    .monto-total { font-size: var(--font-size-sm); color: var(--text-secondary); }
+    .monto-total strong { color: var(--text-primary); font-size: 1.05rem; }
+    .estado-todos { color: var(--success); font-weight: 700; }
+    .estado-parcial { color: var(--warning, #f59e0b); font-weight: 700; }
+    .estado-ninguno { color: var(--text-muted); }
   </style>
   <script>window.__PAGE_PERMISSION = 'mayoristas';</script>
   <script src="/js/auth-gate.js"></script>
@@ -96,6 +102,14 @@
         <label class="form-label" for="filter-hasta">Hasta</label>
         <input type="date" class="form-input" id="filter-hasta">
       </div>
+    </div>
+
+    <div class="vista-bar animate-in animate-in--delay-2">
+      <div class="segmented">
+        <button type="button" class="is-active" id="vista-productos">Detalle por producto</button>
+        <button type="button" id="vista-remitos">Remitos y totales</button>
+      </div>
+      <div class="monto-total" id="monto-total" hidden></div>
     </div>
 
     <div class="card animate-in animate-in--delay-3" style="padding: 0; overflow: hidden;">

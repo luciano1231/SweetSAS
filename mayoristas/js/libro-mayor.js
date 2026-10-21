@@ -8,6 +8,9 @@
   const PALETA = ['#1d8a63', '#3b82f6', '#f59e0b', '#ec4899', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316'];
   let clientes = [];
   let filasCargadas = [];
+  // 'productos' = una fila por producto (libro mayor clásico);
+  // 'remitos' = una fila por remito con su total.
+  let vista = 'productos';
   let offset = 0;
   const LIMIT = 200;
 
@@ -51,6 +54,7 @@
     if (cliente) p.set('cliente_id', cliente);
     if (desde) p.set('desde', desde);
     if (hasta) p.set('hasta', hasta);
+    if (vista === 'remitos') p.set('agrupar', 'remito');
     p.set('limit', LIMIT);
     p.set('offset', extraOffset || 0);
     return p;
@@ -74,9 +78,79 @@
       return;
     }
 
-    filasCargadas = filasCargadas.concat(data.filas);
+    filasCargadas = filasCargadas.concat(vista === 'remitos' ? data.remitos : data.filas);
     offset = filasCargadas.length;
-    render(data.total);
+
+    const montoEl = document.getElementById('monto-total');
+    montoEl.hidden = vista !== 'remitos';
+    if (vista === 'remitos') {
+      montoEl.innerHTML = `${data.total} remito${data.total !== 1 ? 's' : ''} — Total: <strong>${Utils.formatCurrency(data.monto_total)}</strong>`;
+      renderRemitos(data.total);
+    } else {
+      render(data.total);
+    }
+  }
+
+  // "3/3" líneas marcadas → ✓, algunas → "1/3", ninguna → "—"
+  function celdaEstado(marcadas, total) {
+    if (marcadas >= total) return '<span class="estado-todos">✓</span>';
+    if (marcadas > 0) return `<span class="estado-parcial">${marcadas}/${total}</span>`;
+    return '<span class="estado-ninguno">—</span>';
+  }
+
+  function renderRemitos(total) {
+    const wrapper = document.getElementById('table-wrapper');
+    const btnMas = document.getElementById('btn-cargar-mas');
+
+    if (filasCargadas.length === 0) {
+      wrapper.innerHTML = '<div class="empty-state"><p class="empty-state__text">Todavía no hay ningún remito cerrado (o ninguno coincide con el filtro).</p></div>';
+      btnMas.hidden = true;
+      return;
+    }
+
+    let html = `
+      <table class="data-table data-table--stack">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Remito N°</th>
+            <th>Cliente</th>
+            <th>Productos</th>
+            <th>Unidades</th>
+            <th>Total</th>
+            <th>Enviado</th>
+            <th>Recibido</th>
+            <th>Pagado</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    filasCargadas.forEach(r => {
+      html += `
+        <tr>
+          <td class="cell--title" data-label="Fecha">${fechaLegible(r.fecha)}</td>
+          <td data-label="Remito N°">${String(r.remito_numero).padStart(5, '0')}</td>
+          <td data-label="Cliente"><span class="cliente-pill"><span class="cliente-dot" style="background:${colorDeCliente(r.cliente_id, r.cliente_nombre)};"></span>${r.cliente_nombre}</span></td>
+          <td data-label="Productos">${r.productos}</td>
+          <td data-label="Unidades">${Utils.formatNumber(r.unidades)}</td>
+          <td class="cell--currency" data-label="Total" style="font-weight:700;">${Utils.formatCurrency(r.total)}</td>
+          <td class="check-cell" data-label="Enviado">${celdaEstado(r.enviados, r.productos)}</td>
+          <td class="check-cell" data-label="Recibido">${celdaEstado(r.recibidos, r.productos)}</td>
+          <td class="check-cell" data-label="Pagado">${celdaEstado(r.pagados, r.productos)}</td>
+        </tr>
+      `;
+    });
+    html += '</tbody></table>';
+    wrapper.innerHTML = html;
+
+    btnMas.hidden = filasCargadas.length >= total;
+  }
+
+  function cambiarVista(nueva) {
+    vista = nueva;
+    document.getElementById('vista-productos').classList.toggle('is-active', nueva === 'productos');
+    document.getElementById('vista-remitos').classList.toggle('is-active', nueva === 'remitos');
+    cargar(true);
   }
 
   function render(total) {
@@ -161,6 +235,8 @@
       document.getElementById('filter-desde').addEventListener('change', () => cargar(true));
       document.getElementById('filter-hasta').addEventListener('change', () => cargar(true));
       document.getElementById('btn-cargar-mas').addEventListener('click', () => cargar(false));
+      document.getElementById('vista-productos').addEventListener('click', () => cambiarVista('productos'));
+      document.getElementById('vista-remitos').addEventListener('click', () => cambiarVista('remitos'));
       await cargarClientes();
       await cargar(true);
     });

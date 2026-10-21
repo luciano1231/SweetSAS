@@ -9,6 +9,9 @@
  * PUT    ?tipo=...&id=    body: { cantidad }                                             → editar cantidad
  * DELETE ?tipo=...&id=                                                                    → quitar
  *
+ * Cualquiera de los tres actualiza también recetas_productos.updated_at
+ * (la "fecha de actualización" de la receta que se ve en el listado).
+ *
  * Requiere el binding D1: RENDICIONES_DB. Acceso: dueño/supervisor.
  */
 
@@ -53,6 +56,11 @@ export async function onRequest(context) {
   const columnaRef = tipo === 'ingrediente' ? 'ingrediente_id' : 'costo_fijo_id';
   const catalogoTabla = tipo === 'ingrediente' ? 'recetas_ingredientes' : 'recetas_costos_fijos';
 
+  // Marca la receta dueña de una línea como recién modificada.
+  const tocarProductoDeLinea = (lineaId) => env.RENDICIONES_DB.prepare(
+    `UPDATE recetas_productos SET updated_at = ? WHERE id = (SELECT producto_id FROM ${tabla} WHERE id = ?)`
+  ).bind(new Date().toISOString(), lineaId);
+
   if (method === 'POST') {
     let body;
     try { body = await request.json(); } catch { return json({ error: 'Body inválido.' }, 400); }
@@ -73,9 +81,12 @@ export async function onRequest(context) {
     if (yaExiste) return json({ error: 'Esta receta ya tiene ese ítem — editá la cantidad en vez de agregarlo de nuevo.' }, 400);
 
     const nuevoId = crypto.randomUUID();
-    await env.RENDICIONES_DB.prepare(
-      `INSERT INTO ${tabla} (id, producto_id, ${columnaRef}, cantidad) VALUES (?, ?, ?, ?)`
-    ).bind(nuevoId, productoId, refId, cantidad).run();
+    await env.RENDICIONES_DB.batch([
+      env.RENDICIONES_DB.prepare(
+        `INSERT INTO ${tabla} (id, producto_id, ${columnaRef}, cantidad) VALUES (?, ?, ?, ?)`
+      ).bind(nuevoId, productoId, refId, cantidad),
+      env.RENDICIONES_DB.prepare('UPDATE recetas_productos SET updated_at = ? WHERE id = ?').bind(new Date().toISOString(), productoId),
+    ]);
 
     return json({ ok: true, id: nuevoId });
   }
@@ -89,14 +100,21 @@ export async function onRequest(context) {
     const cantidad = Number(body.cantidad);
     if (!(cantidad > 0)) return json({ error: 'La cantidad tiene que ser mayor a 0.' }, 400);
 
-    await env.RENDICIONES_DB.prepare(`UPDATE ${tabla} SET cantidad = ? WHERE id = ?`).bind(cantidad, id).run();
+    await env.RENDICIONES_DB.batch([
+      env.RENDICIONES_DB.prepare(`UPDATE ${tabla} SET cantidad = ? WHERE id = ?`).bind(cantidad, id),
+      tocarProductoDeLinea(id),
+    ]);
     return json({ ok: true });
   }
 
   if (method === 'DELETE') {
     const id = url.searchParams.get('id');
     if (!id) return json({ error: 'Falta el parámetro id.' }, 400);
-    await env.RENDICIONES_DB.prepare(`DELETE FROM ${tabla} WHERE id = ?`).bind(id).run();
+    // Primero se marca la receta (después de borrar la línea ya no se sabe de quién era).
+    await env.RENDICIONES_DB.batch([
+      tocarProductoDeLinea(id),
+      env.RENDICIONES_DB.prepare(`DELETE FROM ${tabla} WHERE id = ?`).bind(id),
+    ]);
     return json({ ok: true });
   }
 

@@ -19,9 +19,14 @@
  *      deshabilitado — eso último se oculta solo, no se saca acá).
  * POST ?accion=ajuste-masivo  body:{ lista, ids:[...], ajuste_tipo?, ajuste_valor }
  *      → aplica el mismo ajuste a varias líneas del borrador de una (ej:
- *      "+10% a los seleccionados"). ajuste_tipo default 'porcentaje'.
+ *      "+10% a los seleccionados"). ajuste_tipo default 'porcentaje'. Las
+ *      líneas con precio fijo no pasan a ajuste: su precio fijo se aumenta
+ *      ese mismo %.
  * PUT  ?id=<borrador_id>     body:{ ajuste_tipo?, ajuste_valor? }
- *      → edita el ajuste de una línea del borrador.
+ *      → edita el ajuste de una línea del borrador. ajuste_tipo 'fijo' =
+ *      precio final puesto a mano (ajuste_valor es ese precio): se guarda
+ *      en precio_fijo y deja de depender del costo de la receta. Volver a
+ *      'monto' o 'porcentaje' borra el precio fijo.
  * DELETE ?id=<borrador_id>
  *      → saca un producto del borrador de esa lista (no lo borra de Recetas).
  *
@@ -43,6 +48,23 @@ const CORS_HEADERS = {
 };
 
 const LISTAS_VALIDAS = ['clientes', 'mayoristas'];
+
+// precio_fijo se agregó después de crear la tabla (y la tabla tiene un
+// CHECK en ajuste_tipo que SQLite no deja modificar) — se agrega solo la
+// primera vez que se usa la API, sin tener que correr una migración a mano.
+let columnaPrecioFijoOk = false;
+async function asegurarColumnaPrecioFijo(db) {
+  if (columnaPrecioFijoOk) return;
+  const { results } = await db.prepare('PRAGMA table_info(listas_precios_borrador)').all();
+  if (!results.some(c => c.name === 'precio_fijo')) {
+    try {
+      await db.prepare('ALTER TABLE listas_precios_borrador ADD COLUMN precio_fijo REAL').run();
+    } catch (e) {
+      if (!String(e.message).includes('duplicate column')) throw e; // otro pedido la agregó al mismo tiempo
+    }
+  }
+  columnaPrecioFijoOk = true;
+}
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -81,7 +103,8 @@ async function armarBorrador(db, lista) {
       const existe = !!producto;
       const nombre = existe ? producto.nombre : f.nombre_cache;
       const precioBase = existe ? producto.precio_con_utilidad : null;
-      const precioFinal = existe ? aplicarAjuste(precioBase, f.ajuste_tipo, f.ajuste_valor) : null;
+      const esFijo = f.precio_fijo !== null && f.precio_fijo !== undefined;
+      const precioFinal = !existe ? null : esFijo ? f.precio_fijo : aplicarAjuste(precioBase, f.ajuste_tipo, f.ajuste_valor);
       const precioPublicadoAnterior = mapaPublicado[f.producto_id] ?? null;
       const diferencia = (precioFinal !== null && precioPublicadoAnterior !== null)
         ? Math.round((precioFinal - precioPublicadoAnterior) * 100) / 100
@@ -92,8 +115,8 @@ async function armarBorrador(db, lista) {
         nombre,
         existe,
         precio_base: precioBase,
-        ajuste_tipo: f.ajuste_tipo,
-        ajuste_valor: f.ajuste_valor,
+        ajuste_tipo: esFijo ? 'fijo' : f.ajuste_tipo,
+        ajuste_valor: esFijo ? f.precio_fijo : f.ajuste_valor,
         precio_final: precioFinal,
         updated_at: f.updated_at || f.created_at,
         precio_publicado_anterior: precioPublicadoAnterior,
@@ -123,6 +146,7 @@ export async function onRequest(context) {
   }
 
   const db = env.RENDICIONES_DB;
+  await asegurarColumnaPrecioFijo(db);
 
   // ── GET: borrador o publicada ────────────────────────────────
   if (method === 'GET') {
@@ -190,10 +214,21 @@ export async function onRequest(context) {
     // el límite de parámetros por consulta de D1 y tira error 500 — se
     // manda un UPDATE por línea en un solo batch en vez de uno gigante.
     const ahora = new Date().toISOString();
-    const updates = body.ids.map(id =>
-      db.prepare('UPDATE listas_precios_borrador SET ajuste_tipo = ?, ajuste_valor = ?, updated_at = ? WHERE lista = ? AND id = ?')
-        .bind(ajusteTipo, ajusteValor, ahora, body.lista, id)
-    );
+    const { results: fijos } = await db.prepare(
+      'SELECT id, precio_fijo FROM listas_precios_borrador WHERE lista = ? AND precio_fijo IS NOT NULL'
+    ).bind(body.lista).all();
+    const mapaFijos = Object.fromEntries(fijos.map(f => [f.id, f.precio_fijo]));
+    const updates = body.ids.map(id => {
+      if (mapaFijos[id] !== undefined) {
+        const nuevoFijo = ajusteTipo === 'porcentaje'
+          ? Math.round(mapaFijos[id] * (1 + ajusteValor / 100) * 100) / 100
+          : Math.round((mapaFijos[id] + ajusteValor) * 100) / 100;
+        return db.prepare('UPDATE listas_precios_borrador SET precio_fijo = ?, updated_at = ? WHERE lista = ? AND id = ?')
+          .bind(nuevoFijo, ahora, body.lista, id);
+      }
+      return db.prepare('UPDATE listas_precios_borrador SET ajuste_tipo = ?, ajuste_valor = ?, updated_at = ? WHERE lista = ? AND id = ?')
+        .bind(ajusteTipo, ajusteValor, ahora, body.lista, id);
+    });
     await db.batch(updates);
 
     return json({ ok: true, actualizados: body.ids.length });
@@ -232,12 +267,22 @@ export async function onRequest(context) {
     let body;
     try { body = await request.json(); } catch { return json({ error: 'Body inválido.' }, 400); }
 
+    const ahora = new Date().toISOString();
+
+    if (body.ajuste_tipo === 'fijo') {
+      const precioFijo = Number(body.ajuste_valor);
+      if (!isFinite(precioFijo) || precioFijo < 0) return json({ error: 'El precio fijo tiene que ser un número mayor o igual a 0.' }, 400);
+      await db.prepare('UPDATE listas_precios_borrador SET precio_fijo = ?, updated_at = ? WHERE id = ?')
+        .bind(Math.round(precioFijo * 100) / 100, ahora, id).run();
+      return json({ ok: true });
+    }
+
     const ajusteTipo = body.ajuste_tipo !== undefined ? body.ajuste_tipo : existente.ajuste_tipo;
-    if (!['monto', 'porcentaje'].includes(ajusteTipo)) return json({ error: 'ajuste_tipo debe ser "monto" o "porcentaje".' }, 400);
+    if (!['monto', 'porcentaje'].includes(ajusteTipo)) return json({ error: 'ajuste_tipo debe ser "monto", "porcentaje" o "fijo".' }, 400);
     const ajusteValor = body.ajuste_valor !== undefined ? Number(body.ajuste_valor) || 0 : existente.ajuste_valor;
 
-    await db.prepare('UPDATE listas_precios_borrador SET ajuste_tipo = ?, ajuste_valor = ?, updated_at = ? WHERE id = ?')
-      .bind(ajusteTipo, ajusteValor, new Date().toISOString(), id).run();
+    await db.prepare('UPDATE listas_precios_borrador SET ajuste_tipo = ?, ajuste_valor = ?, precio_fijo = NULL, updated_at = ? WHERE id = ?')
+      .bind(ajusteTipo, ajusteValor, ahora, id).run();
     return json({ ok: true });
   }
 

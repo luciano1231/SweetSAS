@@ -6,6 +6,9 @@
  *          Obligación, el sistema "aprende" al toque (memoria +
  *          alta automática en la clasificación general) — el
  *          equivalente web del onEdit que tenía en Google Sheets.
+ *          Además clasifica igual a todas las demás filas que siguen
+ *          "SIN CLASIFICAR" con la misma observación (devuelve
+ *          { similaresClasificadas }).
  * DELETE /api/obligaciones?id=
  *
  * Requiere el binding D1: RENDICIONES_DB
@@ -105,7 +108,16 @@ export async function onRequest(context) {
     // fila a mano, lo memorizamos para la próxima vez que aparezca la
     // misma observación, y damos de alta la Obligación para los resúmenes.
     const cambioClasificacion = obligacion && obligacion !== existente.obligacion;
+    let similaresClasificadas = 0;
     if (cambioClasificacion && obligacion.toUpperCase() !== 'SIN CLASIFICAR' && observacion) {
+      // Las demás filas con la misma observación que todavía están sin
+      // clasificar (de cualquier fecha/banco, no solo las que se ven con
+      // el filtro actual) quedan clasificadas igual de una vez.
+      const similares = await env.RENDICIONES_DB.prepare(
+        "UPDATE obligaciones_movimientos SET obligacion = ? WHERE observacion = ? AND obligacion = 'SIN CLASIFICAR' AND id != ?"
+      ).bind(obligacion, observacion, id).run();
+      similaresClasificadas = similares.meta?.changes || 0;
+
       await env.RENDICIONES_DB.prepare(
         `INSERT INTO obligaciones_aprendizaje (id, observacion, obligacion, updated_at)
          VALUES (?, ?, ?, ?)
@@ -115,7 +127,7 @@ export async function onRequest(context) {
       await agregarObligacionesSiFaltan(env, [obligacion]);
     }
 
-    return json({ ok: true });
+    return json({ ok: true, similaresClasificadas });
   }
 
   // ── ELIMINAR ─────────────────────────────────────────────────

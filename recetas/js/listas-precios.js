@@ -117,6 +117,7 @@
               <select class="ajuste-tipo">
                 <option value="monto" ${l.ajuste_tipo === 'monto' ? 'selected' : ''}>+ $</option>
                 <option value="porcentaje" ${l.ajuste_tipo === 'porcentaje' ? 'selected' : ''}>+ %</option>
+                <option value="fijo" ${l.ajuste_tipo === 'fijo' ? 'selected' : ''}>Precio fijo $</option>
               </select>
               <input type="number" class="obl-inline-input obl-inline-input--sm ajuste-valor" step="0.01" value="${l.ajuste_valor}">
             </div>
@@ -159,7 +160,16 @@
       const inputValor = tr.querySelector('.ajuste-valor');
       if (selectTipo && inputValor) {
         const guardarAjuste = () => guardarLinea(id, selectTipo.value, inputValor.value);
-        selectTipo.addEventListener('change', guardarAjuste);
+        selectTipo.addEventListener('change', () => {
+          // Al pasar a precio fijo se arranca desde el precio final actual
+          // (no desde el valor del ajuste, que no tiene nada que ver), y
+          // se deja el campo listo para escribir el precio que se quiera.
+          if (selectTipo.value === 'fijo') {
+            const linea = lineasActuales.find(l => l.id === id);
+            inputValor.value = linea ? linea.precio_final : 0;
+          }
+          guardarAjuste();
+        });
         inputValor.addEventListener('change', guardarAjuste);
       }
 
@@ -224,7 +234,7 @@
 
     const confirmado = await Utils.confirm(
       `¿Aumentar ${valor}%?`,
-      `Se le va a fijar un ajuste de +${valor}% (reemplazando el ajuste que tenían) a los ${seleccionados.size} producto(s) tildado(s) de esta lista.`,
+      `Se le va a fijar un ajuste de +${valor}% (reemplazando el ajuste que tenían) a los ${seleccionados.size} producto(s) tildado(s) de esta lista. Los que tienen precio fijo suben ${valor}% sobre ese precio.`,
       'Aplicar'
     );
     if (!confirmado) return;

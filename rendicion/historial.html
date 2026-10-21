@@ -181,6 +181,18 @@
       </div>
     </div>
 
+    <!-- Efectivo por local (en el rango de fechas filtrado) -->
+    <div class="card animate-in animate-in--delay-2" id="efectivo-local-card" style="display:none;">
+      <div class="card__header">
+        <div class="card__icon card__icon--cash"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg></div>
+        <div>
+          <h2 class="card__title">Efectivo por Local</h2>
+          <p class="card__description" id="efectivo-local-rango">En el rango de fechas seleccionado</p>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: var(--space-sm);" id="efectivo-local-list"></div>
+    </div>
+
     <!-- Table -->
     <div class="card animate-in animate-in--delay-2" style="padding: 0; overflow: hidden;">
       <div class="table-wrapper" id="table-wrapper">

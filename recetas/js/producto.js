@@ -41,6 +41,10 @@
     const p = data.producto;
     document.getElementById('header-nombre').textContent = p.nombre;
     document.title = `${p.nombre} — Recetas`;
+    const actualizado = new Date(p.updated_at);
+    document.getElementById('header-actualizado').textContent = isNaN(actualizado.getTime())
+      ? ''
+      : `· Actualizada el ${actualizado.toLocaleDateString('es-AR')} a las ${actualizado.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}`;
 
     productoActivo = p.activo !== 0;
     const btnActivo = document.getElementById('btn-toggle-activo');
@@ -138,6 +142,7 @@
     input.style.font = 'inherit';
     input.style.fontWeight = 'inherit';
     input.style.width = 'clamp(200px, 40vw, 420px)';
+    input.style.cursor = 'text';
 
     h1.replaceWith(input);
     document.getElementById('btn-edit-nombre').style.display = 'none';

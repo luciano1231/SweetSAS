@@ -176,7 +176,14 @@
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar.');
-      Utils.toast('Clasificación guardada — el sistema lo va a recordar', 'success');
+      const n = data.similaresClasificadas || 0;
+      Utils.toast(
+        n > 0
+          ? `Clasificación guardada — también se clasificaron ${n} movimiento${n !== 1 ? 's' : ''} más con la misma observación`
+          : 'Clasificación guardada — el sistema lo va a recordar',
+        'success',
+        n > 0 ? 6000 : undefined
+      );
       await cargarObligacionesConocidas();
       await cargarMovimientos();
     } catch (err) {

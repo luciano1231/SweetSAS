@@ -11,6 +11,11 @@
 
   let todosLosProductos = [];
 
+  function fechaCorta(iso) {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('es-AR');
+  }
+
   async function cargarProductos() {
     const wrapper = document.getElementById('table-wrapper');
     wrapper.innerHTML = '<div class="empty-state"><span class="empty-state__icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></span><p class="empty-state__text">Cargando...</p></div>';
@@ -66,10 +71,10 @@
             <th></th>
             <th>Producto</th>
             <th>Unid. x Tanda</th>
-            <th>Costo Total</th>
             <th>Costo Unitario</th>
             <th>% Utilidad</th>
             <th>Precio + Utilidad</th>
+            <th>Actualizada</th>
             <th></th>
           </tr>
         </thead>
@@ -87,10 +92,10 @@
           </td>
           <td class="cell--title" title="${p.nombre.replace(/"/g, '&quot;')}">${p.nombre}</td>
           <td data-label="Unid. x Tanda">${Utils.formatNumber(p.unidades_por_tanda)}</td>
-          <td class="cell--currency" data-label="Costo Total">${Utils.formatCurrency(p.costo_total)}</td>
           <td class="cell--currency" data-label="Costo Unitario">${Utils.formatCurrency(p.costo_unitario)}</td>
           <td data-label="% Utilidad">${p.utilidad_deseada_pct}%</td>
           <td class="cell--currency cell--precio" data-label="Precio + Utilidad">${Utils.formatCurrency(p.precio_con_utilidad)}</td>
+          <td data-label="Actualizada">${fechaCorta(p.updated_at)}</td>
           <td><button type="button" class="btn-row-delete btn-delete-prod" title="Eliminar" data-id="${p.id}" data-nombre="${p.nombre.replace(/"/g, '&quot;')}">${ICON_TRASH}</button></td>
         </tr>
       `;
