@@ -159,8 +159,9 @@ export async function onRequest(context) {
     const cantidad = Number(body.cantidad);
     if (!(cantidad > 0)) return json({ error: 'La cantidad tiene que ser mayor a 0.' }, 400);
 
-    const producto = await db.prepare('SELECT nombre FROM recetas_productos WHERE id = ?').bind(productoId).first();
+    const producto = await db.prepare('SELECT nombre, activo FROM recetas_productos WHERE id = ?').bind(productoId).first();
     if (!producto) return json({ error: 'Producto no encontrado.' }, 404);
+    if (producto.activo === 0) return json({ error: 'Ese producto está deshabilitado en Recetas.' }, 400);
 
     const precioUnitario = body.precio_unitario !== undefined && body.precio_unitario !== null && body.precio_unitario !== ''
       ? Number(body.precio_unitario) || 0

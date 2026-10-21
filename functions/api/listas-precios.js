@@ -154,8 +154,12 @@ export async function onRequest(context) {
     const modo = url.searchParams.get('modo') || 'borrador';
 
     if (modo === 'publicada') {
+      // La foto publicada puede traer productos que después se deshabilitaron
+      // en Recetas — esos no se muestran (vuelven solos si se rehabilitan).
       const { results: publicada } = await db.prepare(
-        'SELECT producto_id, nombre, precio_final FROM listas_precios_publicadas WHERE lista = ? ORDER BY nombre COLLATE NOCASE'
+        `SELECT lp.producto_id, lp.nombre, lp.precio_final FROM listas_precios_publicadas lp
+         LEFT JOIN recetas_productos p ON p.id = lp.producto_id
+         WHERE lp.lista = ? AND (p.id IS NULL OR p.activo != 0) ORDER BY lp.nombre COLLATE NOCASE`
       ).bind(lista).all();
       const meta = await db.prepare('SELECT published_at FROM listas_precios_meta WHERE lista = ?').bind(lista).first();
       return json({ ok: true, lista, publicada, published_at: meta ? meta.published_at : null });
