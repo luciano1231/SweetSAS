@@ -173,20 +173,8 @@
     if (themeBtn) nav.insertBefore(homeBtn, themeBtn);
     else nav.insertBefore(homeBtn, nav.firstChild);
 
-    // El logo/marca del header también lleva a Inicio (si no está ya
-    // envuelto en un link, como pasa en el propio Home). Solo el logo y el
-    // título: algunas páginas meten controles adentro de la marca (ej. el
-    // lápiz + input para renombrar una receta), y un click ahí no tiene
-    // que sacarte de la pantalla a mitad de la edición.
-    const brand = document.querySelector('.app-header__brand');
-    if (brand && !brand.closest('a')) {
-      brand.style.cursor = 'pointer';
-      brand.title = 'Ir al Inicio';
-      brand.addEventListener('click', function (e) {
-        if (e.target.closest('button, input, textarea, select, a')) return;
-        window.location.href = '/';
-      });
-    }
+    // A Inicio se va solo con el botón de la casita — el logo/título del
+    // header no es clickeable (antes lo era y sacaba de la pantalla sin querer).
 
     const resto = Array.from(nav.children).filter(function (el) { return el !== themeBtn && el !== homeBtn; });
     if (resto.length === 0) return;
