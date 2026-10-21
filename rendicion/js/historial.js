@@ -224,7 +224,7 @@
 
   function updateEfectivoPorLocal(data) {
     const card = document.getElementById('efectivo-local-card');
-    card.style.display = 'block';
+    card.style.display = 'flex';
 
     const porLocal = {};
     data.forEach(r => {
@@ -247,16 +247,16 @@
     document.getElementById('efectivo-local-rango').textContent = rango;
 
     let html = filas.map(f => `
-      <div class="summary-row summary-row--subtotal">
-        <span class="summary-row__label">${f.nombre} <span style="color: var(--text-muted); font-weight: 400;">(${f.cantidad} rendicion${f.cantidad !== 1 ? 'es' : ''})</span></span>
-        <span class="summary-row__value">${Utils.formatCurrency(f.efectivo)}</span>
+      <div class="efectivo-tile" title="${f.cantidad} rendicion${f.cantidad !== 1 ? 'es' : ''}">
+        <div class="efectivo-tile__local">${f.nombre} · ${f.cantidad}</div>
+        <div class="efectivo-tile__monto">${Utils.formatCurrency(f.efectivo)}</div>
       </div>
     `).join('');
     if (filas.length > 1) {
       html += `
-        <div class="summary-row summary-row--total">
-          <span class="summary-row__label">Total Efectivo</span>
-          <span class="summary-row__value">${Utils.formatCurrency(total)}</span>
+        <div class="efectivo-tile efectivo-tile--total">
+          <div class="efectivo-tile__local">Total</div>
+          <div class="efectivo-tile__monto">${Utils.formatCurrency(total)}</div>
         </div>
       `;
     }
