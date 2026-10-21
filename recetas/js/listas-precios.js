@@ -117,13 +117,13 @@
               <select class="ajuste-tipo">
                 <option value="monto" ${l.ajuste_tipo === 'monto' ? 'selected' : ''}>+ $</option>
                 <option value="porcentaje" ${l.ajuste_tipo === 'porcentaje' ? 'selected' : ''}>+ %</option>
-                <option value="fijo" ${l.ajuste_tipo === 'fijo' ? 'selected' : ''}>Precio fijo $</option>
+                ${l.ajuste_tipo === 'fijo' ? '<option value="fijo" selected>Precio fijo $</option>' : ''}
               </select>
               <input type="number" class="obl-inline-input obl-inline-input--sm ajuste-valor" step="0.01" value="${l.ajuste_valor}">
             </div>
             `}
           </td>
-          <td class="cell--currency cell--precio" data-label="Precio Final">${roto ? '—' : Utils.formatCurrency(l.precio_final)}</td>
+          <td class="cell--currency cell--precio" data-label="Precio Final">${roto ? '—' : `<span class="precio-final-wrap">$ <input type="number" class="obl-inline-input precio-final-input" min="0" step="0.01" value="${l.precio_final}" title="Escribí el precio final — el ajuste se calcula solo"></span>`}</td>
           <td data-label="Actualizado">${fechaCorta(l.updated_at)}</td>
           <td data-label="vs. Última Publicación">${roto ? '—' : celdaDiferencia(l)}</td>
           <td><button type="button" class="btn-row-delete btn-quitar" title="Quitar de esta lista" data-id="${l.id}" data-nombre="${l.nombre.replace(/"/g, '&quot;')}">${ICON_TRASH}</button></td>
@@ -171,6 +171,24 @@
           guardarAjuste();
         });
         inputValor.addEventListener('change', guardarAjuste);
+      }
+
+      // Precio final escrito a mano → se guarda como ajuste "+ $" (la
+      // diferencia contra el precio base), así queda a la vista a la
+      // izquierda y la línea sigue atada al costo de la receta.
+      const inputFinal = tr.querySelector('.precio-final-input');
+      if (inputFinal) {
+        inputFinal.addEventListener('change', () => {
+          const linea = lineasActuales.find(l => l.id === id);
+          const final = Number(inputFinal.value);
+          if (!linea || !isFinite(final) || inputFinal.value === '' || final < 0) {
+            Utils.toast('Escribí un precio válido', 'error');
+            inputFinal.value = linea ? linea.precio_final : '';
+            return;
+          }
+          const monto = Math.round((final - linea.precio_base) * 100) / 100;
+          guardarLinea(id, 'monto', monto);
+        });
       }
 
       const btnQuitar = tr.querySelector('.btn-quitar');
