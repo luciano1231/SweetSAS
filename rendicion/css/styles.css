@@ -307,6 +307,13 @@ img {
   border-color: rgba(29,138,99,0.5);
 }
 
+/* Link fijo al lado de Home (data-header-pin): Caja Chica ⇄ Rendición */
+.nav-link.nav-link--pinned {
+  height: 40px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* --- Menú "hamburguesa" del header: agrupa los nav-link secundarios --- */
 .header-menu {
   position: relative;

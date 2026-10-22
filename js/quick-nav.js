@@ -176,7 +176,17 @@
     // A Inicio se va solo con el botón de la casita — el logo/título del
     // header no es clickeable (antes lo era y sacaba de la pantalla sin querer).
 
-    const resto = Array.from(nav.children).filter(function (el) { return el !== themeBtn && el !== homeBtn; });
+    // Links marcados con data-header-pin (ej. Caja Chica ⇄ Rendición del
+    // mismo local) quedan sueltos al lado de Home en vez de ir al menú.
+    const pinned = Array.from(nav.querySelectorAll(':scope > [data-header-pin]'));
+    let anchor = homeBtn;
+    pinned.forEach(function (el) {
+      el.classList.add('nav-link--pinned');
+      anchor.after(el);
+      anchor = el;
+    });
+
+    const resto = Array.from(nav.children).filter(function (el) { return el !== themeBtn && el !== homeBtn && !pinned.includes(el); });
     if (resto.length === 0) return;
 
     if (themeBtn) themeBtn.classList.add('nav-link--icon');
