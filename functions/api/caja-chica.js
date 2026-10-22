@@ -102,6 +102,20 @@ function origenesDe(destino) {
 // Marca con `origen` la fila que el cierre de una caja vinculada creó en la
 // caja destino (se reconoce por ítem + detalle "Cierre caja ..."), para que
 // la pantalla la pueda destacar.
+// Identificador legible de cada cierre: prefijo de la caja + número
+// correlativo (RIS-0001, HIP-0001, …). Se guarda en lote_envio; los cierres
+// anteriores a esto tienen un UUID ahí y se muestran sin identificador.
+const PREFIJO_CIERRE = { rissione: 'RIS', hiper: 'HIP', changoMas: 'CHA', produccion: 'PRO' };
+
+async function siguienteIdCierre(env, localId) {
+  const prefijo = PREFIJO_CIERRE[localId] || String(localId).slice(0, 3).toUpperCase();
+  const row = await env.RENDICIONES_DB
+    .prepare("SELECT MAX(CAST(SUBSTR(lote_envio, LENGTH(?) + 2) AS INTEGER)) AS ultimo FROM caja_chica_movimientos WHERE local_id = ? AND lote_envio LIKE ? || '-%'")
+    .bind(prefijo, localId, prefijo)
+    .first();
+  return `${prefijo}-${String((row?.ultimo || 0) + 1).padStart(4, '0')}`;
+}
+
 function marcarOrigen(r) {
   for (const [origen, v] of Object.entries(VINCULOS_CIERRE)) {
     if (r.local_id === v.destino && normalizar(r.item) === normalizar(v.itemDestino) && /^cierre caja/i.test(r.detalle || '')) {
@@ -266,7 +280,7 @@ export async function onRequest(context) {
       }, 400);
     }
 
-    const loteEnvio = crypto.randomUUID();
+    const loteEnvio = await siguienteIdCierre(env, localId);
     const fechaEnvio = new Date().toISOString();
 
     const stmts = [
@@ -289,7 +303,7 @@ export async function onRequest(context) {
           fecha: ultimaFecha,
           item: vinculo.itemDestino,
           clasificacion: vinculo.clasificacionDestino,
-          detalle: `Cierre caja ${body.local_nombre || localId}`,
+          detalle: `Cierre caja ${body.local_nombre || localId} ${loteEnvio}`,
           ingreso: monto,
           lote_envio: null,
           creado_por: session?.userName ? `${session.userName} (automático)` : 'automático',

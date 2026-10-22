@@ -28,6 +28,19 @@
     }
   }
 
+  // Cierres con identificador legible (RIS-0001…). Los anteriores a esto
+  // tienen un UUID en lote_envio y se muestran sin identificador.
+  const ID_CIERRE = /^[A-Z]{3}-\d{4,}$/;
+
+  function idCierre(m) {
+    return ID_CIERRE.test(m.lote_envio || '') ? m.lote_envio : '';
+  }
+
+  function fechaCierre(m) {
+    if (!idCierre(m) || !m.fecha_envio) return '';
+    return new Date(m.fecha_envio).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
   async function init() {
     populateFilters();
     try {
@@ -172,6 +185,8 @@
             <th>Ingreso</th>
             <th>Egreso</th>
             <th>Saldo</th>
+            <th>Cierre</th>
+            <th>Fecha cierre</th>
           </tr>
         </thead>
         <tbody>
@@ -189,6 +204,8 @@
           <td class="cell--currency cell--ingreso">${m.ingreso ? Utils.formatCurrency(m.ingreso) : ''}</td>
           <td class="cell--currency cell--egreso">${m.egreso ? Utils.formatCurrency(m.egreso) : ''}</td>
           <td class="cell--currency cell--saldo">${m.saldo === null || m.saldo === undefined ? '' : Utils.formatCurrency(m.saldo)}</td>
+          <td>${idCierre(m) ? `<span class="cierre-tag">${idCierre(m)}</span>` : ''}</td>
+          <td class="cell--muted">${fechaCierre(m)}</td>
         </tr>
       `;
     });
@@ -231,7 +248,7 @@
       return;
     }
 
-    const headers = ['Fecha', 'Local', 'Origen', 'Ítem', 'Clasificación', 'Detalle', 'Ingreso', 'Egreso', 'Saldo'];
+    const headers = ['Fecha', 'Local', 'Origen', 'Ítem', 'Clasificación', 'Detalle', 'Ingreso', 'Egreso', 'Saldo', 'Cierre', 'Fecha cierre'];
     const rows = data.map(m => [
       m.fecha,
       m.local_nombre || Utils.getLocalName(m.local_id),
@@ -242,6 +259,8 @@
       m.ingreso || 0,
       m.egreso || 0,
       m.saldo === null || m.saldo === undefined ? '' : m.saldo,
+      idCierre(m),
+      fechaCierre(m),
     ]);
 
     const BOM = '﻿';

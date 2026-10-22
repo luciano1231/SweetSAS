@@ -422,7 +422,7 @@
     btn.disabled = true;
     try {
       const res = await Storage.cerrarCaja(localId, local.nombre);
-      let msg = `Caja enviada: ${res.enviados} movimiento${res.enviados !== 1 ? 's' : ''}`;
+      let msg = `Cierre ${res.lote_envio}: ${res.enviados} movimiento${res.enviados !== 1 ? 's' : ''} enviado${res.enviados !== 1 ? 's' : ''}`;
       if (res.transferido) msg += ` — ${Utils.formatCurrency(res.transferido.monto)} pasaron a ${res.transferido.destino_nombre}`;
       Utils.toast(msg, 'success');
       await loadPendientes();
