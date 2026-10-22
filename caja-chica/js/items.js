@@ -230,7 +230,20 @@
     }
   });
 
+  function setupCatalogoSelect() {
+    const select = document.getElementById('catalogo-select');
+    select.innerHTML = CONFIG.catalogos.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+    const pedido = new URLSearchParams(window.location.search).get('catalogo');
+    if (pedido && CONFIG.catalogos.some(c => c.id === pedido)) select.value = pedido;
+    Storage.catalogo = select.value;
+    select.addEventListener('change', () => {
+      Storage.catalogo = select.value;
+      loadAll();
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', function () {
+    setupCatalogoSelect();
     window.sweetAuth.onReady(function () {
       loadAll();
     });

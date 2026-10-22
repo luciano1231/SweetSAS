@@ -147,3 +147,30 @@
 @media (max-width: 900px) {
   .quick-add-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* --- Movimientos que vienen de una caja vinculada (Rissione → Producción) --- */
+.data-table tr.row--vinculado td { background: rgba(59, 130, 246, 0.08); }
+.data-table tr.row--vinculado td:first-child { box-shadow: inset 3px 0 0 var(--info); }
+.origen-tag {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--info);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  vertical-align: 1px;
+}
+.filter-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  user-select: none;
+}
+.filter-check input { accent-color: var(--info); width: 16px; height: 16px; }

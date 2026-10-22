@@ -1,8 +1,10 @@
 /**
  * Cloudflare Pages Function — /api/caja-chica
  *
- * GET    /api/caja-chica?local=&estado=&desde=&hasta=&clasificacion=&q=
- *          → listar movimientos (filtros opcionales).
+ * GET    /api/caja-chica?local=&estado=&desde=&hasta=&clasificacion=&q=&vinculadas=
+ *          → listar movimientos (filtros opcionales). Con estado=enviado y
+ *          vinculadas=1 suma los movimientos cerrados de las cajas que se
+ *          vuelcan en este local (Rissione → Producción), marcados con `origen`.
  *          Si estado=enviado y local viene con valor, el saldo acumulado se
  *          calcula sobre TODO el historial del local (no solo lo filtrado)
  *          para que la columna "Saldo" de la planilla maestra sea correcta,
@@ -10,7 +12,9 @@
  * POST   /api/caja-chica                    → crear movimiento (estado=pendiente)
  * POST   /api/caja-chica?action=cerrar      → cerrar caja de un local: exige
  *          que la suma de pendientes (ingreso-egreso) sea $0, y pasa todo a
- *          estado=enviado agrupado en un mismo lote_envio.
+ *          estado=enviado agrupado en un mismo lote_envio. Si el local tiene
+ *          una caja vinculada (VINCULOS_CIERRE: Rissione → Producción), la
+ *          devolución de saldo se carga ahí como ingreso pendiente.
  * POST   /api/caja-chica?action=bulk-import → importación masiva (admin, X-Admin-Token)
  * PUT    /api/caja-chica?id=                → editar un movimiento (solo si está pendiente)
  * DELETE /api/caja-chica?id=                → eliminar un movimiento (solo si está pendiente,
@@ -28,6 +32,45 @@ const CORS_HEADERS = {
 };
 
 const EPSILON = 0.5; // tolerancia de redondeo para considerar el saldo "en cero"
+
+// Cajas vinculadas: al cerrar la caja de origen, lo que se devolvió con los
+// ítems de devolución (egreso) entra como ingreso pendiente en la caja
+// destino, para que el que la maneja lo vea y lo confirme al cerrar la suya.
+// Los nombres de ítem se comparan sin mayúsculas ni acentos.
+const VINCULOS_CIERRE = {
+  rissione: {
+    destino: 'produccion',
+    destinoNombre: 'Caja Chica Producción',
+    itemsDevolucion: ['devolucion saldo de caja chica'],
+    itemDestino: 'Ingreso devolución caja chica',
+    clasificacionDestino: 'MOVIMIENTO INTERNO',
+  },
+};
+
+// Cajas centrales: su saldo se arrastra de un cierre al otro (la columna
+// Saldo de la planilla maestra), así que no se les exige cerrar en $0.
+const CAJAS_CON_SALDO = ['produccion'];
+
+function normalizar(s) {
+  return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
+// Locales cuya caja se vuelca en `destino` al cerrarse (Producción ← Rissione).
+function origenesDe(destino) {
+  return Object.keys(VINCULOS_CIERRE).filter(o => VINCULOS_CIERRE[o].destino === destino);
+}
+
+// Marca con `origen` la fila que el cierre de una caja vinculada creó en la
+// caja destino (se reconoce por ítem + detalle "Cierre caja ..."), para que
+// la pantalla la pueda destacar.
+function marcarOrigen(r) {
+  for (const [origen, v] of Object.entries(VINCULOS_CIERRE)) {
+    if (r.local_id === v.destino && normalizar(r.item) === normalizar(v.itemDestino) && /^cierre caja/i.test(r.detalle || '')) {
+      return { ...r, origen };
+    }
+  }
+  return r;
+}
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -103,8 +146,22 @@ export async function onRequest(context) {
       let running = 0;
       const conSaldo = all.map(r => {
         running += (r.ingreso || 0) - (r.egreso || 0);
-        return { ...r, saldo: Math.round(running * 100) / 100 };
+        return marcarOrigen({ ...r, saldo: Math.round(running * 100) / 100 });
       });
+
+      // ?vinculadas=1 → sumar los movimientos ya cerrados de las cajas que se
+      // vuelcan en esta (Rissione en Producción). Van marcados con `origen` y
+      // sin saldo: no mueven el saldo de esta caja (eso lo hace la devolución).
+      if (url.searchParams.get('vinculadas') === '1') {
+        for (const origen of origenesDe(local)) {
+          const { results: ext } = await env.RENDICIONES_DB
+            .prepare('SELECT * FROM caja_chica_movimientos WHERE local_id = ? AND estado = ? ORDER BY fecha ASC, created_at ASC')
+            .bind(origen, 'enviado')
+            .all();
+          ext.forEach(r => conSaldo.push({ ...r, origen, saldo: null }));
+        }
+        conSaldo.sort((a, b) => (a.fecha || '').localeCompare(b.fecha || '') || (a.created_at || '').localeCompare(b.created_at || ''));
+      }
 
       const filtrado = conSaldo.filter(r => {
         if (desde && r.fecha < desde) return false;
@@ -130,7 +187,7 @@ export async function onRequest(context) {
     let { results } = await stmt.all();
     if (q) results = results.filter(r => `${r.item} ${r.detalle || ''}`.toLowerCase().includes(q));
 
-    return json({ ok: true, movimientos: results });
+    return json({ ok: true, movimientos: results.map(marcarOrigen) });
   }
 
   // ── CERRAR CAJA (enviar pendientes a la planilla maestra) ───────
@@ -156,7 +213,7 @@ export async function onRequest(context) {
     }
 
     const saldo = pendientes.reduce((s, r) => s + (r.ingreso || 0) - (r.egreso || 0), 0);
-    if (Math.abs(saldo) > EPSILON) {
+    if (Math.abs(saldo) > EPSILON && !CAJAS_CON_SALDO.includes(localId)) {
       return json({
         error: `El saldo debe estar en $0 antes de enviar. Saldo actual: ${saldo > 0 ? '+' : ''}${Math.round(saldo)}.`,
         saldo,
@@ -166,12 +223,42 @@ export async function onRequest(context) {
     const loteEnvio = crypto.randomUUID();
     const fechaEnvio = new Date().toISOString();
 
-    await env.RENDICIONES_DB
-      .prepare('UPDATE caja_chica_movimientos SET estado = ?, lote_envio = ?, fecha_envio = ? WHERE local_id = ? AND estado = ?')
-      .bind('enviado', loteEnvio, fechaEnvio, localId, 'pendiente')
-      .run();
+    const stmts = [
+      env.RENDICIONES_DB
+        .prepare('UPDATE caja_chica_movimientos SET estado = ?, lote_envio = ?, fecha_envio = ? WHERE local_id = ? AND estado = ?')
+        .bind('enviado', loteEnvio, fechaEnvio, localId, 'pendiente'),
+    ];
 
-    return json({ ok: true, enviados: pendientes.length, lote_envio: loteEnvio });
+    // Caja vinculada: la devolución de saldo pasa a la caja destino.
+    let transferido = null;
+    const vinculo = VINCULOS_CIERRE[localId];
+    if (vinculo) {
+      const devueltos = pendientes.filter(r => vinculo.itemsDevolucion.includes(normalizar(r.item)) && (r.egreso || 0) > 0);
+      const monto = Math.round(devueltos.reduce((s, r) => s + (r.egreso || 0), 0) * 100) / 100;
+      if (monto > 0) {
+        const ultimaFecha = devueltos.map(r => r.fecha).sort().pop();
+        const row = buildRow({
+          local_id: vinculo.destino,
+          local_nombre: vinculo.destinoNombre,
+          fecha: ultimaFecha,
+          item: vinculo.itemDestino,
+          clasificacion: vinculo.clasificacionDestino,
+          detalle: `Cierre caja ${body.local_nombre || localId}`,
+          ingreso: monto,
+          lote_envio: null,
+          creado_por: session?.userName ? `${session.userName} (automático)` : 'automático',
+        });
+        const columns = Object.keys(row);
+        stmts.push(env.RENDICIONES_DB
+          .prepare(`INSERT INTO caja_chica_movimientos (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`)
+          .bind(...columns.map(c => row[c])));
+        transferido = { destino: vinculo.destino, destino_nombre: vinculo.destinoNombre, monto };
+      }
+    }
+
+    await env.RENDICIONES_DB.batch(stmts);
+
+    return json({ ok: true, enviados: pendientes.length, lote_envio: loteEnvio, transferido });
   }
 
   // ── IMPORTACIÓN MASIVA (admin) ──────────────────────────────

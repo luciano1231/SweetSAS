@@ -103,12 +103,16 @@
 
   function landingFor(permissions) {
     if (permissions.dashboard) return '/index.html';
-    if (Array.isArray(permissions.locales) && permissions.locales.length === 1) {
-      return '/rendicion/carga.html?local=' + encodeURIComponent(permissions.locales[0]);
+    // 'produccion' no es un local de venta (no tiene Rendición): solo Caja Chica.
+    const allLocales = Array.isArray(permissions.locales) ? permissions.locales : [];
+    const locales = allLocales.filter(l => l !== 'produccion');
+    if (locales.length === 1) {
+      return '/rendicion/carga.html?local=' + encodeURIComponent(locales[0]);
     }
-    if (Array.isArray(permissions.locales) && permissions.locales.length > 1) {
+    if (locales.length > 1) {
       return '/rendicion/index.html';
     }
+    if (allLocales.includes('produccion')) return '/caja-chica/carga.html?local=produccion';
     if (permissions.menuEditor) return '/menu-editor.html';
     if (permissions.recetas) return '/recetas/index.html';
     if (permissions.listasPrecios) return '/recetas/listas-precios.html';

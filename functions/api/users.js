@@ -41,8 +41,9 @@ const CORS_HEADERS = {
 
 const KV_KEY = 'users';
 
-// Locales válidos (mismos ids que functions/api/menu.js y rendicion/js/config.js)
-const VALID_LOCALES = ['rissione', 'hiper', 'changoMas'];
+// Locales válidos (mismos ids que functions/api/menu.js y rendicion/js/config.js).
+// 'produccion' no es un local de venta: solo habilita la Caja Chica Producción.
+const VALID_LOCALES = ['rissione', 'hiper', 'changoMas', 'produccion'];
 
 // Permisos del dueño — fijos, no se editan desde Gestión de Usuarios.
 // Única fuente de verdad ahora (antes también estaban hardcodeados en el

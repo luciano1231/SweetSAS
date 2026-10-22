@@ -8,6 +8,16 @@ const CONFIG = {
     { id: 'rissione', nombre: 'Sweet Rissione' },
     { id: 'hiper', nombre: 'Sweet Hiper' },
     { id: 'changoMas', nombre: 'Sweet Chango Más' },
+    // Caja central: no es un local de venta. Usa su propio catálogo de ítems,
+    // recibe la devolución de saldo cuando se cierra la caja de Rissione y
+    // arrastra su saldo (no se le exige cerrar en $0).
+    { id: 'produccion', nombre: 'Caja Chica Producción', catalogo: 'produccion', sinRendicion: true, arrastraSaldo: true, recibeDe: ['rissione'] },
+  ],
+
+  // Catálogos de ítems disponibles (ver functions/api/caja-chica-items.js).
+  catalogos: [
+    { id: 'general', nombre: 'Locales (Rissione, Hiper, Chango Más)' },
+    { id: 'produccion', nombre: 'Producción' },
   ],
 
   // El catálogo de clasificaciones/ítems ya NO está fijo acá — vive en KV y
@@ -16,11 +26,25 @@ const CONFIG = {
 
   // Ítems que casi siempre son un ingreso (para preseleccionar el sentido
   // del movimiento en el formulario — el usuario igual puede cambiarlo).
+  // En Producción además cuenta todo lo que empieza con "Ingreso" (ítem o
+  // clasificación), ver esTipicamenteIngreso().
   itemsTipicamenteIngreso: [
     'DEPOSITO A SUB CAJA CHICA', 'INGRESO DE CAJAS DIARIAS', 'Ingreso a Caja chica Chango Mas Walter',
     'Ingreso a Caja chica Chango Mas', 'INICIO DE CAJA SEMANAL', 'INGRESO DEVOLUCION SALDO DE SUB CAJA CHICA',
     'Caja Inicial', 'REINGRESO (CAJA CHICA)', 'INGRESO A CAJA CHICA',
   ],
+  itemsTipicamenteIngresoProduccion: ['Venta a empleado', 'Devolución préstamo', 'Diferencia sobrante'],
+
+  catalogoDe(localId) {
+    const local = this.locales.find(l => l.id === localId);
+    return (local && local.catalogo) || 'general';
+  },
+
+  esTipicamenteIngreso(localId, item, clasificacion) {
+    if (this.catalogoDe(localId) !== 'produccion') return this.itemsTipicamenteIngreso.includes(item);
+    if (/^ingreso/i.test(item) || /^ingreso/i.test(clasificacion)) return true;
+    return this.itemsTipicamenteIngresoProduccion.includes(item);
+  },
 };
 
 // ============================================
@@ -28,7 +52,7 @@ const CONFIG = {
 // ============================================
 
 const Storage = {
-  async listar({ localId, estado, desde, hasta, clasificacion, q } = {}) {
+  async listar({ localId, estado, desde, hasta, clasificacion, q, vinculadas } = {}) {
     const params = new URLSearchParams();
     if (localId) params.set('local', localId);
     if (estado) params.set('estado', estado);
@@ -36,6 +60,7 @@ const Storage = {
     if (hasta) params.set('hasta', hasta);
     if (clasificacion) params.set('clasificacion', clasificacion);
     if (q) params.set('q', q);
+    if (vinculadas) params.set('vinculadas', '1');
 
     const res = await window.sweetAuth.fetch(`/api/caja-chica?${params.toString()}`);
     const data = await res.json();
@@ -72,15 +97,23 @@ const Storage = {
   },
 
   // ── Catálogo de ítems / clasificaciones (editable desde items.html) ──
+  // Catálogo activo ('general' | 'produccion'). Lo fija cada página según
+  // el local/caja que está mostrando; todas las llamadas de abajo lo usan.
+  catalogo: 'general',
+
+  _catParam() {
+    return 'catalogo=' + encodeURIComponent(this.catalogo || 'general');
+  },
+
   async cargarCatalogo() {
-    const res = await window.sweetAuth.fetch('/api/caja-chica-items');
+    const res = await window.sweetAuth.fetch(`/api/caja-chica-items?${this._catParam()}`);
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo cargar el catálogo de ítems.');
     return { items: data.items, clasificaciones: data.clasificaciones };
   },
 
   async crearItem(item, clasificacion) {
-    const res = await window.sweetAuth.fetch('/api/caja-chica-items?action=item', {
+    const res = await window.sweetAuth.fetch(`/api/caja-chica-items?action=item&${this._catParam()}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ item, clasificacion }),
@@ -91,7 +124,7 @@ const Storage = {
   },
 
   async editarItem(id, cambios) {
-    const res = await window.sweetAuth.fetch(`/api/caja-chica-items?action=item&id=${encodeURIComponent(id)}`, {
+    const res = await window.sweetAuth.fetch(`/api/caja-chica-items?action=item&id=${encodeURIComponent(id)}&${this._catParam()}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(cambios),
@@ -102,13 +135,13 @@ const Storage = {
   },
 
   async eliminarItem(id) {
-    const res = await window.sweetAuth.fetch(`/api/caja-chica-items?action=item&id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const res = await window.sweetAuth.fetch(`/api/caja-chica-items?action=item&id=${encodeURIComponent(id)}&${this._catParam()}`, { method: 'DELETE' });
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo eliminar el ítem.');
   },
 
   async crearClasificacion(nombre) {
-    const res = await window.sweetAuth.fetch('/api/caja-chica-items?action=clasificacion', {
+    const res = await window.sweetAuth.fetch(`/api/caja-chica-items?action=clasificacion&${this._catParam()}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre }),
@@ -118,7 +151,7 @@ const Storage = {
   },
 
   async renombrarClasificacion(nombreViejo, nombreNuevo) {
-    const res = await window.sweetAuth.fetch(`/api/caja-chica-items?action=clasificacion&nombre=${encodeURIComponent(nombreViejo)}`, {
+    const res = await window.sweetAuth.fetch(`/api/caja-chica-items?action=clasificacion&nombre=${encodeURIComponent(nombreViejo)}&${this._catParam()}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombre: nombreNuevo }),
@@ -128,7 +161,7 @@ const Storage = {
   },
 
   async eliminarClasificacion(nombre) {
-    const res = await window.sweetAuth.fetch(`/api/caja-chica-items?action=clasificacion&nombre=${encodeURIComponent(nombre)}`, { method: 'DELETE' });
+    const res = await window.sweetAuth.fetch(`/api/caja-chica-items?action=clasificacion&nombre=${encodeURIComponent(nombre)}&${this._catParam()}`, { method: 'DELETE' });
     const data = await res.json();
     if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudo eliminar la clasificación.');
   },

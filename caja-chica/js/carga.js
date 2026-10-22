@@ -37,8 +37,13 @@
   document.getElementById('header-local').textContent = local.nombre;
   document.title = `Caja Chica — ${local.nombre}`;
 
+  Storage.catalogo = CONFIG.catalogoDe(localId);
+
   const rendicionBtn = document.getElementById('navRendicionBtn');
-  if (rendicionBtn) rendicionBtn.href = `../rendicion/carga.html?local=${encodeURIComponent(localId)}`;
+  if (rendicionBtn) {
+    if (local.sinRendicion) rendicionBtn.style.display = 'none';
+    else rendicionBtn.href = `../rendicion/carga.html?local=${encodeURIComponent(localId)}`;
+  }
 
   let direction = 'ingreso'; // 'ingreso' | 'egreso'
   let pendientes = [];
@@ -122,7 +127,7 @@
       selectedItem = { item, clasificacion };
       list.hidden = true;
 
-      if (CONFIG.itemsTipicamenteIngreso.includes(item)) setDirection('ingreso');
+      if (CONFIG.esTipicamenteIngreso(localId, item, clasificacion)) setDirection('ingreso');
       else setDirection('egreso');
     }
 
@@ -252,10 +257,12 @@
         <tbody>
     `;
     ordenados.forEach(m => {
+      const origenNombre = m.origen ? Utils.getLocalName(m.origen).replace('Sweet ', '') : '';
+      const tag = m.origen ? `<span class="origen-tag" title="Viene del cierre de la caja chica de ${origenNombre}">${origenNombre}</span>` : '';
       html += `
-        <tr>
+        <tr${m.origen ? ' class="row--vinculado"' : ''}>
           <td>${Utils.formatDate(m.fecha)}</td>
-          <td title="${m.item}">${m.item}</td>
+          <td title="${m.item}">${tag}${m.item}</td>
           <td><span class="clasificacion-tag">${m.clasificacion}</span></td>
           <td title="${m.detalle || ''}">${m.detalle || ''}</td>
           <td class="cell--currency cell--ingreso">${m.ingreso ? Utils.formatCurrency(m.ingreso) : ''}</td>
@@ -292,6 +299,12 @@
     if (pendientes.length === 0) {
       hint.textContent = '';
       btnCerrar.disabled = true;
+    } else if (local.arrastraSaldo) {
+      // Caja central: el saldo pasa a la planilla maestra y se arrastra.
+      banner.classList.remove('saldo-banner--unbalanced');
+      banner.classList.add('saldo-banner--balanced');
+      hint.textContent = 'Esta caja arrastra su saldo: podés enviar sin llevarlo a $0.';
+      btnCerrar.disabled = false;
     } else if (balanced) {
       hint.textContent = 'Saldo en $0 — listo para enviar.';
       btnCerrar.disabled = false;
@@ -392,7 +405,9 @@
     btn.disabled = true;
     try {
       const res = await Storage.cerrarCaja(localId, local.nombre);
-      Utils.toast(`Caja enviada: ${res.enviados} movimiento${res.enviados !== 1 ? 's' : ''}`, 'success');
+      let msg = `Caja enviada: ${res.enviados} movimiento${res.enviados !== 1 ? 's' : ''}`;
+      if (res.transferido) msg += ` — ${Utils.formatCurrency(res.transferido.monto)} pasaron a ${res.transferido.destino_nombre}`;
+      Utils.toast(msg, 'success');
       await loadPendientes();
     } catch (err) {
       Utils.toast(err.message, 'error');

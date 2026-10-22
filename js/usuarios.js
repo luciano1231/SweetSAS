@@ -13,6 +13,7 @@
     { id: 'rissione', nombre: 'Sweet Rissione' },
     { id: 'hiper', nombre: 'Sweet Hiper' },
     { id: 'changoMas', nombre: 'Sweet Chango Más' },
+    { id: 'produccion', nombre: 'Producción (solo Caja Chica)' },
   ];
 
   let editingId = null; // null = creando

@@ -6,20 +6,57 @@
   'use strict';
 
   let permittedLocales = [];
+  const VINCULADAS_KEY = 'cajachica_mostrar_vinculadas';
+
+  // Cajas que se vuelcan en el local elegido (Producción ← Rissione).
+  function origenesActuales() {
+    const local = CONFIG.locales.find(l => l.id === currentLocalId());
+    return (local && local.recibeDe) || [];
+  }
+
+  function mostrarVinculadas() {
+    return origenesActuales().length > 0 && document.getElementById('filter-vinculadas').checked;
+  }
+
+  function setupVinculadas() {
+    const group = document.getElementById('filter-vinculadas-group');
+    const origenes = origenesActuales();
+    group.hidden = origenes.length === 0;
+    if (origenes.length) {
+      const nombres = origenes.map(id => (CONFIG.locales.find(l => l.id === id) || {}).nombre || id);
+      document.getElementById('filter-vinculadas-label').textContent = `Mostrar movimientos de ${nombres.join(', ').replace('Sweet ', '')}`;
+    }
+  }
 
   async function init() {
     populateFilters();
+    try {
+      const guardado = localStorage.getItem(VINCULADAS_KEY);
+      if (guardado !== null) document.getElementById('filter-vinculadas').checked = guardado === '1';
+    } catch { /* sin storage: queda marcado */ }
+    setupVinculadas();
     bindEvents();
     renderTable();
+    await loadClasificaciones();
+  }
+
+  // Cada caja tiene su catálogo (los locales comparten uno, Producción el
+  // suyo), así que las clasificaciones del filtro dependen del local elegido.
+  async function loadClasificaciones() {
+    const clasifSelect = document.getElementById('filter-clasificacion');
+    const catalogo = CONFIG.catalogoDe(currentLocalId());
+    if (clasifSelect.dataset.catalogo === catalogo) return;
+    Storage.catalogo = catalogo;
     try {
-      const catalogo = await Storage.cargarCatalogo();
-      const clasifSelect = document.getElementById('filter-clasificacion');
-      catalogo.clasificaciones.forEach(c => {
+      const { clasificaciones } = await Storage.cargarCatalogo();
+      clasifSelect.querySelectorAll('option:not([value=""])').forEach(o => o.remove());
+      clasificaciones.forEach(c => {
         const opt = document.createElement('option');
         opt.value = c;
         opt.textContent = c;
         clasifSelect.appendChild(opt);
       });
+      clasifSelect.dataset.catalogo = catalogo;
     } catch (err) {
       Utils.toast('No se pudo cargar la lista de clasificaciones: ' + err.message, 'error');
     }
@@ -50,6 +87,15 @@
     ['filter-local', 'filter-clasificacion', 'filter-desde', 'filter-hasta'].forEach(id => {
       document.getElementById(id).addEventListener('change', renderTable);
     });
+    document.getElementById('filter-vinculadas').addEventListener('change', (e) => {
+      try { localStorage.setItem(VINCULADAS_KEY, e.target.checked ? '1' : '0'); } catch { /* opcional */ }
+      renderTable();
+    });
+    document.getElementById('filter-local').addEventListener('change', () => {
+      setupVinculadas();
+      document.getElementById('filter-clasificacion').value = '';
+      loadClasificaciones().then(renderTable);
+    });
     document.getElementById('filter-texto').addEventListener('input', Utils.debounce(renderTable, 250));
     document.getElementById('btn-export').addEventListener('click', exportCSV);
   }
@@ -70,6 +116,7 @@
       desde: document.getElementById('filter-desde').value || undefined,
       hasta: document.getElementById('filter-hasta').value || undefined,
       q: document.getElementById('filter-texto').value.trim() || undefined,
+      vinculadas: mostrarVinculadas(),
     });
     return data;
   }
@@ -131,15 +178,17 @@
     `;
 
     data.forEach(m => {
+      const origenNombre = m.origen ? ((CONFIG.locales.find(l => l.id === m.origen) || {}).nombre || m.origen).replace('Sweet ', '') : '';
+      const tag = m.origen ? `<span class="origen-tag" title="Viene de la caja chica de ${origenNombre}">${origenNombre}</span>` : '';
       html += `
-        <tr>
+        <tr${m.origen ? ' class="row--vinculado"' : ''}>
           <td>${Utils.formatDate(m.fecha)}</td>
-          <td>${m.item}</td>
+          <td>${tag}${m.item}</td>
           <td><span class="clasificacion-tag">${m.clasificacion}</span></td>
           <td title="${m.detalle || ''}">${m.detalle || ''}</td>
           <td class="cell--currency cell--ingreso">${m.ingreso ? Utils.formatCurrency(m.ingreso) : ''}</td>
           <td class="cell--currency cell--egreso">${m.egreso ? Utils.formatCurrency(m.egreso) : ''}</td>
-          <td class="cell--currency cell--saldo">${Utils.formatCurrency(m.saldo)}</td>
+          <td class="cell--currency cell--saldo">${m.saldo === null || m.saldo === undefined ? '' : Utils.formatCurrency(m.saldo)}</td>
         </tr>
       `;
     });
@@ -154,10 +203,15 @@
     const totalsCard = document.getElementById('totals-card');
     totalsCard.style.display = 'block';
 
-    const sumIngresos = data.reduce((s, m) => s + (m.ingreso || 0), 0);
-    const sumEgresos = data.reduce((s, m) => s + (m.egreso || 0), 0);
+    // Los movimientos de cajas vinculadas se muestran pero no suman: el
+    // saldo de esta caja solo lo mueve la devolución que llega al cerrarlas.
+    const propios = data.filter(m => m.saldo !== null && m.saldo !== undefined);
+    const externos = data.length - propios.length;
+    const sumIngresos = propios.reduce((s, m) => s + (m.ingreso || 0), 0);
+    const sumEgresos = propios.reduce((s, m) => s + (m.egreso || 0), 0);
 
-    document.getElementById('totals-count').textContent = `${data.length} movimiento${data.length !== 1 ? 's' : ''}`;
+    document.getElementById('totals-count').textContent = `${propios.length} movimiento${propios.length !== 1 ? 's' : ''}`
+      + (externos ? ` (+${externos} de cajas vinculadas, no suman)` : '');
     document.getElementById('sum-ingresos').textContent = Utils.formatCurrency(sumIngresos);
     document.getElementById('sum-egresos').textContent = Utils.formatCurrency(sumEgresos);
     document.getElementById('sum-saldo-actual').textContent = Utils.formatCurrency(saldoActual);
@@ -177,16 +231,17 @@
       return;
     }
 
-    const headers = ['Fecha', 'Local', 'Ítem', 'Clasificación', 'Detalle', 'Ingreso', 'Egreso', 'Saldo'];
+    const headers = ['Fecha', 'Local', 'Origen', 'Ítem', 'Clasificación', 'Detalle', 'Ingreso', 'Egreso', 'Saldo'];
     const rows = data.map(m => [
       m.fecha,
       m.local_nombre || Utils.getLocalName(m.local_id),
+      m.origen ? Utils.getLocalName(m.origen) : '',
       m.item,
       m.clasificacion,
       `"${(m.detalle || '').replace(/"/g, '""')}"`,
       m.ingreso || 0,
       m.egreso || 0,
-      m.saldo || 0,
+      m.saldo === null || m.saldo === undefined ? '' : m.saldo,
     ]);
 
     const BOM = '﻿';
