@@ -127,7 +127,7 @@ body{font-family:var(--font);background:var(--bg-primary);color:var(--text-prima
 .charts-grid.single{grid-template-columns:1fr;}
 .chart-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:24px;transition:border-color var(--transition-fast);}
 .chart-card:hover{border-color:var(--border-light);}
-.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.chart-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;}
 .chart-header h3{font-size:.92rem;font-weight:600;color:var(--text-primary);}
 .chart-body{position:relative;height:280px;}
 .chart-body-donut{height:260px;display:flex;align-items:center;justify-content:center;}

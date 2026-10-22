@@ -171,7 +171,7 @@
             </a>
             <a href="#" class="nav-item" data-view="personales">
                 <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>
-                <span class="nav-label">Gastos Personales</span>
+                <span class="nav-label">Gastos Extras</span>
             </a>
             <a href="#" class="nav-item" data-view="comparativo">
                 <span class="nav-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg></span>
@@ -290,7 +290,7 @@
                 <div class="kpi-card kpi-personales">
                     <div class="kpi-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
                     <div class="kpi-content">
-                        <span class="kpi-label">Gastos Personales</span>
+                        <span class="kpi-label">Gastos Extras</span>
                         <span class="kpi-value" id="kpiPersonales">$0</span>
                         <span class="kpi-sub" id="kpiPersonalesCount">0 meses</span>
                     </div>
@@ -302,7 +302,8 @@
             <div class="charts-grid">
                 <div class="chart-card chart-large">
                     <div class="chart-header">
-                        <h3>Evolución Mensual — Ingresos vs Gastos</h3>
+                        <h3>Evolución Mensual — Ingresos, Gastos y Extras</h3>
+                        <div class="filter-chips" id="overviewChips"></div>
                     </div>
                     <div class="chart-body">
                         <canvas id="chartOverviewBalance"></canvas>
@@ -402,7 +403,7 @@
             </div>
         </section>
 
-        <!-- ===================== GASTOS PERSONALES VIEW ===================== -->
+        <!-- ===================== GASTOS EXTRAS VIEW ===================== -->
         <section class="view" id="viewPersonales">
             <!-- Column Filters -->
             <div class="column-filters" id="personalesFilters">
@@ -412,7 +413,7 @@
             <div class="charts-grid single">
                 <div class="chart-card chart-full">
                     <div class="chart-header">
-                        <h3>Gastos Personales — Evolución Mensual</h3>
+                        <h3>Gastos Extras — Personales, Internos e Inversiones</h3>
                         <div class="chart-type-toggle">
                             <button class="chart-type-btn active" data-chart="personalesDetalle" data-type="bar" title="Barras"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg></button>
                             <button class="chart-type-btn" data-chart="personalesDetalle" data-type="line" title="Líneas"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></button>
@@ -426,7 +427,7 @@
             <div class="charts-grid">
                 <div class="chart-card chart-small">
                     <div class="chart-header">
-                        <h3>Proporción Gastos Personales</h3>
+                        <h3>Proporción Gastos Extras</h3>
                     </div>
                     <div class="chart-body chart-body-donut">
                         <canvas id="chartPersonalesDonut"></canvas>
@@ -446,7 +447,8 @@
             <div class="charts-grid single">
                 <div class="chart-card chart-full">
                     <div class="chart-header">
-                        <h3>Ingresos vs Gastos Empresa — Comparativo Mensual</h3>
+                        <h3>Ingresos, Gastos Empresa y Gastos Extras — Comparativo Mensual</h3>
+                        <div class="filter-chips" id="comparativoChips"></div>
                     </div>
                     <div class="chart-body chart-body-tall">
                         <canvas id="chartComparativo"></canvas>
@@ -476,6 +478,11 @@
                             <div class="comp-label">Total Gastos Empresa</div>
                             <div class="comp-value" id="compGastos">$0</div>
                             <div class="comp-bar"><div class="comp-bar-fill comp-bar-red" id="compBarGas"></div></div>
+                        </div>
+                        <div class="comp-item comp-extras">
+                            <div class="comp-label">Total Gastos Extras</div>
+                            <div class="comp-value" id="compExtras">$0</div>
+                            <div class="comp-bar"><div class="comp-bar-fill" id="compBarExt" style="background:#eab308"></div></div>
                         </div>
                         <div class="comp-divider"></div>
                         <div class="comp-item comp-balance">

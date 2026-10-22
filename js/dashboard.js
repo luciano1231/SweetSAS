@@ -13,21 +13,28 @@ const INCOME_COLS = [
   { key: 'mayoristasInt', label: 'Ingreso Mayoristas Int.', color: '#06b6d4', icon: ICON_PACKAGE }
 ];
 const EXPENSE_COLS = [
+  { key: 'obligaciones', label: 'Obligaciones', color: '#6366f1' },
   { key: 'cajaChicaPan', label: 'Caja Chica Panadería', color: '#ef4444' },
   { key: 'cajaChicaSH', label: 'Caja Chica Sweet Hiper', color: '#f97316' },
   { key: 'cajaChicaCh', label: 'Caja Chica Chango', color: '#ec4899' },
-  { key: 'cajaSemanal', label: 'Caja Semanal', color: '#8b5cf6' },
-  { key: 'obligaciones', label: 'Obligaciones', color: '#6366f1' }
+  { key: 'cajaChicaProd', label: 'Caja Chica Producción', color: '#14b8a6' },
+  { key: 'cajaSemanal', label: 'Caja Semanal (histórico)', color: '#8b5cf6' }
 ];
-const PERSONAL_COLS = [
-  { key: 'gastosPerOblig', label: 'Gastos Pers. (Obligaciones)', color: '#eab308' },
-  { key: 'invOblig', label: 'Inversiones Obligaciones', color: '#a3e635' },
-  { key: 'gastosPerCaja', label: 'Gastos Pers. (Caja Chica)', color: '#facc15' },
-  { key: 'invCaja', label: 'Inversiones (Caja Chica)', color: '#fde047' }
+// Gastos que no son de la empresa: se grafican aparte de Gastos Empresa.
+const EXTRA_COLS = [
+  { key: 'personales', label: 'Gastos Personales', color: '#eab308' },
+  { key: 'internos', label: 'Movimientos Internos', color: '#38bdf8' },
+  { key: 'inversiones', label: 'Inversiones', color: '#a3e635' }
+];
+// Barras del gráfico mensual (se pueden activar/desactivar con chips)
+const SERIES = [
+  { key: 'ingresos', label: 'Ingresos', color: '#10b981', total: r => totalIncome(r) },
+  { key: 'gastos', label: 'Gastos Empresa', color: '#ef4444', total: r => totalExpense(r) },
+  { key: 'extras', label: 'Gastos Extras', color: '#eab308', total: r => totalExtra(r) }
 ];
 
 let dashboardData = [], filteredData = [], charts = {}, currentView = 'overview';
-let activeFilters = { ingresos: {}, gastos: {}, personales: {} };
+let activeFilters = { ingresos: {}, gastos: {}, personales: {}, series: { ingresos: true, gastos: true, extras: true } };
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbziobe992H3vPeL63szDyVmgmlmqq0rQaCNvfx3y10vlr3N0LgD1bSjvIbLwAUIDN0o/exec';
 let sheetUrl = localStorage.getItem('sweetSAS_sheetUrl') || DEFAULT_SHEET_URL;
 
@@ -50,6 +57,17 @@ function formatDateLabel(f) {
 
 function splitCSV(line) { const r = []; let c = '', q = false; for (let i = 0; i < line.length; i++) { const ch = line[i]; if (ch === '"') { if (q && i + 1 < line.length && line[i + 1] === '"') { c += '"'; i++; } else q = !q; } else if (ch === ',' && !q) { r.push(c.trim()); c = ''; } else c += ch; } r.push(c.trim()); return r; }
 
+// La planilla vieja separaba personales/inversiones por origen (obligaciones o
+// caja chica); el tablero ahora las muestra juntas, y los movimientos
+// internos solo existen en el sistema nuevo.
+function normalizarFilaPlanilla(r) {
+  r.personales = (r.gastosPerOblig || 0) + (r.gastosPerCaja || 0);
+  r.inversiones = (r.invOblig || 0) + (r.invCaja || 0);
+  r.internos = 0;
+  r.cajaChicaProd = 0;
+  return r;
+}
+
 function parseCSV(csv) {
   const lines = csv.trim().split('\n'); if (lines.length < 2) return [];
   let hi = 0; for (let i = 0; i < lines.length; i++) { if (lines[i].toLowerCase().match(/fecha|mes|ingres/)) { hi = i; break; } }
@@ -57,6 +75,7 @@ function parseCSV(csv) {
   for (let i = hi + 1; i < lines.length; i++) {
     const c = splitCSV(lines[i]); if (c.length < 5 || !c[0] || !c[0].trim()) continue;
     rows.push({ fecha: c[0].replace(/"/g, '').trim(), panaderia: parseNum(c[1]), sweetHiper: parseNum(c[2]), chango: parseNum(c[3]), mayoristasExt: parseNum(c[4]), cajaChicaPan: parseNum(c[5]), cajaChicaSH: parseNum(c[6]), cajaChicaCh: parseNum(c[7]), cajaSemanal: parseNum(c[8]), obligaciones: parseNum(c[9]), mayoristasInt: parseNum(c[10]), gastosPerOblig: parseNum(c[11]), invOblig: parseNum(c[12]), gastosPerCaja: parseNum(c[13]), invCaja: parseNum(c[14]) });
+    normalizarFilaPlanilla(rows[rows.length - 1]);
   }
   return rows;
 }
@@ -70,6 +89,7 @@ function parseJSONSheet(rows) {
     const c = rows[i].map(v => String(v));
     if (c.length < 5 || !c[0] || !c[0].trim()) continue;
     result.push({ fecha: c[0].trim(), panaderia: parseNum(c[1]), sweetHiper: parseNum(c[2]), chango: parseNum(c[3]), mayoristasExt: parseNum(c[4]), cajaChicaPan: parseNum(c[5]), cajaChicaSH: parseNum(c[6]), cajaChicaCh: parseNum(c[7]), cajaSemanal: parseNum(c[8]), obligaciones: parseNum(c[9]), mayoristasInt: parseNum(c[10]), gastosPerOblig: parseNum(c[11]), invOblig: parseNum(c[12]), gastosPerCaja: parseNum(c[13]), invCaja: parseNum(c[14]) });
+    normalizarFilaPlanilla(result[result.length - 1]);
   }
   return result;
 }
@@ -127,7 +147,7 @@ function mergeRendiciones(rows, mensual) {
     let row = byMonth.get(m.mes);
     if (!row) {
       row = { fecha: m.mes };
-      [...INCOME_COLS, ...EXPENSE_COLS, ...PERSONAL_COLS].forEach(c => { row[c.key] = 0; });
+      [...INCOME_COLS, ...EXPENSE_COLS, ...EXTRA_COLS].forEach(c => { row[c.key] = 0; });
       byMonth.set(m.mes, row);
     }
     row[col] = Number(m.total) || 0;
@@ -135,9 +155,36 @@ function mergeRendiciones(rows, mensual) {
   return [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(e => e[1]);
 }
 
+async function fetchGastosMensual() {
+  try {
+    const res = await window.sweetAuth.fetch('/api/gastos-mensual');
+    const data = await res.json();
+    return data.ok ? data.mensual : null;
+  } catch { return null; }
+}
+
+// Los egresos salen de Obligaciones + Caja Chica (sistema nuevo) y reemplazan
+// a la planilla: un mes con movimientos en el sistema nuevo pisa TODAS sus
+// columnas de gastos (empresa y extras). Los meses anteriores al sistema
+// conservan lo que traía la planilla.
+function mergeGastos(rows, mensual) {
+  const byMonth = new Map();
+  rows.forEach(r => { const k = monthKey(r.fecha); if (k) byMonth.set(k, r); });
+  mensual.forEach(m => {
+    let row = byMonth.get(m.mes);
+    if (!row) {
+      row = { fecha: m.mes };
+      [...INCOME_COLS, ...EXPENSE_COLS, ...EXTRA_COLS].forEach(c => { row[c.key] = 0; });
+      byMonth.set(m.mes, row);
+    }
+    [...EXPENSE_COLS, ...EXTRA_COLS].forEach(c => { row[c.key] = Number(m[c.key]) || 0; });
+  });
+  return [...byMonth.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(e => e[1]);
+}
+
 async function loadData() {
-  const [d, mensual] = await Promise.all([fetchData(), fetchRendicionesMensual()]);
-  dashboardData = mergeRendiciones(d || [], mensual || []);
+  const [d, mensual, gastos] = await Promise.all([fetchData(), fetchRendicionesMensual(), fetchGastosMensual()]);
+  dashboardData = mergeGastos(mergeRendiciones(d || [], mensual || []), gastos || []);
   setConn(!!(d && d.length), !!mensual);
   populateDateFilters(); applyDateFilter();
 }
@@ -205,6 +252,35 @@ Chart.defaults.font.family = "'Inter',sans-serif"; Chart.defaults.plugins.legend
 Chart.defaults.plugins.tooltip.backgroundColor = '#1a2035'; Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,0.1)';
 Chart.defaults.plugins.tooltip.borderWidth = 1; Chart.defaults.plugins.tooltip.padding = 12; Chart.defaults.plugins.tooltip.cornerRadius = 8;
 
+// Una barra por serie activa (Ingresos / Gastos Empresa / Gastos Extras)
+function seriesDatasets(barPct) {
+  return SERIES.filter(sr => activeFilters.series[sr.key]).map(sr => ({
+    label: sr.label, data: filteredData.map(r => sr.total(r)),
+    backgroundColor: sr.color + 'cc', borderRadius: 6, barPercentage: barPct, categoryPercentage: .85
+  }));
+}
+
+// Chips que prenden/apagan las barras; el estado se comparte entre el
+// Resumen General y el Comparativo.
+function initSeriesChips(containerIds) {
+  const chips = [];
+  containerIds.forEach(id => {
+    const c = document.getElementById(id); if (!c) return; c.innerHTML = '';
+    SERIES.forEach(sr => {
+      const chip = document.createElement('button');
+      chip.className = 'filter-chip active'; chip.dataset.key = sr.key;
+      chip.style.setProperty('--chip-color', sr.color);
+      chip.textContent = sr.label;
+      chip.onclick = () => {
+        activeFilters.series[sr.key] = !activeFilters.series[sr.key];
+        chips.forEach(ch => ch.classList.toggle('active', activeFilters.series[ch.dataset.key]));
+        renderOverviewCharts(); renderComparativoView();
+      };
+      c.appendChild(chip); chips.push(chip);
+    });
+  });
+}
+
 function destroyChart(k) { if (charts[k]) { charts[k].destroy(); delete charts[k]; } }
 function destroyAll() { Object.keys(charts).forEach(k => destroyChart(k)); }
 
@@ -213,12 +289,12 @@ function getActiveCols(type, allCols) { return allCols.filter(c => activeFilters
 function sumCols(row, cols) { return cols.reduce((s, c) => s + (row[c.key] || 0), 0); }
 function totalIncome(r) { return INCOME_COLS.reduce((s, c) => s + (r[c.key] || 0), 0); }
 function totalExpense(r) { return EXPENSE_COLS.reduce((s, c) => s + (r[c.key] || 0), 0); }
-function totalPersonal(r) { return PERSONAL_COLS.reduce((s, c) => s + (r[c.key] || 0), 0); }
+function totalExtra(r) { return EXTRA_COLS.reduce((s, c) => s + (r[c.key] || 0), 0); }
 
 function renderKPIs() {
   const ti = filteredData.reduce((s, r) => s + totalIncome(r), 0);
   const te = filteredData.reduce((s, r) => s + totalExpense(r), 0);
-  const tp = filteredData.reduce((s, r) => s + totalPersonal(r), 0);
+  const tp = filteredData.reduce((s, r) => s + totalExtra(r), 0);
   const bal = ti - te;
   document.getElementById('kpiIngresos').textContent = fmt(ti);
   document.getElementById('kpiIngresosCount').textContent = filteredData.length + ' meses';
@@ -233,14 +309,9 @@ function renderKPIs() {
 function renderOverviewCharts() {
   const labels = getLabels();
   destroyChart('overviewBalance'); destroyChart('overviewDonut');
-  const ingArr = filteredData.map(r => totalIncome(r)), gasArr = filteredData.map(r => totalExpense(r));
   charts.overviewBalance = new Chart(document.getElementById('chartOverviewBalance'), {
-    type: 'bar', data: {
-      labels, datasets: [
-        { label: 'Ingresos', data: ingArr, backgroundColor: '#10b981cc', borderRadius: 6, barPercentage: .6 },
-        { label: 'Gastos Empresa', data: gasArr, backgroundColor: '#ef4444cc', borderRadius: 6, barPercentage: .6 }
-      ]
-    }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index' }, scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { display: false } } } }
+    type: 'bar', data: { labels, datasets: seriesDatasets(.7) },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index' }, plugins: { tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtFull(ctx.raw) } } }, scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { display: false } } } }
   });
 
   const incTotals = INCOME_COLS.map(c => sumF(filteredData, c.key));
@@ -289,7 +360,7 @@ function renderGastosView() {
 }
 
 function renderPersonalesView() {
-  const labels = getLabels(); const cols = getActiveCols('personales', PERSONAL_COLS);
+  const labels = getLabels(); const cols = getActiveCols('personales', EXTRA_COLS);
   destroyChart('personalesDetalle'); destroyChart('personalesDonut');
   const type = document.querySelector('.chart-type-btn.active[data-chart="personalesDetalle"]')?.dataset.type || 'bar';
   charts.personalesDetalle = new Chart(document.getElementById('chartPersonalesDetalle'), {
@@ -302,11 +373,11 @@ function renderPersonalesView() {
     }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtFull(ctx.raw) } } }, scales: { y: { stacked: type === 'bar', ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { stacked: type === 'bar', grid: { display: false } } } }
   });
 
-  const totals = PERSONAL_COLS.map(c => sumF(filteredData, c.key));
-  charts.personalesDonut = new Chart(document.getElementById('chartPersonalesDonut'), { type: 'doughnut', data: { labels: PERSONAL_COLS.map(c => c.label), datasets: [{ data: totals, backgroundColor: PERSONAL_COLS.map(c => c.color), borderWidth: 0, hoverOffset: 8 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmtFull(ctx.raw) } } } } });
+  const totals = EXTRA_COLS.map(c => sumF(filteredData, c.key));
+  charts.personalesDonut = new Chart(document.getElementById('chartPersonalesDonut'), { type: 'doughnut', data: { labels: EXTRA_COLS.map(c => c.label), datasets: [{ data: totals, backgroundColor: EXTRA_COLS.map(c => c.color), borderWidth: 0, hoverOffset: 8 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { tooltip: { callbacks: { label: ctx => ctx.label + ': ' + fmtFull(ctx.raw) } } } } });
 
   const grid = document.getElementById('personalesSummary'); grid.innerHTML = '';
-  PERSONAL_COLS.forEach(c => { grid.innerHTML += `<div class="gasto-item gasto-personal"><span class="gasto-label"><span class="gasto-dot" style="background:${c.color}"></span>${c.label}</span><span class="gasto-value gasto-value-yellow">${fmtFull(sumF(filteredData, c.key))}</span></div>`; });
+  EXTRA_COLS.forEach(c => { grid.innerHTML += `<div class="gasto-item gasto-personal"><span class="gasto-label"><span class="gasto-dot" style="background:${c.color}"></span>${c.label}</span><span class="gasto-value gasto-value-yellow">${fmtFull(sumF(filteredData, c.key))}</span></div>`; });
 }
 
 function renderComparativoView() {
@@ -315,12 +386,8 @@ function renderComparativoView() {
   const ingArr = filteredData.map(r => totalIncome(r)), gasArr = filteredData.map(r => totalExpense(r)), balArr = filteredData.map(r => totalIncome(r) - totalExpense(r));
 
   charts.comparativo = new Chart(document.getElementById('chartComparativo'), {
-    type: 'bar', data: {
-      labels, datasets: [
-        { label: 'Ingresos', data: ingArr, backgroundColor: '#10b981cc', borderRadius: 6, barPercentage: .35, categoryPercentage: .8 },
-        { label: 'Gastos Empresa', data: gasArr, backgroundColor: '#ef4444cc', borderRadius: 6, barPercentage: .35, categoryPercentage: .8 }
-      ]
-    }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index' }, plugins: { tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtFull(ctx.raw), afterBody: items => { const i = items[0].dataIndex; return 'Balance: ' + fmtFull(balArr[i]); } } } }, scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { display: false } } } }
+    type: 'bar', data: { labels, datasets: seriesDatasets(.8) },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index' }, plugins: { tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtFull(ctx.raw), afterBody: items => { const i = items[0].dataIndex; return 'Balance: ' + fmtFull(balArr[i]); } } } }, scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { display: false } } } }
   });
 
   charts.balanceNeto = new Chart(document.getElementById('chartBalanceNeto'), { type: 'bar', data: { labels, datasets: [{ label: 'Balance Neto', data: balArr, backgroundColor: balArr.map(v => v >= 0 ? '#10b981cc' : '#ef4444cc'), borderRadius: 6, barPercentage: .6 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + fmtFull(ctx.raw) } } }, scales: { y: { ticks: { callback: v => fmt(v) }, grid: { color: 'rgba(255,255,255,0.04)' } }, x: { grid: { display: false } } } } });
@@ -328,6 +395,9 @@ function renderComparativoView() {
   const ti = ingArr.reduce((a, v) => a + v, 0), te = gasArr.reduce((a, v) => a + v, 0), bal = ti - te, mx = Math.max(ti, te) || 1;
   document.getElementById('compIngresos').textContent = fmtFull(ti);
   document.getElementById('compGastos').textContent = fmtFull(te);
+  const tx = filteredData.reduce((a, r) => a + totalExtra(r), 0);
+  document.getElementById('compExtras').textContent = fmtFull(tx);
+  document.getElementById('compBarExt').style.width = (tx / Math.max(mx, tx) * 100) + '%';
   document.getElementById('compBalance').textContent = fmtFull(bal);
   document.getElementById('compBalance').style.color = bal >= 0 ? '#10b981' : '#ef4444';
   document.getElementById('compMargin').textContent = (ti > 0 ? Math.round((bal / ti) * 100) : 0) + '%';
@@ -348,7 +418,7 @@ function renderPerformers() {
 }
 
 function renderTable(filter = '') {
-  const allCols = [{ key: 'fecha', label: 'Mes y Año' }, ...INCOME_COLS, ...EXPENSE_COLS, ...PERSONAL_COLS];
+  const allCols = [{ key: 'fecha', label: 'Mes y Año' }, ...INCOME_COLS, ...EXPENSE_COLS, ...EXTRA_COLS];
   document.getElementById('tableHead').innerHTML = allCols.map(c => `<th>${c.label}</th>`).join('');
   const data = filter ? filteredData.filter(r => formatDateLabel(r.fecha).toLowerCase().includes(filter.toLowerCase())) : filteredData;
   document.getElementById('tableBody').innerHTML = data.map(r => '<tr>' + allCols.map(c => c.key === 'fecha' ? `<td>${formatDateLabel(r.fecha)}</td>` : `<td>${fmtFull(r[c.key])}</td>`).join('') + '</tr>').join('');
@@ -370,7 +440,7 @@ function switchView(v) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const map = { overview: 'viewOverview', ingresos: 'viewIngresos', gastos: 'viewGastos', personales: 'viewPersonales', comparativo: 'viewComparativo', tabla: 'viewTabla', rendiciones: 'viewRendiciones' };
-  const titles = { overview: 'Resumen General', ingresos: 'Ingresos', gastos: 'Gastos Empresa', personales: 'Gastos Personales', comparativo: 'Comparativo', tabla: 'Tabla Detallada', rendiciones: 'Rendiciones de Caja' };
+  const titles = { overview: 'Resumen General', ingresos: 'Ingresos', gastos: 'Gastos Empresa', personales: 'Gastos Extras', comparativo: 'Comparativo', tabla: 'Tabla Detallada', rendiciones: 'Rendiciones de Caja' };
   document.getElementById(map[v]).classList.add('active');
   document.querySelector(`[data-view="${v}"]`).classList.add('active');
   document.getElementById('viewTitle').textContent = titles[v];
@@ -403,7 +473,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Init column filter chips
   initFilters('ingresos', INCOME_COLS, 'ingresosChips');
   initFilters('gastos', EXPENSE_COLS, 'gastosChips');
-  initFilters('personales', PERSONAL_COLS, 'personalesChips');
+  initFilters('personales', EXTRA_COLS, 'personalesChips');
+  initSeriesChips(['overviewChips', 'comparativoChips']);
 
   // Config modal
   document.getElementById('connectionStatus').addEventListener('click', () => { document.getElementById('sheetUrl').value = sheetUrl; document.getElementById('configModal').classList.add('active'); });
