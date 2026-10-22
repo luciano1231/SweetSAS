@@ -9,7 +9,10 @@
  *          calcula sobre TODO el historial del local (no solo lo filtrado)
  *          para que la columna "Saldo" de la planilla maestra sea correcta,
  *          y recién ahí se aplican el resto de los filtros.
- * POST   /api/caja-chica                    → crear movimiento (estado=pendiente)
+ * POST   /api/caja-chica                    → crear movimiento (estado=pendiente). En
+ *          cajas con LIMITE_PENDIENTES (Producción: 100) los más viejos que
+ *          sobren pasan solos al historial; el GET de pendientes de esas cajas
+ *          trae saldo_anterior para mostrar el saldo real.
  * POST   /api/caja-chica?action=cerrar      → cerrar caja de un local: exige
  *          que la suma de pendientes (ingreso-egreso) sea $0, y pasa todo a
  *          estado=enviado agrupado en un mismo lote_envio. Si el local tiene
@@ -50,6 +53,42 @@ const VINCULOS_CIERRE = {
 // Cajas centrales: su saldo se arrastra de un cierre al otro (la columna
 // Saldo de la planilla maestra), así que no se les exige cerrar en $0.
 const CAJAS_CON_SALDO = ['produccion'];
+
+// Cajas que no se cierran a mano: quedan siempre los últimos N movimientos
+// como pendientes y, al pasarse, los más viejos pasan solos al historial
+// (estado=enviado). El saldo no cambia: es historial + pendientes.
+const LIMITE_PENDIENTES = { produccion: 100 };
+
+async function archivarExcedente(env, localId) {
+  const limite = LIMITE_PENDIENTES[localId];
+  if (!limite) return 0;
+  const { results } = await env.RENDICIONES_DB
+    .prepare('SELECT id FROM caja_chica_movimientos WHERE local_id = ? AND estado = ? ORDER BY fecha ASC, created_at ASC')
+    .bind(localId, 'pendiente')
+    .all();
+  const sobrantes = results.slice(0, Math.max(0, results.length - limite)).map(r => r.id);
+  if (sobrantes.length === 0) return 0;
+
+  const lote = `auto-${crypto.randomUUID()}`;
+  const fechaEnvio = new Date().toISOString();
+  const stmts = [];
+  for (let i = 0; i < sobrantes.length; i += 50) {
+    const ids = sobrantes.slice(i, i + 50);
+    stmts.push(env.RENDICIONES_DB
+      .prepare(`UPDATE caja_chica_movimientos SET estado = 'enviado', lote_envio = ?, fecha_envio = ? WHERE id IN (${ids.map(() => '?').join(', ')})`)
+      .bind(lote, fechaEnvio, ...ids));
+  }
+  await env.RENDICIONES_DB.batch(stmts);
+  return sobrantes.length;
+}
+
+async function saldoEnviado(env, localId) {
+  const row = await env.RENDICIONES_DB
+    .prepare('SELECT COALESCE(SUM(ingreso), 0) - COALESCE(SUM(egreso), 0) AS saldo FROM caja_chica_movimientos WHERE local_id = ? AND estado = ?')
+    .bind(localId, 'enviado')
+    .first();
+  return Math.round((row?.saldo || 0) * 100) / 100;
+}
 
 function normalizar(s) {
   return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -187,7 +226,14 @@ export async function onRequest(context) {
     let { results } = await stmt.all();
     if (q) results = results.filter(r => `${r.item} ${r.detalle || ''}`.toLowerCase().includes(q));
 
-    return json({ ok: true, movimientos: results.map(marcarOrigen) });
+    // Cajas que arrastran saldo: la carga necesita el saldo de lo que ya pasó
+    // al historial para mostrar el saldo real (este dato sí lo puede ver
+    // quien maneja la caja, aunque no tenga acceso a la planilla maestra).
+    const extra = local && estado === 'pendiente' && CAJAS_CON_SALDO.includes(local)
+      ? { saldo_anterior: await saldoEnviado(env, local), limite_pendientes: LIMITE_PENDIENTES[local] || null }
+      : {};
+
+    return json({ ok: true, movimientos: results.map(marcarOrigen), ...extra });
   }
 
   // ── CERRAR CAJA (enviar pendientes a la planilla maestra) ───────
@@ -257,6 +303,7 @@ export async function onRequest(context) {
     }
 
     await env.RENDICIONES_DB.batch(stmts);
+    if (transferido) await archivarExcedente(env, transferido.destino);
 
     return json({ ok: true, enviados: pendientes.length, lote_envio: loteEnvio, transferido });
   }
@@ -310,6 +357,7 @@ export async function onRequest(context) {
     const sql = `INSERT INTO caja_chica_movimientos (${columns.join(', ')}) VALUES (${placeholders})`;
 
     await env.RENDICIONES_DB.prepare(sql).bind(...columns.map(c => row[c])).run();
+    await archivarExcedente(env, row.local_id);
 
     return json({ ok: true, id: row.id });
   }

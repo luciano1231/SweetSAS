@@ -47,6 +47,8 @@
 
   let direction = 'ingreso'; // 'ingreso' | 'egreso'
   let pendientes = [];
+  let saldoAnterior = 0; // lo ya pasado al historial (solo cajas que arrastran saldo)
+  let limitePendientes = null;
   let catalogItems = [];
   let catalogClasificaciones = [];
   let selectedItem = null; // { item, clasificacion } — lo que eligió del buscador
@@ -211,7 +213,10 @@
   async function loadPendientes() {
     const wrapper = document.getElementById('table-wrapper');
     try {
-      pendientes = await Storage.listar({ localId, estado: 'pendiente' });
+      const res = await Storage.listarPendientes(localId);
+      pendientes = res.movimientos;
+      saldoAnterior = res.saldoAnterior;
+      limitePendientes = res.limite;
     } catch (err) {
       wrapper.innerHTML = `<div class="empty-state"><p class="empty-state__text">${err.message}</p></div>`;
       return;
@@ -236,10 +241,17 @@
       return;
     }
 
-    count.textContent = `${pendientes.length} movimiento${pendientes.length !== 1 ? 's' : ''} sin enviar`;
+    count.textContent = limitePendientes
+      ? `Últimos ${pendientes.length} movimiento${pendientes.length !== 1 ? 's' : ''} — al pasar de ${limitePendientes}, los más viejos pasan solos al historial`
+      : `${pendientes.length} movimiento${pendientes.length !== 1 ? 's' : ''} sin enviar`;
 
-    // Orden cronológico (más antiguo primero, como se van a enviar)
-    const ordenados = [...pendientes].sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+    // Orden cronológico (más antiguo primero, como se van a enviar). En las
+    // cajas que arrastran saldo se ordena por fecha, igual que el historial,
+    // para que la columna Saldo coincida.
+    const ordenados = [...pendientes].sort(local.arrastraSaldo
+      ? (a, b) => (a.fecha || '').localeCompare(b.fecha || '') || (a.created_at || '').localeCompare(b.created_at || '')
+      : (a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+    let running = saldoAnterior;
 
     let html = `
       <table class="data-table">
@@ -251,6 +263,7 @@
             <th>Detalle</th>
             <th>Ingreso</th>
             <th>Egreso</th>
+            ${local.arrastraSaldo ? '<th>Saldo</th>' : ''}
             <th></th>
           </tr>
         </thead>
@@ -267,6 +280,7 @@
           <td title="${m.detalle || ''}">${m.detalle || ''}</td>
           <td class="cell--currency cell--ingreso">${m.ingreso ? Utils.formatCurrency(m.ingreso) : ''}</td>
           <td class="cell--currency cell--egreso">${m.egreso ? Utils.formatCurrency(m.egreso) : ''}</td>
+          ${local.arrastraSaldo ? `<td class="cell--currency cell--saldo">${Utils.formatCurrency(running += (m.ingreso || 0) - (m.egreso || 0))}</td>` : ''}
           <td><button type="button" class="btn-row-delete" data-id="${m.id}" title="Eliminar">${ICON_TRASH}</button></td>
         </tr>
       `;
@@ -286,7 +300,7 @@
 
     document.getElementById('saldo-ingresos').textContent = Utils.formatCurrency(totalIngreso);
     document.getElementById('saldo-egresos').textContent = Utils.formatCurrency(totalEgreso);
-    document.getElementById('saldo-total').textContent = Utils.formatCurrency(saldo);
+    document.getElementById('saldo-total').textContent = Utils.formatCurrency(local.arrastraSaldo ? saldoAnterior + saldo : saldo);
 
     const banner = document.getElementById('saldo-banner');
     const hint = document.getElementById('saldo-hint');
@@ -296,15 +310,16 @@
     banner.classList.toggle('saldo-banner--balanced', balanced);
     banner.classList.toggle('saldo-banner--unbalanced', !balanced);
 
-    if (pendientes.length === 0) {
-      hint.textContent = '';
-      btnCerrar.disabled = true;
-    } else if (local.arrastraSaldo) {
-      // Caja central: el saldo pasa a la planilla maestra y se arrastra.
+    if (local.arrastraSaldo) {
+      // Caja central: no se cierra a mano. El saldo es historial + pendientes
+      // y los movimientos viejos pasan solos al historial (ver server).
       banner.classList.remove('saldo-banner--unbalanced');
       banner.classList.add('saldo-banner--balanced');
-      hint.textContent = 'Esta caja arrastra su saldo: podés enviar sin llevarlo a $0.';
-      btnCerrar.disabled = false;
+      hint.textContent = `Saldo actual de la caja: ${Utils.formatCurrency(saldoAnterior)} en el historial + ${Utils.formatCurrency(saldo)} de los movimientos de abajo.`;
+      btnCerrar.closest('.form-actions').style.display = 'none';
+    } else if (pendientes.length === 0) {
+      hint.textContent = '';
+      btnCerrar.disabled = true;
     } else if (balanced) {
       hint.textContent = 'Saldo en $0 — listo para enviar.';
       btnCerrar.disabled = false;

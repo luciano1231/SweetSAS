@@ -68,6 +68,16 @@ const Storage = {
     return data.movimientos;
   },
 
+  // Pendientes de un local + saldo de lo ya enviado al historial (solo lo
+  // devuelve el server para cajas que arrastran saldo, como Producción).
+  async listarPendientes(localId) {
+    const params = new URLSearchParams({ local: localId, estado: 'pendiente' });
+    const res = await window.sweetAuth.fetch(`/api/caja-chica?${params.toString()}`);
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.error || 'No se pudieron cargar los movimientos.');
+    return { movimientos: data.movimientos, saldoAnterior: data.saldo_anterior || 0, limite: data.limite_pendientes || null };
+  },
+
   async crear(mov) {
     const res = await window.sweetAuth.fetch('/api/caja-chica', {
       method: 'POST',
