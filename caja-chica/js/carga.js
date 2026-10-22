@@ -245,13 +245,15 @@
       ? `Últimos ${pendientes.length} movimiento${pendientes.length !== 1 ? 's' : ''} — al pasar de ${limitePendientes}, los más viejos pasan solos al historial`
       : `${pendientes.length} movimiento${pendientes.length !== 1 ? 's' : ''} sin enviar`;
 
-    // Orden cronológico (más antiguo primero, como se van a enviar). En las
-    // cajas que arrastran saldo se ordena por fecha, igual que el historial,
-    // para que la columna Saldo coincida.
-    const ordenados = [...pendientes].sort(local.arrastraSaldo
+    // El saldo fila por fila se calcula en orden cronológico (en las cajas que
+    // arrastran saldo, por fecha, igual que el historial), y después se
+    // muestra al revés: los últimos movimientos arriba.
+    const cronologico = [...pendientes].sort(local.arrastraSaldo
       ? (a, b) => (a.fecha || '').localeCompare(b.fecha || '') || (a.created_at || '').localeCompare(b.created_at || '')
       : (a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
     let running = saldoAnterior;
+    const saldoFila = new Map(cronologico.map(m => [m.id, running += (m.ingreso || 0) - (m.egreso || 0)]));
+    const ordenados = cronologico.reverse();
 
     let html = `
       <table class="data-table">
@@ -280,7 +282,7 @@
           <td title="${m.detalle || ''}">${m.detalle || ''}</td>
           <td class="cell--currency cell--ingreso">${m.ingreso ? Utils.formatCurrency(m.ingreso) : ''}</td>
           <td class="cell--currency cell--egreso">${m.egreso ? Utils.formatCurrency(m.egreso) : ''}</td>
-          ${local.arrastraSaldo ? `<td class="cell--currency cell--saldo">${Utils.formatCurrency(running += (m.ingreso || 0) - (m.egreso || 0))}</td>` : ''}
+          ${local.arrastraSaldo ? `<td class="cell--currency cell--saldo">${Utils.formatCurrency(saldoFila.get(m.id))}</td>` : ''}
           <td><button type="button" class="btn-row-delete" data-id="${m.id}" title="Eliminar">${ICON_TRASH}</button></td>
         </tr>
       `;
