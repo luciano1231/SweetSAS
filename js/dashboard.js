@@ -9,8 +9,12 @@ const INCOME_COLS = [
   { key: 'panaderia', label: 'Ingreso Panadería', color: '#3b82f6', icon: ICON_STORE },
   { key: 'sweetHiper', label: 'Ingreso Sweet Hiper', color: '#8b5cf6', icon: ICON_CART },
   { key: 'chango', label: 'Ingreso Chango', color: '#10b981', icon: ICON_STORE },
-  { key: 'mayoristasExt', label: 'Ingreso Mayoristas Ext.', color: '#f59e0b', icon: ICON_TRUCK },
-  { key: 'mayoristasInt', label: 'Ingreso Mayoristas Int.', color: '#06b6d4', icon: ICON_PACKAGE }
+  { key: 'mayoristasExt', label: 'Ingreso Mayoristas Ext.', color: '#f59e0b', icon: ICON_TRUCK }
+];
+// Lo que los locales periféricos le compran a Producción: no es ganancia (es un
+// movimiento interno), así que no suma a Ingresos; se grafica aparte.
+const INTERNAL_COLS = [
+  { key: 'mayoristasInt', label: 'Ventas Internas (Mayoristas Int.)', color: '#06b6d4', icon: ICON_PACKAGE }
 ];
 const EXPENSE_COLS = [
   { key: 'obligaciones', label: 'Obligaciones', color: '#6366f1' },
@@ -30,11 +34,12 @@ const EXTRA_COLS = [
 const SERIES = [
   { key: 'ingresos', label: 'Ingresos', color: '#10b981', total: r => totalIncome(r) },
   { key: 'gastos', label: 'Gastos Empresa', color: '#ef4444', total: r => totalExpense(r) },
-  { key: 'extras', label: 'Gastos Extras', color: '#eab308', total: r => totalExtra(r) }
+  { key: 'extras', label: 'Gastos Extras', color: '#eab308', total: r => totalExtra(r) },
+  { key: 'internos', label: 'Ventas Internas', color: '#06b6d4', total: r => sumCols(r, INTERNAL_COLS) }
 ];
 
 let dashboardData = [], filteredData = [], charts = {}, currentView = 'overview';
-let activeFilters = { ingresos: {}, gastos: {}, personales: {}, series: { ingresos: true, gastos: true, extras: true } };
+let activeFilters = { ingresos: {}, gastos: {}, personales: {}, series: { ingresos: true, gastos: true, extras: true, internos: false } };
 const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbziobe992H3vPeL63szDyVmgmlmqq0rQaCNvfx3y10vlr3N0LgD1bSjvIbLwAUIDN0o/exec';
 let sheetUrl = localStorage.getItem('sweetSAS_sheetUrl') || DEFAULT_SHEET_URL;
 
@@ -147,7 +152,7 @@ function mergeRendiciones(rows, mensual) {
     let row = byMonth.get(m.mes);
     if (!row) {
       row = { fecha: m.mes };
-      [...INCOME_COLS, ...EXPENSE_COLS, ...EXTRA_COLS].forEach(c => { row[c.key] = 0; });
+      [...INCOME_COLS, ...INTERNAL_COLS, ...EXPENSE_COLS, ...EXTRA_COLS].forEach(c => { row[c.key] = 0; });
       byMonth.set(m.mes, row);
     }
     row[col] = Number(m.total) || 0;
@@ -174,7 +179,7 @@ function mergeGastos(rows, mensual) {
     let row = byMonth.get(m.mes);
     if (!row) {
       row = { fecha: m.mes };
-      [...INCOME_COLS, ...EXPENSE_COLS, ...EXTRA_COLS].forEach(c => { row[c.key] = 0; });
+      [...INCOME_COLS, ...INTERNAL_COLS, ...EXPENSE_COLS, ...EXTRA_COLS].forEach(c => { row[c.key] = 0; });
       byMonth.set(m.mes, row);
     }
     [...EXPENSE_COLS, ...EXTRA_COLS].forEach(c => { row[c.key] = Number(m[c.key]) || 0; });
@@ -418,7 +423,7 @@ function renderPerformers() {
 }
 
 function renderTable(filter = '') {
-  const allCols = [{ key: 'fecha', label: 'Mes y Año' }, ...INCOME_COLS, ...EXPENSE_COLS, ...EXTRA_COLS];
+  const allCols = [{ key: 'fecha', label: 'Mes y Año' }, ...INCOME_COLS, ...INTERNAL_COLS, ...EXPENSE_COLS, ...EXTRA_COLS];
   document.getElementById('tableHead').innerHTML = allCols.map(c => `<th>${c.label}</th>`).join('');
   const data = filter ? filteredData.filter(r => formatDateLabel(r.fecha).toLowerCase().includes(filter.toLowerCase())) : filteredData;
   document.getElementById('tableBody').innerHTML = data.map(r => '<tr>' + allCols.map(c => c.key === 'fecha' ? `<td>${formatDateLabel(r.fecha)}</td>` : `<td>${fmtFull(r[c.key])}</td>`).join('') + '</tr>').join('');
