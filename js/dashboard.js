@@ -486,6 +486,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnCloseModal').addEventListener('click', () => document.getElementById('configModal').classList.remove('active'));
   document.getElementById('btnConnect').addEventListener('click', () => { sheetUrl = document.getElementById('sheetUrl').value.trim(); if (sheetUrl) localStorage.setItem('sweetSAS_sheetUrl', sheetUrl); document.getElementById('configModal').classList.remove('active'); loadData(); });
 
-  loadData().then(() => setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 600));
-  setInterval(() => loadData(), 300000);
+  // Esperar la sesión: si se cargaba antes del login (entrando directo a
+  // esta página o tras vencer la sesión), las APIs daban 403 y el tablero
+  // quedaba sin caja diaria ni gastos del sistema hasta el próximo refresco.
+  window.sweetAuth.onReady(() => {
+    loadData().then(() => setTimeout(() => document.getElementById('loadingOverlay').classList.add('hidden'), 600));
+    setInterval(() => loadData(), 300000);
+  });
 });

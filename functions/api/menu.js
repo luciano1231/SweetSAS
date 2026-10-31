@@ -7,7 +7,16 @@
  * Requiere el binding KV: MENU_DATA (configurar en Cloudflare Dashboard → Settings → Bindings)
  */
 
-import { obtenerSesion } from '../lib/session.js';
+import { obtenerSesion, tieneLocal } from '../lib/session.js';
+
+// Mensaje distinto de "No autorizado." a propósito: ese texto hace que
+// auth-gate.js crea que la sesión venció y desloguee.
+function sinAccesoAlLocal() {
+  return new Response(
+    JSON.stringify({ error: 'No tenés acceso al menú de ese local.' }),
+    { status: 403, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
+  );
+}
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -44,6 +53,7 @@ export async function onRequest(context) {
   if (method === 'GET') {
     const url = new URL(request.url);
     const store = url.searchParams.get('store') || 'rissione';
+    if (!tieneLocal(session, store)) return sinAccesoAlLocal();
     const key = `menu_${store}`;
 
     const value = await env.MENU_DATA.get(key);
@@ -91,6 +101,8 @@ export async function onRequest(context) {
         { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
       );
     }
+    // La UI ya oculta los locales ajenos, pero eso no alcanza: se valida acá.
+    if (!tieneLocal(session, store)) return sinAccesoAlLocal();
 
     const key = `menu_${store}`;
     await env.MENU_DATA.put(key, JSON.stringify(data));

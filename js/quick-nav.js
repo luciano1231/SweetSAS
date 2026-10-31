@@ -31,9 +31,10 @@
     const esOwnerOSupervisor = role === 'owner' || role === 'supervisor';
     const tieneLocales = Array.isArray(perms.locales) && perms.locales.length > 0;
     const tieneAlgunModulo = esOwnerOSupervisor || perms.recetas || perms.listasPrecios || perms.mayoristas || perms.menuEditor;
-    // Un usuario "local" sin ningún módulo extra asignado no necesita este
-    // menú — su único acceso ya está a la vista en el header de su página.
-    if (!tieneAlgunModulo) return null;
+    // Un usuario "local" sin ningún módulo extra asignado no necesita links
+    // acá — su único acceso ya está a la vista en el header de su página.
+    // El menú igual se muestra para que tenga "Cerrar sesión" (ver mount).
+    if (!tieneAlgunModulo) return [];
 
     const here = normalizePath(location.pathname);
     const svg = (inner) => `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:-3px;margin-right:9px;">${inner}</svg>`;
@@ -79,8 +80,9 @@
 
   function mount(session) {
     if (mounted) return;
+    // Siempre se monta, aunque no haya links: es el único lugar con
+    // "Cerrar sesión" para supervisor y locales (el Home es solo del dueño).
     const links = buildLinks(session);
-    if (!links || links.length === 0) return;
     mounted = true;
 
     const root = document.createElement('div');
@@ -100,7 +102,14 @@
       const indent = l.group ? 'padding-left:26px;' : '';
       menuHtml += `<a href="${l.href}" style="display:flex;align-items:center;gap:10px;padding:11px 14px;${indent}border-radius:9px;color:#e5e7eb;text-decoration:none;font-size:.86rem;font-weight:500;transition:background .15s;">${l.label}</a>`;
     });
+    const ICON_LOGOUT = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:-3px;margin-right:9px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>';
+    const userName = session.userName ? `<div style="padding:8px 14px 2px;font-size:.72rem;color:#6b7280;">Sesión: ${String(session.userName).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))}</div>` : '';
+    menuHtml += `<div style="border-top:1px solid rgba(255,255,255,0.08);margin:6px 0 2px;"></div>${userName}<a href="#" id="quickNavLogout" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:9px;color:#f87171;text-decoration:none;font-size:.86rem;font-weight:500;transition:background .15s;">${ICON_LOGOUT} Cerrar sesión</a>`;
     menu.innerHTML = menuHtml;
+    menu.querySelector('#quickNavLogout').addEventListener('click', function (e) {
+      e.preventDefault();
+      window.sweetAdmin.logout();
+    });
     menu.querySelectorAll('a').forEach(a => {
       a.addEventListener('mouseenter', () => a.style.background = 'rgba(255,255,255,0.07)');
       a.addEventListener('mouseleave', () => a.style.background = 'transparent');

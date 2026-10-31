@@ -124,6 +124,18 @@ async function saveUsers(env, users) {
   await env.USERS_DATA.put(KV_KEY, JSON.stringify(users));
 }
 
+// El login identifica al usuario SOLO por su PIN — si dos usuarios
+// comparten PIN, el segundo entraría como el primero (con sus permisos).
+// Devuelve un mensaje de error si el hash ya lo usa otro (o es la
+// contraseña del dueño), o null si está libre.
+function pinEnUso(users, hash, env, exceptoId) {
+  if (env.OWNER_PASSWORD_HASH && hash === env.OWNER_PASSWORD_HASH) {
+    return 'Ese PIN no se puede usar. Elegí otro.';
+  }
+  const otro = users.find(u => u.passHash === hash && u.id !== exceptoId);
+  return otro ? `Ese PIN ya lo usa "${otro.nombre}". Elegí otro.` : null;
+}
+
 function sanitizePermissions(input) {
   const locales = Array.isArray(input?.locales)
     ? input.locales.filter(l => VALID_LOCALES.includes(l))
@@ -223,12 +235,16 @@ export async function onRequest(context) {
     }
 
     const users = await getUsers(env);
+    const passHash = await hashStr(pin);
+    const errPin = pinEnUso(users, passHash, env, null);
+    if (errPin) return json({ error: errPin }, 409);
+
     const newUser = {
       id: crypto.randomUUID(),
       nombre: String(nombre).trim(),
       role,
       permissions: sanitizePermissions(body.permissions),
-      passHash: await hashStr(pin),
+      passHash,
     };
     users.push(newUser);
     await saveUsers(env, users);
@@ -252,14 +268,23 @@ export async function onRequest(context) {
     const idx = users.findIndex(u => u.id === id);
     if (idx === -1) return json({ error: 'Usuario no encontrado.' }, 404);
 
-    if (body.nombre) users[idx].nombre = String(body.nombre).trim();
-    if (body.permissions) users[idx].permissions = sanitizePermissions(body.permissions);
+    if (body.role !== undefined && !['supervisor', 'local'].includes(body.role)) {
+      return json({ error: 'role inválido. Debe ser "supervisor" o "local".' }, 400);
+    }
+    let nuevoHash = null;
     if (body.pin) {
       if (!/^\d{4,8}$/.test(body.pin)) {
         return json({ error: 'El PIN debe ser numérico (4 a 8 dígitos).' }, 400);
       }
-      users[idx].passHash = await hashStr(body.pin);
+      nuevoHash = await hashStr(body.pin);
+      const errPin = pinEnUso(users, nuevoHash, env, id);
+      if (errPin) return json({ error: errPin }, 409);
     }
+
+    if (body.nombre) users[idx].nombre = String(body.nombre).trim();
+    if (body.role) users[idx].role = body.role;
+    if (body.permissions) users[idx].permissions = sanitizePermissions(body.permissions);
+    if (nuevoHash) users[idx].passHash = nuevoHash;
 
     await saveUsers(env, users);
     return json({ ok: true, user: publicUser(users[idx]) });

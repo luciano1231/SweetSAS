@@ -160,7 +160,7 @@
     if (!editingId && !pin) { errEl.textContent = 'Ingresá un PIN para el nuevo usuario.'; return; }
     if (pin && !/^\d{4,8}$/.test(pin)) { errEl.textContent = 'El PIN debe ser numérico (4 a 8 dígitos).'; return; }
 
-    const body = { nombre, permissions };
+    const body = { nombre, role, permissions };
     if (pin) body.pin = pin;
 
     let res;
@@ -169,7 +169,6 @@
         method: 'PUT', headers: adminHeaders(), body: JSON.stringify(body),
       });
     } else {
-      body.role = role;
       res = await window.sweetAuth.fetch('/api/users?action=create', {
         method: 'POST', headers: adminHeaders(), body: JSON.stringify(body),
       });
