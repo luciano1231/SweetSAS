@@ -2,6 +2,8 @@
  * Cloudflare Pages Function — /api/obligaciones
  *
  * GET    /api/obligaciones?desde=&hasta=&banco=&obligacion=&sinClasificar=1&q=
+ *          → cada movimiento trae clasificacion (Clasificación general) y
+ *          tipo_gasto: empresa | personales | internos | inversiones
  * PUT    /api/obligaciones?id=   → editar una fila. Si cambia la
  *          Obligación, el sistema "aprende" al toque (memoria +
  *          alta automática en la clasificación general) — el
@@ -16,6 +18,7 @@
 
 import { agregarObligacionesSiFaltan } from './obligaciones-upload.js';
 import { obtenerSesion, tieneRol } from '../lib/session.js';
+import { columnaExtra } from '../lib/gastos-clasificacion.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -58,19 +61,22 @@ export async function onRequest(context) {
     const sinClasificar = url.searchParams.get('sinClasificar');
     const q = (url.searchParams.get('q') || '').trim().toLowerCase();
 
-    let sql = 'SELECT * FROM obligaciones_movimientos WHERE 1=1';
+    // Cada movimiento viene con su Clasificación general y el tipo de gasto
+    // (empresa / personales / internos / inversiones) con la misma regla
+    // que usa el Tablero.
+    let sql = 'SELECT m.*, g.clasificacion FROM obligaciones_movimientos m LEFT JOIN obligaciones_referencias_generales g ON g.obligacion = m.obligacion WHERE 1=1';
     const binds = [];
-    if (desde) { sql += ' AND fecha >= ?'; binds.push(desde); }
-    if (hasta) { sql += ' AND fecha <= ?'; binds.push(hasta); }
-    if (banco) { sql += ' AND banco = ?'; binds.push(banco); }
-    if (obligacion) { sql += ' AND obligacion = ?'; binds.push(obligacion); }
-    if (sinClasificar === '1') { sql += " AND obligacion = 'SIN CLASIFICAR'"; }
+    if (desde) { sql += ' AND m.fecha >= ?'; binds.push(desde); }
+    if (hasta) { sql += ' AND m.fecha <= ?'; binds.push(hasta); }
+    if (banco) { sql += ' AND m.banco = ?'; binds.push(banco); }
+    if (obligacion) { sql += ' AND m.obligacion = ?'; binds.push(obligacion); }
+    if (sinClasificar === '1') { sql += " AND m.obligacion = 'SIN CLASIFICAR'"; }
 
     // 'carga' = orden en que se cargaron (rowid, el sqlite interno, refleja
     // el orden real de inserción); 'fecha' (default) = cronológico por la
     // fecha del movimiento.
     const orden = url.searchParams.get('orden');
-    sql += (orden === 'carga') ? ' ORDER BY rowid DESC' : ' ORDER BY fecha DESC, created_at DESC, rowid DESC';
+    sql += (orden === 'carga') ? ' ORDER BY m.rowid DESC' : ' ORDER BY m.fecha DESC, m.created_at DESC, m.rowid DESC';
 
     const stmt = binds.length ? env.RENDICIONES_DB.prepare(sql).bind(...binds) : env.RENDICIONES_DB.prepare(sql);
     let { results } = await stmt.all();
@@ -80,6 +86,7 @@ export async function onRequest(context) {
       );
     }
 
+    results = results.map(r => ({ ...r, tipo_gasto: columnaExtra(r.clasificacion, r.obligacion) || 'empresa' }));
     return json({ ok: true, movimientos: results });
   }
 

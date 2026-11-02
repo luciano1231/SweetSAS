@@ -20,6 +20,7 @@
  */
 
 import { obtenerSesion, tieneRol } from '../lib/session.js';
+import { columnaExtra } from '../lib/gastos-clasificacion.js';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -34,32 +35,10 @@ function json(data, status = 200) {
   });
 }
 
-// Reglas de "gasto extra" (se comparan sin acentos ni mayúsculas, por
-// fragmento). Lo que no cae en ninguna es gasto de la empresa.
-// 'GASTOS EXTRA' es la clasificación de caja chica para cosas no
-// empresariales (mascota, veterinaria), por eso va con los personales.
-const REGLAS_EXTRA = [
-  { col: 'personales', fragmentos: ['PERSONAL', 'GASTOS EXTRA'] },
-  { col: 'internos', fragmentos: ['INTERNO', 'INTERNA'] },
-  { col: 'inversiones', fragmentos: ['INVERSION'] },
-];
-
 // local_id de caja chica → columna del tablero
 const CAJA_COL = { rissione: 'cajaChicaPan', hiper: 'cajaChicaSH', changoMas: 'cajaChicaCh', produccion: 'cajaChicaProd' };
 
 const COLUMNAS = ['obligaciones', 'cajaChicaPan', 'cajaChicaSH', 'cajaChicaCh', 'cajaChicaProd', 'personales', 'internos', 'inversiones'];
-
-function normalizar(s) {
-  return (s || '').toString().toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-}
-
-function columnaExtra(...textos) {
-  const t = textos.map(normalizar).filter(Boolean);
-  for (const regla of REGLAS_EXTRA) {
-    if (t.some(txt => regla.fragmentos.some(f => txt.includes(f)))) return regla.col;
-  }
-  return null;
-}
 
 export async function onRequest(context) {
   const { request, env } = context;
