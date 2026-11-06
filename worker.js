@@ -43,6 +43,17 @@ export default {
       return env.ASSETS.fetch(new Request(new URL('/home.html', request.url), request));
     }
 
+    // TPV de prueba (proyecto Fudo), escondido: no está linkeado desde
+    // ningún lado y pide login de dueño. Se genera desde el proyecto Fudo
+    // con `npm run build:sweet` (escribe en ./pos-lab/).
+    if (url.pathname === '/pos-lab') {
+      url.pathname = '/pos-lab/';
+      return Response.redirect(url.toString(), 302);
+    }
+    if (url.pathname === '/pos-lab/') {
+      return env.ASSETS.fetch(new Request(new URL('/pos-lab/index.html', request.url), request));
+    }
+
     if (url.pathname === '/api/menu') return menuHandler({ request, env, ctx });
     if (url.pathname === '/api/users') return usersHandler({ request, env, ctx });
     if (url.pathname === '/api/rendiciones') return rendicionesHandler({ request, env, ctx });
