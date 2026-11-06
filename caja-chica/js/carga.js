@@ -45,6 +45,10 @@
     else rendicionBtn.href = `../rendicion/carga.html?local=${encodeURIComponent(localId)}`;
   }
 
+  // TPV: el punto de venta tiene el catálogo de Rissione → solo en ese local
+  const tpvBtn = document.getElementById('navTpvBtn');
+  if (tpvBtn && localId === 'rissione') tpvBtn.style.display = '';
+
   let direction = 'ingreso'; // 'ingreso' | 'egreso'
   let pendientes = [];
   let saldoAnterior = 0; // lo ya pasado al historial (solo cajas que arrastran saldo)

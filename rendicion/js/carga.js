@@ -36,6 +36,10 @@
   const cajaChicaBtn = document.getElementById('navCajaChicaBtn');
   if (cajaChicaBtn) cajaChicaBtn.href = `../caja-chica/carga.html?local=${encodeURIComponent(localId)}`;
 
+  // TPV: el punto de venta tiene el catálogo de Rissione → solo en ese local
+  const tpvBtn = document.getElementById('navTpvBtn');
+  if (tpvBtn && localId === 'rissione') tpvBtn.style.display = '';
+
   // --- State ---
   let billValues = {};   // { '10': 0, '20': 0, ... }
   let efectivoManual = null; // número si el total se escribió a mano; null = se calcula por billetes

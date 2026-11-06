@@ -48,6 +48,7 @@
     const ICON_BANK = svg('<line x1="3" y1="21" x2="21" y2="21"></line><line x1="5" y1="21" x2="5" y2="10"></line><line x1="19" y1="21" x2="19" y2="10"></line><polygon points="12 3 22 9 2 9"></polygon>');
     const ICON_RECETAS = svg('<rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M9 12h6"></path><path d="M9 16h6"></path>');
     const ICON_PRECIOS = svg('<path d="m22 2-7 20-4-9-9-4Z"></path><path d="M22 2 11 13"></path>');
+    const ICON_TPV = svg('<rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line>');
     const ICON_MAYORISTAS = svg('<circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>');
 
     const links = [];
@@ -72,6 +73,8 @@
     if (esOwnerOSupervisor || perms.listasPrecios) links.push({ href: '/recetas/listas-precios.html', label: ICON_PRECIOS + ' Listas de Precios' });
     if (esOwnerOSupervisor || perms.mayoristas) links.push({ href: '/mayoristas/index.html', label: ICON_MAYORISTAS + ' Mayoristas' });
     if (esOwnerOSupervisor || perms.menuEditor) links.push({ href: '/menu-editor.html', label: ICON_MENU + ' Editor de Menú' });
+    // TPV de Rissione: dueño o quien tenga ese local
+    if (role === 'owner' || (tieneLocales && perms.locales.includes('rissione'))) links.push({ href: '/pos-lab/', label: ICON_TPV + ' TPV Rissione' });
     if (role === 'owner') links.push({ href: '/usuarios.html', label: ICON_USERS + ' Gestión de Usuarios' });
 
     // No listar la página en la que ya estamos

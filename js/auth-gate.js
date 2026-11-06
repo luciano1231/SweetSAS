@@ -30,6 +30,7 @@
 //   <script>window.__PAGE_PERMISSION = 'recetas';</script>            // costos y precios de productos: solo dueño/supervisor
 //   <script>window.__PAGE_PERMISSION = 'listasPrecios';</script>      // listas de precios (clientes/mayoristas): solo dueño/supervisor
 //   <script>window.__PAGE_PERMISSION = 'mayoristas';</script>         // remitos a mayoristas: solo dueño/supervisor
+//   <script>window.__PAGE_PERMISSION = 'tpv';</script>                // TPV (/pos-lab/): dueño o quien tenga el local Rissione
 // Si el usuario logueado no tiene ese permiso, se lo redirige automáticamente
 // al mejor destino posible para él (sin mostrar la página).
 //
@@ -95,6 +96,11 @@
     // Recetas, Listas de Precios y Mayoristas: dueño y supervisor entran
     // siempre (como antes); a un usuario "local" hay que asignárselo a mano
     // desde Gestión de Usuarios (permissions.recetas / listasPrecios / mayoristas).
+    // TPV (punto de venta con el catálogo de Rissione, /pos-lab/): el dueño y
+    // cualquier usuario que tenga asignado el local Rissione.
+    if (required === 'tpv') {
+      return role === 'owner' || (Array.isArray(permissions.locales) && permissions.locales.includes('rissione'));
+    }
     if (required === 'recetas' || required === 'listasPrecios' || required === 'mayoristas') {
       return role === 'owner' || role === 'supervisor' || !!permissions[required];
     }
