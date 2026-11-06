@@ -74,7 +74,7 @@
     if (esOwnerOSupervisor || perms.mayoristas) links.push({ href: '/mayoristas/index.html', label: ICON_MAYORISTAS + ' Mayoristas' });
     if (esOwnerOSupervisor || perms.menuEditor) links.push({ href: '/menu-editor.html', label: ICON_MENU + ' Editor de Menú' });
     // TPV de Rissione: dueño o quien tenga ese local
-    if (role === 'owner' || (tieneLocales && perms.locales.includes('rissione'))) links.push({ href: '/pos-lab/', label: ICON_TPV + ' TPV Rissione' });
+    if (role === 'owner' || (tieneLocales && perms.locales.includes('rissione'))) links.push({ href: '/pos-lab/', label: ICON_TPV + ' <span style="color:#fb923c;font-weight:700;">FUDO</span> Rissione' });
     if (role === 'owner') links.push({ href: '/usuarios.html', label: ICON_USERS + ' Gestión de Usuarios' });
 
     // No listar la página en la que ya estamos
